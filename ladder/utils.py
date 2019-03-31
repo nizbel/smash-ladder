@@ -7,12 +7,10 @@ import re
 from django.db import transaction
 from django.db.models.aggregates import Sum, Max
 from django.db.models.expressions import F
-from django.db.models.query import prefetch_related_objects
 from django.db.models.query_utils import Q
 from django.utils import timezone
 
-from configuracao.models import ConfiguracaoLadder
-from jogadores.models import RegistroFerias, Jogador
+from jogadores.models import Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
@@ -39,6 +37,9 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
     else:
         raise ValueError('Informe apenas um desafio ou um mês/ano')
     
+    # Buscar season atual
+    season_atual = Season.objects.order_by('-data_inicio')[0]
+    
     # Preparar iterador de desafio
     evento = None
     try:
@@ -46,8 +47,8 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
             # Definir desafios a serem recalculados
             if informou_desafio:
-                eventos = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).exclude(id=desafio_ladder.id) \
-                    .order_by('data_hora', 'posicao_desafiado', 'id'))
+                eventos = list(DesafioLadder.validados.na_season(season_atual).filter(data_hora__gte=desafio_ladder.data_hora) \
+                               .exclude(id=desafio_ladder.id).order_by('data_hora', 'posicao_desafiado', 'id'))
                 
                 # Adiciona desafio atual se não tiver sido cancelado
                 if not desafio_ladder.is_cancelado():
@@ -533,13 +534,6 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
     desafiante = desafio_ladder.desafiante
     desafiado = desafio_ladder.desafiado
     
-    # Verifica se desafiante e desafiado não estão de férias na data
-    if desafiante.de_ferias_na_data(desafio_ladder.data_hora.date()):
-        raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_FERIAS)
-    
-    if desafiado.de_ferias_na_data(desafio_ladder.data_hora.date()):
-        raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIADO_FERIAS)
-    
     # Jogador não pode desafiar a si mesmo
     if desafiante == desafiado:
         raise ValueError(DesafioLadder.MENSAGEM_ERRO_MESMO_JOGADOR)
@@ -581,6 +575,7 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
                 ladder = desfazer_lote_desafios(list(DesafioLadder.validados.filter(data_hora=desafio_ladder.data_hora)), 
                                                 ladder)
             
+            # TODO Melhorar isso aqui sem férias
             # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
             desafiaveis = list()
             ladder.sort(key=lambda x: x.posicao, reverse=True)
@@ -588,14 +583,13 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             # Verificar se desafiante possui permissão de aumento de range
             limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
-                
+
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
-                if not jogador_posicao.jogador.de_ferias_na_data(desafio_ladder.data_hora.date()):
-                    desafiaveis.append(jogador_posicao.jogador)
-                    
-                    # Verifica se quantidade de desafiáveis já supre o limite de posições acima
-                    if len(desafiaveis) == limite_range:
-                        break
+                desafiaveis.append(jogador_posicao.jogador)
+                
+                # Verifica se quantidade de desafiáveis já supre o limite de posições acima
+                if len(desafiaveis) == limite_range:
+                    break
             
             # Desafiado é desafiável?
             if desafiado not in desafiaveis:
@@ -729,6 +723,7 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     
     resultados_desafios = dict(ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios).order_by('jogador').values('jogador') \
                                .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
+    
     
     if not decaimentos:
         decaimentos = list()
@@ -1014,27 +1009,20 @@ def avaliar_decaimento(jogador):
     if not DesafioLadder.validados.filter(data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).exists():
         return None
     
-    # Verificar último desafio validado do jogador
-    if DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador), 
-                                      data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).exists():
-        ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador), 
-                                                        data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).order_by('-data_hora')[0]
+    # Verificar último desafio validado do jogador na season
+    if DesafioLadder.validados.na_season(season_atual).filter(Q(desafiante=jogador) | Q(desafiado=jogador)).exists():
+        ultimo_desafio = DesafioLadder.validados.na_season(season_atual).filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
+        .order_by('-data_hora')[0]
     else:
         # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder nesta Season
         ultimo_desafio = DesafioLadder(data_hora=DesafioLadder.validados \
-                                       .filter(data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).order_by('data_hora')[0].data_hora)
-    
-    # Verificar períodos de férias desde último desafio
-    registros_ferias = RegistroFerias.objects.filter(jogador=jogador, data_inicio__gt=ultimo_desafio.data_hora.date())
-    qtd_dias_ferias = 0
-    for registro_ferias in registros_ferias:
-        qtd_dias_ferias += (registro_ferias.data_fim - registro_ferias.data_inicio).days
+                                       .na_season(season_atual).order_by('data_hora')[0].data_hora)
     
     # Verificar se jogador já possui decaimento desde último desafio
     decaimentos_desde_desafio = DecaimentoJogador.objects.filter(jogador=jogador, data__gt=ultimo_desafio.data_hora)
     
     # Verificar quantidade de períodos de inatividade
-    qtd_periodos_inatividade = (timezone.localdate() - ultimo_desafio.data_hora.date()).days - qtd_dias_ferias
+    qtd_periodos_inatividade = (timezone.localdate() - ultimo_desafio.data_hora.date()).days
     qtd_periodos_inatividade = qtd_periodos_inatividade // DecaimentoJogador.PERIODO_INATIVIDADE
     
     # Gerar decaimento para quantidade de períodos apontado na variável, se 0, não deve ser criado
@@ -1051,10 +1039,6 @@ def avaliar_decaimento(jogador):
                 # Buscar data em que o período de inatividade foi completado
                 data_decaimento = ultimo_desafio.data_hora.date() + datetime.timedelta(days=decaimento_atual * 
                                                                                        DecaimentoJogador.PERIODO_INATIVIDADE)
-                # Remover dias de férias
-                for registro_ferias in registros_ferias:
-                    if registro_ferias.data_inicio <= data_decaimento:
-                        data_decaimento += datetime.timedelta(days=(registro_ferias.data_fim - registro_ferias.data_inicio).days)
                 
                 data_decaimento = timezone.datetime(data_decaimento.year, data_decaimento.month, data_decaimento.day, 
                                                     tzinfo=timezone.get_current_timezone())
@@ -1126,14 +1110,26 @@ def decair_jogador(decaimento):
     
 def verificar_decaimento_valido(decaimento):
     """Verifica se decaimento é válido"""
+    # Decaimento só é válido na ladder atual
+    season_atual = Season.objects.order_by('-data_inicio')[0]
     
-    if DesafioLadder.validados.filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
+#     print('desafios validados', DesafioLadder.validados.count())
+#     print('desafios validados na season', DesafioLadder.validados.na_season(season_atual).count())
+    
+    # Se não há desafios, decaimento não é válido
+    if not DesafioLadder.validados.na_season(season_atual).exists():
+        return False
+    
+    if DesafioLadder.validados.na_season(season_atual) \
+            .filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
             .filter(data_hora__lt=decaimento.data).exists():
-        data_hora_ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
+        data_hora_ultimo_desafio = DesafioLadder.validados.na_season(season_atual) \
+            .filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
             .filter(data_hora__lt=decaimento.data).order_by('-data_hora').values_list('data_hora', flat=True)[0]
     else:
-        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder
-        data_hora_ultimo_desafio = DesafioLadder.validados.all().order_by('data_hora')[0].data_hora
+        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder, na season
+        data_hora_ultimo_desafio = DesafioLadder.validados.na_season(season_atual) \
+        .order_by('data_hora')[0].data_hora
     
     # Retorna válido para caso de período de inatividade apontado pelo decaimento ainda ser verdadeiro
     return decaimento.data.date() >= data_hora_ultimo_desafio.date() \
@@ -1183,20 +1179,16 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
     # Montar lista com desafiáveis
     desafiaveis = list()
     
-    # Buscar registros de férias
-    prefetch_related_objects([posicao_ladder.jogador for posicao_ladder in ladder_para_alterar], 'registroferias_set')
-    
     # Avaliar limite de range
     limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if jogador.possui_permissao_aumento_range(data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
                 
     for desafiavel in [posicao_ladder.jogador for posicao_ladder in \
                        ladder_para_alterar if posicao_ladder.posicao < posicao_jogador]:
-        if not desafiavel.de_ferias_na_data(data_hora.date()):
-            if retornar_ids:
-                desafiaveis.append(desafiavel.id)
-            else:
-                desafiaveis.append(desafiavel)
+        if retornar_ids:
+            desafiaveis.append(desafiavel.id)
+        else:
+            desafiaveis.append(desafiavel)
             
         if not coringa and len(desafiaveis) == limite_range:
             break
@@ -1204,14 +1196,12 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
     # Se jogador estiver fora da ladder, adicionar jogadores que também estão de fora
     if posicao_jogador == ladder_para_alterar[0].posicao + 1:
         jogadores_fora_da_ladder = Jogador.objects.all().exclude(id=jogador.id) \
-            .exclude(id__in=[posicao_ladder.jogador.id for posicao_ladder in ladder_para_alterar]) \
-            .prefetch_related('registroferias_set')
+            .exclude(id__in=[posicao_ladder.jogador.id for posicao_ladder in ladder_para_alterar])
         for jogador_fora in jogadores_fora_da_ladder:
-            if not jogador_fora.de_ferias_na_data(data_hora.date()):
-                if retornar_ids:
-                    desafiaveis.append(jogador_fora.id)
-                else:
-                    desafiaveis.append(jogador_fora)
+            if retornar_ids:
+                desafiaveis.append(jogador_fora.id)
+            else:
+                desafiaveis.append(jogador_fora)
     
     return desafiaveis
     

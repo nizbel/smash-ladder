@@ -139,6 +139,12 @@ $(document).ready(function(){
 		}
 	});
 	
+	// Mostrar lutas de acordo com scores
+	$('input[id*="score]').change(function(){
+		var score_desafiante = $('#score_desafiante').val();
+		var score_desafiado = $('#score_desafiado').val();
+	});
+	
 	buscarDesafiaveis();
 	buscarPersonagensJogador($("select[id='id_desafiante']"));
 	buscarPersonagensJogador($("select[id='id_desafiado']"));

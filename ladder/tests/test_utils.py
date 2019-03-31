@@ -5,18 +5,19 @@ from django.contrib.auth.models import User
 from django.test.testcases import TestCase
 from django.utils import timezone
 
-from jogadores.models import Jogador, RegistroFerias
+from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste, SENHA_TESTE
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
     CancelamentoDesafioLadder, RemocaoJogador, DecaimentoJogador, InicioLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
-    validar_desafio_ladder_teste, criar_ladder_inicial_teste
+    validar_desafio_ladder_teste, criar_ladder_inicial_teste, criar_season_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, copiar_ladder, remover_jogador, decair_jogador, \
     avaliar_decaimento, buscar_desafiaveis, processar_remocao
 from smashLadder.utils import mes_ano_ant
+from configuracao.models import ConfiguracaoLadder
 
 
 class AlterarLadderTestCase(TestCase):
@@ -49,7 +50,7 @@ class AlterarLadderTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localtime().date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
@@ -560,6 +561,10 @@ class RecalcularLadderTestCase(TestCase):
 #                          cls.jogador_pos_3, cls.jogador_pos_4,
 #                          cls.jogador_pos_5, cls.jogador_pos_6,
 #                          cls.jogador_pos_7]
+
+        # Criar season
+        criar_season_teste(data_inicio=timezone.localdate() - datetime.timedelta(days=365), 
+                           data_fim=timezone.localdate() + datetime.timedelta(days=365))
         
         # Criar ladder inicial
         criar_ladder_inicial_teste()
@@ -840,6 +845,46 @@ class RecalcularLadderTestCase(TestCase):
         self.assertTrue(PosicaoLadder.objects.filter(posicao=11, jogador=self.jogador_pos_10).exists())
         self.assertTrue(PosicaoLadder.objects.filter(posicao=10, jogador=novo_jogador).exists())
         
+    def test_alterar_ladder_nao_processa_primeiro_decaimento_se_configuracao_abonar(self):
+        """Testa se, com a configuração de abonar primeiro decaimento, jogador é perdoado no primeiro decaimento"""
+        horario_decaimento = timezone.localtime() - datetime.timedelta(days=5)
+        
+        # Criar desafio há 35 dias para garantir validade de decaimento
+        desafio_teste = criar_desafio_ladder_simples_teste(self.jogador_pos_3, self.jogador_pos_1, 1, 3, 
+                                                           horario_decaimento - datetime.timedelta(days=(DecaimentoJogador.PERIODO_INATIVIDADE*2)+1), 
+                                                           False, self.jogador_pos_1)
+        validar_desafio_ladder_teste(desafio_teste, self.jogador_pos_1)
+        
+        # Jogador com 1 período
+        decaimento_abonado = DecaimentoJogador.objects.create(jogador=self.jogador_pos_4, data=horario_decaimento, 
+                                       posicao_inicial=4, qtd_periodos_inatividade=1)
+        # Jogador com 2 períodos
+        decaimento_nao_abonado = DecaimentoJogador.objects.create(jogador=self.jogador_pos_5, data=horario_decaimento, 
+                                       posicao_inicial=5, qtd_periodos_inatividade=2)
+#         decair_jogador(decaimento_abonado)
+        
+#         decair_jogador(decaimento_nao_abonado)
+        
+        recalcular_ladder(mes=self.mes, ano=self.ano)
+        
+        # Verificar que houve decaimento
+        self.assertEqual(PosicaoLadder.objects.get(jogador=self.jogador_pos_4).posicao, 7)
+        self.assertEqual(PosicaoLadder.objects.get(jogador=self.jogador_pos_5).posicao, 8)
+        
+        # Ativar configuracao de abonar primeiro decaimento
+        # Buscar configurações para ativar 
+        ConfiguracaoLadder.buscar_configuracao([])
+        ConfiguracaoLadder.objects.filter(abonar_primeiro_decaimento=False).update(abonar_primeiro_decaimento=True)
+        DecaimentoJogador.alterar_abonar_primeiro_decaimento()
+        
+        # Testar
+        recalcular_ladder(mes=self.mes, ano=self.ano)
+        
+        # Verificar que o decaimento do player 4 foi abonado
+        self.assertEqual(PosicaoLadder.objects.get(jogador=self.jogador_pos_4).posicao, 4)
+        self.assertEqual(PosicaoLadder.objects.get(jogador=self.jogador_pos_5).posicao, 8)
+        
+        
 
 class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
     """Testes para a função que verifica se desafiante está abaixo do desafiado na ladder"""
@@ -874,152 +919,83 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         
     def test_desafiante_desafiado_mesmo_jogador(self):
         """Desafiante e desafiado são o mesmo jogador"""
-        desafio = DesafioLadder(desafiante=self.jogador_pos_3, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_3, desafiado=self.jogador_pos_3, data_hora=timezone.localtime(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_MESMO_JOGADOR):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_3, self.jogador_pos_3, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_3, self.jogador_pos_3, timezone.localtime(), False)
             verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_qtd_menos_1_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO-1 posição portanto pode desafiar, ladder atual"""
-        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
-#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_3, data_hora=timezone.localtime(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_4, self.jogador_pos_3, timezone.localtime(), False)
         verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_qtd_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO posições portanto pode desafiar, ladder atual"""
-        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
-#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, data_hora=timezone.localtime(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_3, timezone.localtime(), False)
         verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_qtd_mais_1_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO+1 posições portanto não pode desafiar, ladder atual"""
-        desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_3, data_hora=timezone.localtime(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.localtime(), False)
             verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_abaixo_qtd_menos_1_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO-1 posição portanto pode desafiar, ladder histórico"""
         desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_3, 
-                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+                                data_hora=timezone.localtime().replace(month=self.mes, year=self.ano), desafio_coringa=False)
 #         verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-#                                                               self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+#                                                               self.jogador_pos_4, self.jogador_pos_3, timezone.localtime(), False)
         verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_qtd_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO posições portanto pode desafiar, ladder histórico"""
         desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, 
-                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+                                data_hora=timezone.localtime().replace(month=self.mes, year=self.ano), desafio_coringa=False)
 #         verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-#                                                               self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+#                                                               self.jogador_pos_5, self.jogador_pos_3, timezone.localtime(), False)
         verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_qtd_mais_1_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo LIMITE_POSICOES_DESAFIO+1 posições portanto não pode desafiar, ladder histórico"""
         desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_3, 
-                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+                                data_hora=timezone.localtime().replace(month=self.mes, year=self.ano), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
 #             verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-#                                                                   self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+#                                                                   self.jogador_pos_6, self.jogador_pos_3, timezone.localtime(), False)
             verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_acima_desafiado_ladder_atual(self):
         """Desafiante está acima de desafiado no ranking portanto não pode desafiar, ladder atual"""
         desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_6, 
-                                data_hora=timezone.now(), desafio_coringa=False)
+                                data_hora=timezone.localtime(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_6, timezone.localtime(), False)
             verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_acima_desafiado_ladder_historico(self):
         """Desafiante está acima de desafiado no ranking portanto não pode desafiar, ladder histórico"""
         desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_6, 
-                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+                                data_hora=timezone.localtime().replace(month=self.mes, year=self.ano), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO):
 #             verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-#                                                               self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+#                                                               self.jogador_pos_5, self.jogador_pos_6, timezone.localtime(), False)
             verificar_posicoes_desafiante_desafiado(desafio)
     
-    def test_desafiante_ferias(self):
-        """Desafiante está de férias portanto não pode desafiar ninguém"""
-        # Criar desafio férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_6, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
-        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_5, 
-                                data_hora=timezone.now(), desafio_coringa=False)
-        with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_FERIAS):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
-            verificar_posicoes_desafiante_desafiado(desafio)
-    
-    def test_desafiado_ferias(self):
-        """Jogador desafiado está de férias portanto não pode ser desafiado"""
-        # Criar desafio férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
-        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_5, 
-                                data_hora=timezone.now(), desafio_coringa=False)
-        with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIADO_FERIAS):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
-            verificar_posicoes_desafiante_desafiado(desafio)
-    
-    def test_desafiante_qtd_mais_1_posicoes_abaixo_proximo_com_ferias(self):
-        """Desafiante está LIMITE_POSICOES_DESAFIO+1 posições abaixo, mas o jogador logo acima está de férias, pode desafiar"""
-        # Criar desafio férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
-        desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_3, 
-                                data_hora=timezone.now(), desafio_coringa=False)
-#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
-        verificar_posicoes_desafiante_desafiado(desafio)
-    
-    def test_desafiante_qtd_mais_2_posicoes_abaixo_proximo_com_ferias(self):
-        """Desafiante está LIMITE_POSICOES_DESAFIO+2 abaixo e o próximo acima está de férias, portanto não pode desafiar"""
-        # Criar desafio férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
-        desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_2, 
-                                data_hora=timezone.now(), desafio_coringa=False)
-        with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
-#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
-            verificar_posicoes_desafiante_desafiado(desafio)
-    
-    def test_desafiante_qtd_mais_2_posicoes_abaixo_2_proximos_com_ferias(self):
-        """Desafiante está LIMITE_POSICOES_DESAFIO+2 abaixo mas os 2 próximos jogadores estão de férias, portanto pode desafiar"""
-        # Criar desafios férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        RegistroFerias.objects.create(jogador=self.jogador_pos_4, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
-        desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=self.jogador_pos_2, 
-                                data_hora=timezone.now(), desafio_coringa=False)
-#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
-        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafio_coringa_ladder_atual(self):
-        """Desafiante usa desafio coringa na ladder atual, basta desafiado não estar de férias"""
-        # Criar desafio férias
-        RegistroFerias.objects.create(jogador=self.jogador_pos_3, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
-                                      data_fim=(timezone.now() + datetime.timedelta(days=10)))
-        
+        """Desafiante usa desafio coringa na ladder atual"""        
         for jogador in self.jogadores:
             # Desafiante não pode desafiar a si mesmo
             if jogador == self.jogador_pos_7:
                 pass
-            elif jogador == self.jogador_pos_3:
-                desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=jogador, 
-                                        data_hora=timezone.now(), desafio_coringa=True)
-                with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIADO_FERIAS):
-#                     verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
-                    verificar_posicoes_desafiante_desafiado(desafio)
             else:
                 desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=jogador, 
-                                        data_hora=timezone.now(), desafio_coringa=True)
-#                 verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+                                        data_hora=timezone.localtime(), desafio_coringa=True)
+#                 verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.localtime(), True)
                 verificar_posicoes_desafiante_desafiado(desafio)
 
 class CopiarLadderTestCase(TestCase):
@@ -1046,7 +1022,7 @@ class CopiarLadderTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localtime().date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
@@ -1375,8 +1351,8 @@ class AvaliarDecaimentoTestCase(TestCase):
         # Pegar objetos de jogador de acordo com sua posição
         cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
         cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva') # Último desafio validado a PERIODO_INATIVIDADE * 2 dias (gerar decaimento 2)
-        cls.jogador_pos_3 = Jogador.objects.get(nick='sena') # Último desafio validado a PERIODO_INATIVIDADE + 5 dias (férias de 5 dias)
-        cls.jogador_pos_4 = Jogador.objects.get(nick='mad') # Último desafio validado a PERIODO_INATIVIDADE + 4 dias (férias de 5 dias)
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena') # Último desafio validado a PERIODO_INATIVIDADE + 5 dias 
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad') # Último desafio validado a PERIODO_INATIVIDADE + 4 dias
         cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer') # Último desafio validado a PERIODO_INATIVIDADE - 1 dias
         cls.jogador_pos_6 = Jogador.objects.get(nick='frodo') # Último desafio validado a PERIODO_INATIVIDADE  dias
         cls.jogador_pos_7 = Jogador.objects.get(nick='dan') # Último desafio validado a PERIODO_INATIVIDADE + 1 dias (sem registro)
@@ -1404,18 +1380,12 @@ class AvaliarDecaimentoTestCase(TestCase):
                                                        timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+5), 
                                                        False, cls.jogador_pos_1, 3, 1)
         validar_desafio_ladder_teste(desafio_3, cls.jogador_pos_1, False)
-        # Adicionar registro férias de 5 dias
-        RegistroFerias.objects.create(jogador=cls.jogador_pos_3, data_inicio=timezone.localdate() - datetime.timedelta(days=10), 
-                                      data_fim=timezone.localdate() - datetime.timedelta(days=5))
         
         # Jogador posição 4
         desafio_4 = criar_desafio_ladder_simples_teste(cls.jogador_pos_4, cls.jogador_pos_1, 0, 3, 
                                                        timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+4), 
                                                        False, cls.jogador_pos_1, 4, 1)
         validar_desafio_ladder_teste(desafio_4, cls.jogador_pos_1, False)
-        # Adicionar registro férias de 5 dias
-        RegistroFerias.objects.create(jogador=cls.jogador_pos_4, data_inicio=timezone.localdate() - datetime.timedelta(days=10), 
-                                      data_fim=timezone.localdate() - datetime.timedelta(days=5))
         
         # Jogador posição 5
         desafio_5 = criar_desafio_ladder_simples_teste(cls.jogador_pos_5, cls.jogador_pos_1, 0, 3, 
@@ -1517,20 +1487,6 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.posicao_inicial, 2)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 2)
         
-    def test_avaliar_jogador_ferias_sem_cair_no_periodo_inatividade(self):
-        """Testa avaliar jogador com férias que não cai no período de inatividade"""
-        # Não deve gerar decaimento
-        self.assertEqual(avaliar_decaimento(self.jogador_pos_4), None)
-        
-    def test_avaliar_jogador_ferias_caindo_no_periodo_inatividade(self):
-        """Testa avaliar jogador com férias que cai no período de inatividade"""
-        # Deve gerar decaimento
-        decaimento = avaliar_decaimento(self.jogador_pos_3)
-        
-        self.assertEqual(decaimento.jogador, self.jogador_pos_3)
-        self.assertEqual(decaimento.data.date(), timezone.localdate())
-        self.assertEqual(decaimento.posicao_inicial, 3)
-        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_fora_ladder(self):
         """Testa erro avaliar jogador que não está na ladder"""
@@ -1629,20 +1585,6 @@ class BuscarDesafiaveisTestCase(TestCase):
         # Apagar uso de coringa
         self.jogador_pos_6.ultimo_uso_coringa = None
         self.jogador_pos_6.save()
-        
-    def test_trazer_desafiaveis_com_ferias(self):
-        """Testa se jogador de férias é excluído de desafiáveis e o próximo da lista entra no seu lugar"""
-        # Adicionar férias para jogador na posição 5
-        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=timezone.localdate(), 
-                                      data_fim=timezone.localdate() + datetime.timedelta(days=10))
-        
-        desafiaveis = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime())
-        
-        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
-        for jogador_id in desafiaveis:
-            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
-                          list(range(self.jogador_pos_6.posicao_ladder - 1, self.jogador_pos_6.posicao_ladder - 1 \
-                                      - DesafioLadder.LIMITE_POSICOES_DESAFIO - 1, -1)))
     
     def test_trazer_lista_vazia_para_1_lugar(self):
         """Testa se desafiante for o primeiro colocado, trazer lista vazia"""

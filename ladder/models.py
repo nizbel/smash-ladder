@@ -52,8 +52,6 @@ class DesafioLadder(models.Model):
     
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
     MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO = 'Desafiante está à frente do desafiado'
-    MENSAGEM_ERRO_DESAFIANTE_FERIAS = 'Desafiante está de férias'
-    MENSAGEM_ERRO_DESAFIADO_FERIAS = 'Desafiado está de férias'
     MENSAGEM_ERRO_MESMO_JOGADOR = 'Desafiante e desafiado não podem ser o mesmo jogador'
     MENSAGEM_ERRO_PERIODO_ESPERA_MESMOS_JOGADORES = f'Desafio não respeita período mínimo de ' \
         f'{PERIODO_ESPERA_MESMOS_JOGADORES} dias entre mesmos jogadores'
@@ -140,13 +138,43 @@ class DesafioLadder(models.Model):
         """Retorna se desafiante foi o ganhador"""
         return self.score_desafiante > self.score_desafiado
     
+    class DesafioLadderManager(models.Manager):
+        """Override do manager padrão"""
+        def na_season(self, season):
+            data_hora_inicio = datetime.datetime(season.data_inicio.year, season.data_inicio.month, season.data_inicio.day)
+            
+            # Se possui data de fim
+            if season.data_fim:
+                data_hora_fim = datetime.datetime(season.data_fim.year, season.data_fim.month, season.data_fim.day) \
+                    + datetime.timedelta(days=1)
+                return self.get_queryset().filter(data_hora__range=[timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()), 
+                                                                timezone.make_aware(data_hora_fim, 
+                                                                                    timezone.get_current_timezone())])
+            else:
+                # Se não, buscar apenas a partir da data inicial
+                return self.get_queryset().filter(data_hora__gte=timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()))
     # Managers
     class DesafiosValidadosManager(models.Manager):
-        """Queryset para trazer desafios validados e não cancelados"""
+        """Manager para trazer desafios validados e não cancelados"""
         def get_queryset(self):
             return super().get_queryset().filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False)
         
-    objects = models.Manager()
+        def na_season(self, season):
+            data_hora_inicio = datetime.datetime(season.data_inicio.year, season.data_inicio.month, season.data_inicio.day)
+            
+            # Se possui data de fim
+            if season.data_fim:
+                data_hora_fim = datetime.datetime(season.data_fim.year, season.data_fim.month, season.data_fim.day) \
+                    + datetime.timedelta(days=1)
+                return self.get_queryset().filter(data_hora__range=[timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()), 
+                                                                timezone.make_aware(data_hora_fim, 
+                                                                                    timezone.get_current_timezone())])
+            else:
+                # Se não, buscar apenas a partir da data inicial
+                return self.get_queryset().filter(data_hora__gte=timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()))
+        
+#     objects = models.Manager()
+    objects = DesafioLadderManager()
     validados = DesafiosValidadosManager()
     
 class LutaLadder(models.Model):

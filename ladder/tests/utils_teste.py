@@ -47,7 +47,11 @@ def criar_ladder_teste():
     # Criar ladder inicial caso não exista
     if not InicioLadder.objects.all().exists():
         criar_ladder_inicial_teste()
-        
+    
+    # Criar Season caso não exista
+    if not Season.objects.all().exists():
+        criar_season_teste()
+    
     return ladder
 
 

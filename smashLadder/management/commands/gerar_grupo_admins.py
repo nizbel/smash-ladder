@@ -7,7 +7,6 @@ permissoes_admins = [
     'Can view', 
     'Can add user', 'Can change user', 
     'Can add jogador', 'Can change jogador',
-    'Can add registro ferias', 'Can change registro ferias',
     'Can change configuracao ladder']
 
 class Command(BaseCommand):

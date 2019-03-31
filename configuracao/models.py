@@ -29,7 +29,7 @@ class ConfiguracaoLadder(models.Model):
                               (VALOR_SEASON_SEMESTRAL, DESCRICAO_SEASON_SEMESTRAL)]
     PADRAO_PERIODO_SEASON = VALOR_SEASON_INDETERMINADO
     
-    PADRAO_ABONAR_PRIMEIRO_DECAIMENTO = True
+    PADRAO_ABONAR_PRIMEIRO_DECAIMENTO = False
     PADRAO_PERIODO_INATIVIDADE = 30
     
     
@@ -58,7 +58,6 @@ class ConfiguracaoLadder(models.Model):
                 periodo_inatividade=ConfiguracaoLadder.PADRAO_PERIODO_INATIVIDADE
                 )
             config.save()
-            
             return ConfiguracaoLadder.objects.all().values(*lista_configuracoes)[0]
 
 class HistoricoConfiguracaoLadder(models.Model):

@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='configuracaoladder',
             name='abonar_primeiro_decaimento',
-            field=models.BooleanField(default=True, verbose_name='Abonar primeiro decaimento?'),
+            field=models.BooleanField(default=False, verbose_name='Abonar primeiro decaimento?'),
         ),
         migrations.AddField(
             model_name='configuracaoladder',
