@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}- Desafios de Ladder a validar{% endblock %}
+
+{% block content %}
+	<div>
+		{% for desafio_ladder in desafios_pendentes %}
+		<p>
+			{{ desafio_ladder.data_hora|date:'d/m/Y H:n' }}: 
+			<span>
+				<a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiante.user.username %}">{{ desafio_ladder.desafiante.nick }}</a> 
+				{{desafio_ladder.score_desafiante}} VS {{desafio_ladder.score_desafiado}} 
+				<a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiado.user.username %}">{{ desafio_ladder.desafiado.nick }}</a>
+			<a href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
+			{% if request.user.jogador.admin %}<a href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar</a>{% endif %}
+		</p>
+		{% endfor %}
+	</div>
+{% endblock %}

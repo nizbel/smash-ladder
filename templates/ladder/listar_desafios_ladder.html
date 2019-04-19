@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}- Desafios de Ladder {{ mes }}/{{ ano }}{% endblock %}
+
+{% block content %}
+	<div>
+		{% for desafio_ladder in desafios_ladder %}
+		<p>
+			{{ desafio_ladder.data_hora|date:'d/m/Y H:n' }}: 
+			<span>
+				<a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiante.user.username %}">{{ desafio_ladder.desafiante.nick }}</a> 
+				{{desafio_ladder.score_desafiante}} VS {{desafio_ladder.score_desafiado}} 
+				<a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiado.user.username %}">{{ desafio_ladder.desafiado.nick }}</a>
+			<a href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
+		</p>
+		{% endfor %}
+	</div>
+{% endblock %}

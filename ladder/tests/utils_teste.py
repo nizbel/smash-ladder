@@ -2,7 +2,7 @@
 
 from jogadores.models import Jogador, Personagem, Stage
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    RegistroLadder, LutaLadder, InicioLadder
+    DesafioLadder, LutaLadder, InicioLadder
 from ladder.utils import alterar_ladder
 
 LADDER_FORMATO_TESTE = [
@@ -56,7 +56,7 @@ def criar_ladder_historico_teste(ano, mes):
         HistoricoLadder.objects.create(posicao=posicao_ladder['posicao'], jogador=jogador_atual, ano=ano, mes=mes)
 
 def criar_luta_teste(jogadores, ganhador, data, criador_luta):
-    """Cria um registro de luta básico para teste"""
+    """Cria um desafio de luta básico para teste"""
     luta = Luta.objects.create(ganhador=ganhador, data=data, adicionada_por=criador_luta)
     # Participantes
     for jogador in jogadores:
@@ -65,7 +65,7 @@ def criar_luta_teste(jogadores, ganhador, data, criador_luta):
     return luta
 
 def criar_luta_completa_teste(jogadores, personagens, ganhador, data, criador_luta, stage):
-    """Cria um registro de luta básico para teste"""
+    """Cria um desafio de luta básico para teste"""
     if len(jogadores) != len(personagens):
         raise ValueError('Cada jogador deve ter um personagem')
     luta = Luta.objects.create(ganhador=ganhador, data=data, adicionada_por=criador_luta, stage=stage)
@@ -75,16 +75,16 @@ def criar_luta_completa_teste(jogadores, personagens, ganhador, data, criador_lu
         
     return luta
 
-def criar_registro_ladder_simples_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
-                                        desafio_coringa, criador_registro):
-    """Cria um registro de ladder simples para teste"""
-    return RegistroLadder.objects.create(desafiante=desafiante, desafiado=desafiado, score_desafiante=score_desafiante, 
+def criar_desafio_ladder_simples_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
+                                        desafio_coringa, criador_desafio):
+    """Cria um desafio de ladder simples para teste"""
+    return DesafioLadder.objects.create(desafiante=desafiante, desafiado=desafiado, score_desafiante=score_desafiante, 
                                          score_desafiado=score_desafiado, data_hora=data_hora, 
-                                         desafio_coringa=desafio_coringa, adicionado_por=criador_registro)
+                                         desafio_coringa=desafio_coringa, adicionado_por=criador_desafio)
     
-def criar_registro_ladder_completo_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
-                                        desafio_coringa, criador_registro):
-    """Cria um registro de ladder completo para teste"""
+def criar_desafio_ladder_completo_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
+                                        desafio_coringa, criador_desafio):
+    """Cria um desafio de ladder completo para teste"""
     qtd_vitorias_desafiante = 0
     qtd_vitorias_desafiado = 0
     
@@ -98,31 +98,31 @@ def criar_registro_ladder_completo_teste(desafiante, desafiado, score_desafiante
     # Gerar 1 luta para cada por vez
     while (qtd_vitorias_desafiado + qtd_vitorias_desafiante < score_desafiado + score_desafiante):
         if qtd_vitorias_desafiado < score_desafiado:
-            luta = criar_luta_completa_teste([desafiante, desafiado], personagens, desafiado, data_hora.date(), criador_registro, stage)
+            luta = criar_luta_completa_teste([desafiante, desafiado], personagens, desafiado, data_hora.date(), criador_desafio, stage)
             lutas.append(luta)
             qtd_vitorias_desafiado += 1
             
         if qtd_vitorias_desafiante < score_desafiante:
-            luta = criar_luta_completa_teste([desafiante, desafiado], personagens, desafiante, data_hora.date(), criador_registro, stage)
+            luta = criar_luta_completa_teste([desafiante, desafiado], personagens, desafiante, data_hora.date(), criador_desafio, stage)
             lutas.append(luta)
             qtd_vitorias_desafiante += 1
             
-    registro_ladder = RegistroLadder.objects.create(desafiante=desafiante, desafiado=desafiado, score_desafiante=score_desafiante, 
+    desafio_ladder = DesafioLadder.objects.create(desafiante=desafiante, desafiado=desafiado, score_desafiante=score_desafiante, 
                                          score_desafiado=score_desafiado, data_hora=data_hora, 
-                                         desafio_coringa=desafio_coringa, adicionado_por=criador_registro)
+                                         desafio_coringa=desafio_coringa, adicionado_por=criador_desafio)
     
     # Vincular lutas
     for indice, luta in enumerate(lutas):
-        LutaLadder.objects.create(registro_ladder=registro_ladder, luta=luta, indice_registro_ladder=indice+1)
+        LutaLadder.objects.create(desafio_ladder=desafio_ladder, luta=luta, indice_desafio_ladder=indice+1)
         
-    return registro_ladder
+    return desafio_ladder
 
-def validar_registro_ladder_teste(registro_ladder, admin_validador):
-    """Valida um registro de ladder e altera posições para teste"""
-    alterar_ladder(registro_ladder)
+def validar_desafio_ladder_teste(desafio_ladder, admin_validador):
+    """Valida um desafio de ladder e altera posições para teste"""
+    alterar_ladder(desafio_ladder)
     
-    registro_ladder.admin_validador = admin_validador
-    registro_ladder.save()
+    desafio_ladder.admin_validador = admin_validador
+    desafio_ladder.save()
     
 def gerar_campos_formset(dados, prefixo_form):
     """Instancia um formset diretamente para teste"""
