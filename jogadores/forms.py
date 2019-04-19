@@ -3,6 +3,7 @@
 from django.forms.models import ModelForm
 
 from jogadores.models import Jogador
+from smashLadder.utils import preparar_classes_form
 
 
 class JogadorForm(ModelForm):
@@ -11,9 +12,13 @@ class JogadorForm(ModelForm):
         model = Jogador
         fields = ('nick', 'main', 'admin')
         
-#     def clean(self):
-#         data = super(JogadorForm, self).clean()
-#         if data.get('valor_objetivo') is None:
-#             data['valor_objetivo'] = 0
-# 
-#         return data
+    
+    def __init__(self,*args,**kwargs):
+        if 'admin' in kwargs:
+            self.admin = kwargs.pop('admin')
+        else:
+            self.admin = False
+            
+        super(JogadorForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
