@@ -39,7 +39,8 @@
 	<p><strong>Esta operação não poderá ser desfeita</strong></p>
 	<form action="{% url 'ladder:cancelar_registro_ladder' registro_ladder.id %}" method="post">
 	    {% csrf_token %}
-	    <input type="submit" value="Confirmar">
+	    
+	  	<input class="btn btn-lg btn-dark btn-block" type="submit" value="Confirmar">
 	</form>
 	
 {% endblock %}

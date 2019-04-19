@@ -5,6 +5,7 @@
 {% block content %}
 	<form class="col-12" action="{% url 'ladder:validar_registro_ladder' registro_ladder.id %}" method="post">
 	    {% csrf_token %}
-		<input type="submit" class="btn btn-dark" name="salvar" value="Validar">
+	    
+	  	<input class="btn btn-lg btn-dark btn-block" type="submit" name="salvar" value="Validar">
 	</form>
 {% endblock %}

@@ -993,7 +993,79 @@ class ViewDetalharLadderAtualTestCase(TestCase):
             self.assertEqual(jogador.posicao, posicao)
             posicao += 1
         
+class ViewListarHistoricoLadderTestCase(TestCase):
+    """Testes para a view de listar históricos de ladder"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewListarHistoricoLadderTestCase, cls).setUpTestData()
         
+        criar_jogadores_teste()
+        
+        cls.sena = Jogador.objects.get(nick='sena')
+        
+        # Preparar mês anterior para histórico
+        data_atual = timezone.now().date()
+        cls.ano = data_atual.year
+        cls.mes = data_atual.month - 1
+        if cls.mes == 0:
+            cls.mes = 12
+            cls.ano -= 1
+        
+        criar_ladder_historico_teste(cls.ano, cls.mes)
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de listar jogadores sem logar"""
+        response = self.client.get(reverse('ladder:listar_ladder_historico'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['lista_ladders']), HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes).order_by('-ano', 'mes') \
+                         .values('mes', 'ano').distinct().count())
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de listar jogadores logado"""
+        self.client.login(username=self.sena.user.username, password='teste')
+        response = self.client.get(reverse('ladder:listar_ladder_historico'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['lista_ladders']), HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes).order_by('-ano', 'mes') \
+                         .values('mes', 'ano').distinct().count())
+        
+    def test_sem_historicos(self):
+        """Testa tela de erro ao verificar um histórico inexistente"""
+        # Apagar histórico
+        HistoricoLadder.objects.all().delete()
+        
+        response = self.client.get(reverse('ladder:listar_ladder_historico'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['lista_ladders']), 0)
+        
+    def test_ordem_ladder(self):
+        """Testar ordem da lista, as mais recentes devem vir primeiro"""
+        # Criar mais 1 ano de ladders, total de 13 meses
+        ano = self.ano
+        mes = self.mes
+        for _ in range(12):
+            mes -= 1
+            if mes == 0:
+                ano -= 1
+                mes = 12
+            criar_ladder_historico_teste(ano, mes)
+            
+        response = self.client.get(reverse('ladder:listar_ladder_historico'))
+        
+        # Testar ordem
+        ano = self.ano
+        mes = self.mes
+        for ladder in response.context['lista_ladders']:
+            print(ano, mes)
+            self.assertEqual(ladder['ano'], ano)
+            self.assertEqual(ladder['mes'], mes)
+            
+            # Atualizar mes e ano
+            mes -= 1
+            if mes == 0:
+                ano -= 1
+                mes = 12
+
+
 class ViewDetalharHistoricoLadderTestCase(TestCase):
     """Testes para a view de detalhar histórico de ladder"""
     @classmethod

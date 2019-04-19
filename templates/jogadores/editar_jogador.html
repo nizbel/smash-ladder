@@ -6,6 +6,7 @@
 	<form action="{% url 'jogadores:editar_jogador' jogador.user.username %}" method="post">
 	    {% csrf_token %}
     	{% include "form.html" with form=form_jogador %}
-	    <input type="submit" value="Salvar">
+    	
+	  	<input class="btn btn-lg btn-dark btn-block" type="submit" value="Salvar">
 	</form>
 {% endblock %}

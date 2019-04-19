@@ -13,7 +13,7 @@
 				{% elif posicao_ladder.alteracao < 0 %}
 					<div class="col-4 pl-0 text-danger"><i class="fas fa-arrow-down"></i> {{ posicao_ladder.alteracao }}</div>
 				{% endif %}
-				<a class="ml-auto" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador_id %}">{{ posicao_ladder.jogador.nick }}</a>
+				<a class="ml-auto" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
 			</li>
 		{% endfor %}
 		</ul>

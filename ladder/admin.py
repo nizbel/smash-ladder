@@ -7,7 +7,7 @@ from ladder.models import PosicaoLadder, HistoricoLadder, RegistroLadder, \
 
 
 class HistoricoLadderAdmin(admin.ModelAdmin):
-    list_display = ('posicao', 'jogador')
+    list_display = ('posicao', 'jogador', 'mes', 'ano')
     search_fields = ['jogador__nick']
     
 admin.site.register(HistoricoLadder, HistoricoLadderAdmin)

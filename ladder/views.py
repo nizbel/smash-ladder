@@ -126,7 +126,44 @@ def detalhar_ladder_historico(request, ano, mes):
     ladder = HistoricoLadder.objects.filter(ano=ano, mes=mes).order_by('posicao') \
         .select_related('jogador')
     
+    # Pegar mês/ano anterior
+    mes_anterior = mes - 1
+    ano_anterior = ano
+    if mes_anterior == 0:
+        ano_anterior -= 1
+        mes_anterior = 12
+    
+    # Comparar com ladder anterior
+    if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
+        ladder_anterior = HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior)
+    else:
+        ladder_anterior = InicioLadder.objects.all()
+    ladder_anterior = list(ladder_anterior)
+    
+    # Considerar última posição de ladder atual caso jogador não esteja na anterior
+    for posicao_ladder in ladder:
+        preencheu_alteracao = False
+        # Procurar jogador na ladder anterior
+        for posicao_ladder_anterior in ladder_anterior:
+            if posicao_ladder_anterior.jogador == posicao_ladder.jogador:
+                posicao_ladder.alteracao = posicao_ladder_anterior.posicao - posicao_ladder.posicao
+
+                preencheu_alteracao = True
+                break
+            
+        if not preencheu_alteracao:
+            posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
+    
     return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes})
+
+def listar_ladder_historico(request):
+    """Listar históricos de ladder por ano/mês"""
+    # Buscar anos e meses para listagem
+    
+    lista_ladders = HistoricoLadder.objects.all().order_by('-ano', '-mes') \
+                         .values('mes', 'ano').distinct()
+    
+    return render(request, 'ladder/listar_ladder_historico.html', {'lista_ladders': lista_ladders})
 
 def detalhar_luta(request, luta_id):
     """Detalhar uma luta"""
