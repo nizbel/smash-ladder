@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}- Editar registro para ladder{% endblock %}
+{% block title %}- Editar desafio para ladder{% endblock %}
 
 {% block content %}
-	<form class="col-12" action="{% url 'ladder:editar_registro_ladder' form_registro_ladder.instance.id %}" method="post">
+	<form class="col-12" action="{% url 'ladder:editar_desafio_ladder' form_desafio_ladder.instance.id %}" method="post">
 	    {% csrf_token %}
 	    {% comment %}
-	    {{ form_registro_ladder }}
+	    {{ form_desafio_ladder }}
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}
@@ -17,7 +17,7 @@
         {% endfor %}
         {% endcomment %}
         
-        {% include "form.html" with form=form_registro_ladder %}
+        {% include "form.html" with form=form_desafio_ladder %}
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}

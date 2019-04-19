@@ -23,16 +23,16 @@ urlpatterns = [
     path(r'atual/', views.detalhar_ladder_atual, name='detalhar_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/', views.detalhar_ladder_historico, name='detalhar_ladder_historico'),
     path(r'historico/listar/', views.listar_ladder_historico, name='listar_ladder_historico'),
-    path(r'atual/listar-registros/', views.listar_registros_ladder, name='listar_registros_ladder_atual'),
-    path(r'historico/<int:ano>/<int:mes>/listar-registros/', views.listar_registros_ladder, name='listar_registros_ladder_historico'),
+    path(r'atual/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_atual'),
+    path(r'historico/<int:ano>/<int:mes>/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_historico'),
     
-    # Registros de ladder
-    path(r'registro/adicionar/', views.add_registro_ladder, name='adicionar_registro_ladder'),
-    path(r'registro/cancelar/<int:registro_id>/', views.cancelar_registro_ladder, name='cancelar_registro_ladder'),
-    path(r'registro/detalhar/<int:registro_id>/', views.detalhar_registro_ladder, name='detalhar_registro_ladder'),
-    path(r'registro/editar/<int:registro_id>/', views.editar_registro_ladder, name='editar_registro_ladder'),
-    path(r'registro/listar-pendentes/', views.listar_registros_ladder_pendentes_validacao, name='listar_registros_ladder_pendentes_validacao'),
-    path(r'registro/validar/<int:registro_id>/', views.validar_registro_ladder, name='validar_registro_ladder'),
+    # Desafios de ladder
+    path(r'desafio/adicionar/', views.add_desafio_ladder, name='adicionar_desafio_ladder'),
+    path(r'desafio/cancelar/<int:desafio_id>/', views.cancelar_desafio_ladder, name='cancelar_desafio_ladder'),
+    path(r'desafio/detalhar/<int:desafio_id>/', views.detalhar_desafio_ladder, name='detalhar_desafio_ladder'),
+    path(r'desafio/editar/<int:desafio_id>/', views.editar_desafio_ladder, name='editar_desafio_ladder'),
+    path(r'desafio/listar-pendentes/', views.listar_desafios_ladder_pendentes_validacao, name='listar_desafios_ladder_pendentes_validacao'),
+    path(r'desafio/validar/<int:desafio_id>/', views.validar_desafio_ladder, name='validar_desafio_ladder'),
     
     # Regras
     path(r'regras/', views.detalhar_regras, name='detalhar_regras_ladder'),

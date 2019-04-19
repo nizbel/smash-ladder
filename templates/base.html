@@ -39,10 +39,10 @@
 			          			Ladder
 			        		</a>
 			        		<div class="dropdown-menu" aria-labelledby="ladderDropdown">
-					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_registro_ladder' %}">Adicionar registro de ladder</a>
+					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Listar histórico da Ladder</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_registros_ladder_pendentes_validacao' %}">Listar registros a validar</a>
+					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Listar desafios a validar</a>
 		        			</div>
 		        		</li>
 			      		<li class="nav-item {% if request.resolver_match.url_name == 'detalhar_regras_ladder' %}active{% endif %}">

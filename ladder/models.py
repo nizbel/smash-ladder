@@ -27,13 +27,13 @@ class JogadorLuta(models.Model):
     class Meta():
         unique_together = ('jogador', 'luta')
     
-class RegistroLadder(models.Model):
-    """Registro para ladder"""
+class DesafioLadder(models.Model):
+    """Desafio para ladder"""
     LIMITE_POSICOES_DESAFIO = 2 # Diferença máxima de posições para haver desafio
     PERIODO_ESPERA_MESMOS_JOGADORES = 4 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 90 # Quantidade de dias a esperar para utilizar um coringa
     
-    MELHOR_DE = 5 # Quantidade máxima de lutas que um registro pode ter
+    MELHOR_DE = 5 # Quantidade máxima de lutas que um desafio pode ter
     SCORE_VITORIA = 3 # Score para vitória
     
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
@@ -53,19 +53,19 @@ class RegistroLadder(models.Model):
     score_desafiado = models.SmallIntegerField(u'Vitórias do desafiado', validators=[MinValueValidator(0), MaxValueValidator(3)])
     admin_validador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, blank=True, null=True, related_name='admin_validador')
     data_hora = models.DateTimeField(u'Data e hora do resultado')
-    adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='criador_registro')
+    adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='criador_desafio')
     
     class Meta():
         unique_together = ('desafiante', 'desafiado', 'data_hora')
     
     @property
     def lutas(self):
-        """Lista de lutas que compõe o registro"""
+        """Lista de lutas que compõe o desafio"""
         return [luta_ladder.luta for luta_ladder in self.lutaladder_set.all()]
     
     def is_cancelado(self):
-        """Define se é um registro cancelado"""
-        return hasattr(self, 'cancelamentoregistroladder')
+        """Define se é um desafio cancelado"""
+        return hasattr(self, 'cancelamentodesafioladder')
     
     def is_historico(self):
         """Define se é histórico"""
@@ -77,7 +77,7 @@ class RegistroLadder(models.Model):
     
     @property
     def mes_ano_ladder(self):
-        """Retorna mes e ano de ladder da qual registro faz parte"""
+        """Retorna mes e ano de ladder da qual desafio faz parte"""
         if self.is_historico():
             return (self.data_hora.month, self.data_hora.year)
         return None
@@ -94,14 +94,14 @@ class RegistroLadder(models.Model):
         return self.score_desafiante > self.score_desafiado
     
 class LutaLadder(models.Model):
-    """Lutas para um registro de ladder"""
-    registro_ladder = models.ForeignKey('RegistroLadder', on_delete=models.CASCADE)
+    """Lutas para um desafio de ladder"""
+    desafio_ladder = models.ForeignKey('DesafioLadder', on_delete=models.CASCADE)
     luta = models.OneToOneField('Luta', on_delete=models.CASCADE)
-    indice_registro_ladder = models.SmallIntegerField(u'Índice da luta')
+    indice_desafio_ladder = models.SmallIntegerField(u'Índice da luta')
     
     class Meta():
-        unique_together = (('registro_ladder', 'luta'), ('registro_ladder', 'indice_registro_ladder'))
-        ordering = ('indice_registro_ladder',)
+        unique_together = (('desafio_ladder', 'luta'), ('desafio_ladder', 'indice_desafio_ladder'))
+        ordering = ('indice_desafio_ladder',)
 
 class InicioLadder(models.Model):
     """Posição inicial na ladder"""
@@ -137,9 +137,9 @@ class HistoricoLadder(models.Model):
     class Meta():
         unique_together = (('jogador', 'mes', 'ano'), ('posicao', 'mes', 'ano'))
     
-class CancelamentoRegistroLadder(models.Model):
-    """Cancelamento (exclusão lógica) de registros de ladder"""
-    registro_ladder = models.OneToOneField('RegistroLadder', on_delete=models.CASCADE)
+class CancelamentoDesafioLadder(models.Model):
+    """Cancelamento (exclusão lógica) de desafios de ladder"""
+    desafio_ladder = models.OneToOneField('DesafioLadder', on_delete=models.CASCADE)
     data_hora = models.DateTimeField(u'Data/hora da exclusão', auto_now_add=True)
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     

@@ -12,29 +12,29 @@ from jogadores.models import Jogador, Personagem
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, criar_stage_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, JogadorLuta, \
-    RegistroLadder, CancelamentoRegistroLadder, Luta, LutaLadder
+    DesafioLadder, CancelamentoDesafioLadder, Luta, LutaLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_luta_teste, criar_luta_completa_teste, \
-    criar_registro_ladder_simples_teste, criar_registro_ladder_completo_teste, \
-    validar_registro_ladder_teste, gerar_campos_formset
-from ladder.views import MENSAGEM_ERRO_EDITAR_REGISTRO_CANCELADO, \
-    MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER
+    criar_desafio_ladder_simples_teste, criar_desafio_ladder_completo_teste, \
+    validar_desafio_ladder_teste, gerar_campos_formset
+from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
+    MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
 
-class ViewEditarRegistroLadderTestCase(TestCase):
-    """Testes para a view de editar registro para ladder"""
+class ViewEditarDesafioLadderTestCase(TestCase):
+    """Testes para a view de editar desafio para ladder"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewEditarRegistroLadderTestCase, cls).setUpTestData()
+        super(ViewEditarDesafioLadderTestCase, cls).setUpTestData()
         
         # Jogadores
         criar_jogadores_teste()
         
-        cls.teets = Jogador.objects.get(nick='teets') # Admin, com registros
-        cls.saraiva = Jogador.objects.get(nick='saraiva') # Admin, sem registros
-        cls.sena = Jogador.objects.get(nick='sena') # Não-admin, com registros
-        cls.mad = Jogador.objects.get(nick='mad') # Não-admin, sem registros
-        cls.tiovsky = Jogador.objects.get(nick='tiovsky') # Não-admin, sem registros
+        cls.teets = Jogador.objects.get(nick='teets') # Admin, com desafios
+        cls.saraiva = Jogador.objects.get(nick='saraiva') # Admin, sem desafios
+        cls.sena = Jogador.objects.get(nick='sena') # Não-admin, com desafios
+        cls.mad = Jogador.objects.get(nick='mad') # Não-admin, sem desafios
+        cls.tiovsky = Jogador.objects.get(nick='tiovsky') # Não-admin, sem desafios
         
         # Personagens
         criar_personagens_teste()
@@ -45,7 +45,7 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         # Stage
         cls.stage = criar_stage_teste()
         
-        # Criar ladders para verificar que adicionar registro não as afeta
+        # Criar ladders para verificar que adicionar desafio não as afeta
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
@@ -59,130 +59,130 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
-        # Criar registros para ladder
+        # Criar desafios para ladder
         cls.horario_historico = cls.horario_atual.replace(year=cls.ano, month=cls.mes)
-        cls.registro_ladder = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                           cls.horario_atual.replace(day=15), False, cls.teets)
-        cls.registro_ladder_historico = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
+        cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                                     cls.horario_historico.replace(day=15), False, cls.sena)
         
-        cls.registro_ladder_add_por_nao_admin = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
+        cls.desafio_ladder_add_por_nao_admin = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                           cls.horario_atual.replace(day=10), False, cls.sena)
         
-        cls.registro_ladder_completo = criar_registro_ladder_completo_teste(cls.sena, cls.saraiva, 1, 3, 
+        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.saraiva, 1, 3, 
                                                                           cls.horario_atual.replace(day=5), False, cls.sena)
         
     def test_acesso_deslogado(self):
-        """Testa acesso a tela de editar registro de ladder sem logar"""
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        """Testa acesso a tela de editar desafio de ladder sem logar"""
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = settings.LOGIN_URL + '?next=' + reverse('ladder:editar_registro_ladder', 
-                                                               kwargs={'registro_id': self.registro_ladder.id})
+        url_esperada = settings.LOGIN_URL + '?next=' + reverse('ladder:editar_desafio_ladder', 
+                                                               kwargs={'desafio_id': self.desafio_ladder.id})
         self.assertRedirects(response, url_esperada)
         
-    def test_acesso_logado_criador_registro_nao_validado(self):
-        """Testa acesso a tela de editar registro de ladder logado como criador do registro não validado"""
+    def test_acesso_logado_criador_desafio_nao_validado(self):
+        """Testa acesso a tela de editar desafio de ladder logado como criador do desafio não validado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_add_por_nao_admin.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_add_por_nao_admin.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertIn('form_registro_ladder', response.context)
+        self.assertIn('form_desafio_ladder', response.context)
         
-    def test_acesso_logado_terceiro_registro_nao_validado(self):
-        """Testa acesso a tela de editar registro de ladder logado como não criador do registro não validado"""
+    def test_acesso_logado_terceiro_desafio_nao_validado(self):
+        """Testa acesso a tela de editar desafio de ladder logado como não criador do desafio não validado"""
         self.client.login(username=self.mad.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 403)
         
-    def test_acesso_logado_criador_registro_validado(self):
-        """Testa acesso a tela de editar registro de ladder logado como criador do registro validado"""
-        # Definir registro como validado
-        self.registro_ladder.admin_validador = self.teets
-        self.registro_ladder.save()
+    def test_acesso_logado_criador_desafio_validado(self):
+        """Testa acesso a tela de editar desafio de ladder logado como criador do desafio validado"""
+        # Definir desafio como validado
+        self.desafio_ladder.admin_validador = self.teets
+        self.desafio_ladder.save()
         
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 403)
         
-    def test_acesso_logado_terceiro_registro_validado(self):
-        """Testa acesso a tela de editar registro de ladder logado como não criador do registro validado"""
-        # Definir registro como validado
-        self.registro_ladder.admin_validador = self.teets
-        self.registro_ladder.save()
+    def test_acesso_logado_terceiro_desafio_validado(self):
+        """Testa acesso a tela de editar desafio de ladder logado como não criador do desafio validado"""
+        # Definir desafio como validado
+        self.desafio_ladder.admin_validador = self.teets
+        self.desafio_ladder.save()
         
         self.client.login(username=self.mad.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 403)
         
-    def test_acesso_logado_admin_registro_nao_validado(self):
-        """Testa acesso a tela de editar registro de ladder não validado, logado como admin"""
+    def test_acesso_logado_admin_desafio_nao_validado(self):
+        """Testa acesso a tela de editar desafio de ladder não validado, logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertIn('form_registro_ladder', response.context)
+        self.assertIn('form_desafio_ladder', response.context)
         
-    def test_acesso_logado_admin_registro_validado(self):
-        """Testa acesso a tela de editar registro de ladder validado, logado como admin"""
-        # Definir registro como validado
-        self.registro_ladder.admin_validador = self.teets
-        self.registro_ladder.save()
+    def test_acesso_logado_admin_desafio_validado(self):
+        """Testa acesso a tela de editar desafio de ladder validado, logado como admin"""
+        # Definir desafio como validado
+        self.desafio_ladder.admin_validador = self.teets
+        self.desafio_ladder.save()
         
-        """Testa acesso a tela de adicionar registro de ladder logado como admin"""
+        """Testa acesso a tela de adicionar desafio de ladder logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 403)
         
-    def test_acesso_logado_registro_cancelado(self):
-        """Testa acesso a tela de editar registro de ladder que já foi cancelado"""
-        # Definir registro como cancelado
-        CancelamentoRegistroLadder.objects.create(registro_ladder=self.registro_ladder, jogador=self.teets)
+    def test_acesso_logado_desafio_cancelado(self):
+        """Testa acesso a tela de editar desafio de ladder que já foi cancelado"""
+        # Definir desafio como cancelado
+        CancelamentoDesafioLadder.objects.create(desafio_ladder=self.desafio_ladder, jogador=self.teets)
         
         self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id})
         self.assertRedirects(response, url_esperada)
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_REGISTRO_CANCELADO)
+        self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO)
         
-    def test_editar_registro_ja_cancelado(self):
-        """Testa editar registro de ladder que já foi cancelado"""
-        # Definir registro como cancelado
-        CancelamentoRegistroLadder.objects.create(registro_ladder=self.registro_ladder, jogador=self.teets)
+    def test_editar_desafio_ja_cancelado(self):
+        """Testa editar desafio de ladder que já foi cancelado"""
+        # Definir desafio como cancelado
+        CancelamentoDesafioLadder.objects.create(desafio_ladder=self.desafio_ladder, jogador=self.teets)
         
         # Preparar dados POST
         dados_post = {}
         # Preparar informações para validação do formset
-        formset = gerar_campos_formset([], 'registro_ladder_luta')
+        formset = gerar_campos_formset([], 'desafio_ladder_luta')
         
         dados_post = {**dados_post, **formset}
         
         self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}),
                                     dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id})
         self.assertRedirects(response, url_esperada)
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_REGISTRO_CANCELADO)
+        self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO)
         
-    def test_form_edicao_registro_simples_nao_validado(self):
-        """Testa os campos para o formulário de edição de registro de ladder simples não validado"""
+    def test_form_edicao_desafio_simples_nao_validado(self):
+        """Testa os campos para o formulário de edição de desafio de ladder simples não validado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_add_por_nao_admin.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_add_por_nao_admin.id}))
         self.assertEqual(response.status_code, 200)
         
         # Verificar form
-        form = response.context['form_registro_ladder']
-        # Apenas criador do registro deve estar desabilitado
+        form = response.context['form_desafio_ladder']
+        # Apenas criador do desafio deve estar desabilitado
         self.assertFalse(form.fields['desafiante'].disabled)
         self.assertFalse(form.fields['desafiado'].disabled)
         self.assertFalse(form.fields['score_desafiante'].disabled)
@@ -201,22 +201,22 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         self.assertNotEqual(form.initial['adicionado_por'], None)
         
     
-    def test_form_edicao_registro_simples_validado(self):
-        """Testa os campos para o formulário de edição de registro de ladder simples validado"""
+    def test_form_edicao_desafio_simples_validado(self):
+        """Testa os campos para o formulário de edição de desafio de ladder simples validado"""
         # TODO implementar
         pass
     
-    def test_form_edicao_registro_completo_nao_validado(self):
-        """Testa os campos para o formulário de edição de registro de ladder completo não validado"""
+    def test_form_edicao_desafio_completo_nao_validado(self):
+        """Testa os campos para o formulário de edição de desafio de ladder completo não validado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
         self.assertEqual(response.status_code, 200)
         
         # Verificar form e formset
-        form = response.context['form_registro_ladder']
+        form = response.context['form_desafio_ladder']
         formset = response.context['formset_lutas']
         
-        # Apenas criador do registro deve estar desabilitado
+        # Apenas criador do desafio deve estar desabilitado
         # Form
         self.assertFalse(form.fields['desafiante'].disabled)
         self.assertFalse(form.fields['desafiado'].disabled)
@@ -242,7 +242,7 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         self.assertNotEqual(form.initial['adicionado_por'], None)
         # Formset
         for form_luta in formset[:4]:
-            # Como registro completo lista 4 lutas (3x1), apenas as 4 primeiras estão preenchidas
+            # Como desafio completo lista 4 lutas (3x1), apenas as 4 primeiras estão preenchidas
             self.assertNotEqual(form_luta.initial['ganhador'], None)
             self.assertNotEqual(form_luta.initial['stage'], None)
             self.assertNotEqual(form_luta.initial['personagem_desafiante'], None)
@@ -250,13 +250,13 @@ class ViewEditarRegistroLadderTestCase(TestCase):
             
         self.assertEqual(formset[4].initial, {})
     
-    def test_form_edicao_registro_completo_validado(self):
-        """Testa os campos para o formulário de edição de registro de ladder completo validado"""
+    def test_form_edicao_desafio_completo_validado(self):
+        """Testa os campos para o formulário de edição de desafio de ladder completo validado"""
         # TODO implementar
         pass
         
-    def test_editar_registro_nao_validado_atual_sucesso(self):
-        """Testa editar registro de ladder atual não validado com sucesso"""
+    def test_editar_desafio_nao_validado_atual_sucesso(self):
+        """Testa editar desafio de ladder atual não validado com sucesso"""
         horario_atual = datetime.datetime.now()
         
         # Preparar informações do form
@@ -264,36 +264,36 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                       'desafio_coringa': True, 'data_hora': horario_atual}
         
         # Preparar informações para validação do formset
-        formset = gerar_campos_formset([], 'registro_ladder_luta')
+        formset = gerar_campos_formset([], 'desafio_ladder_luta')
         
         # Preparar dados POST
         dados_post = {**form, **formset}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder = RegistroLadder.objects.get(id=self.registro_ladder.id)
-        self.assertEqual(self.registro_ladder.desafiante, self.tiovsky)
-        self.assertEqual(self.registro_ladder.desafiado, self.mad)
-        self.assertEqual(self.registro_ladder.score_desafiante, 0)
-        self.assertEqual(self.registro_ladder.score_desafiado, 3)
-        self.assertEqual(self.registro_ladder.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder.data_hora, timezone.make_aware(horario_atual))
-        self.assertEqual(self.registro_ladder.adicionado_por, self.teets)
+        # Verificar alterações em desafio
+        self.desafio_ladder = DesafioLadder.objects.get(id=self.desafio_ladder.id)
+        self.assertEqual(self.desafio_ladder.desafiante, self.tiovsky)
+        self.assertEqual(self.desafio_ladder.desafiado, self.mad)
+        self.assertEqual(self.desafio_ladder.score_desafiante, 0)
+        self.assertEqual(self.desafio_ladder.score_desafiado, 3)
+        self.assertEqual(self.desafio_ladder.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder.adicionado_por, self.teets)
         
-    def test_editar_registro_nao_validado_historico_sucesso(self):
-        """Testa editar registro de ladder histórico não validado com sucesso"""
+    def test_editar_desafio_nao_validado_historico_sucesso(self):
+        """Testa editar desafio de ladder histórico não validado com sucesso"""
         horario_historico = datetime.datetime.now().replace(month=self.horario_historico.month, 
                                                             year=self.horario_historico.year)
         
@@ -302,46 +302,46 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                       'desafio_coringa': True, 'data_hora': horario_historico}
         
         # Preparar informações para validação do formset
-        formset = gerar_campos_formset([], 'registro_ladder_luta')
+        formset = gerar_campos_formset([], 'desafio_ladder_luta')
         
         # Preparar dados POST
         dados_post = {**form, **formset}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder_historico = RegistroLadder.objects.get(id=self.registro_ladder_historico.id)
-        self.assertEqual(self.registro_ladder_historico.desafiante, self.tiovsky)
-        self.assertEqual(self.registro_ladder_historico.desafiado, self.mad)
-        self.assertEqual(self.registro_ladder_historico.score_desafiante, 0)
-        self.assertEqual(self.registro_ladder_historico.score_desafiado, 3)
-        self.assertEqual(self.registro_ladder_historico.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder_historico.data_hora, timezone.make_aware(horario_historico))
-        self.assertEqual(self.registro_ladder_historico.adicionado_por, self.sena)
+        # Verificar alterações em desafio
+        self.desafio_ladder_historico = DesafioLadder.objects.get(id=self.desafio_ladder_historico.id)
+        self.assertEqual(self.desafio_ladder_historico.desafiante, self.tiovsky)
+        self.assertEqual(self.desafio_ladder_historico.desafiado, self.mad)
+        self.assertEqual(self.desafio_ladder_historico.score_desafiante, 0)
+        self.assertEqual(self.desafio_ladder_historico.score_desafiado, 3)
+        self.assertEqual(self.desafio_ladder_historico.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder_historico.data_hora, timezone.make_aware(horario_historico))
+        self.assertEqual(self.desafio_ladder_historico.adicionado_por, self.sena)
         
-    def test_editar_registro_validado_atual_sucesso(self):
-        """Testa editar registro de ladder atual validado com sucesso"""
+    def test_editar_desafio_validado_atual_sucesso(self):
+        """Testa editar desafio de ladder atual validado com sucesso"""
         # TODO implementar
         pass
         
-    def test_editar_registro_validado_historico_sucesso(self):
-        """Testa editar registro de ladder histórico validado com sucesso"""
+    def test_editar_desafio_validado_historico_sucesso(self):
+        """Testa editar desafio de ladder histórico validado com sucesso"""
         # TODO implementar
         pass
 
-    def test_erro_editar_registro_criador_fora_desafio(self):
-        """Testa se editar o registro de forma que o criador não participe nem seja admin dá erro"""
+    def test_erro_editar_desafio_criador_fora_desafio(self):
+        """Testa se editar o desafio de forma que o criador não participe nem seja admin dá erro"""
         horario_atual = datetime.datetime.now()
         
         # Preparar informações do form
@@ -349,31 +349,31 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                       'desafio_coringa': True, 'data_hora': horario_atual}
         
         # Preparar informações para validação do formset
-        formset = gerar_campos_formset([], 'registro_ladder_luta')
+        formset = gerar_campos_formset([], 'desafio_ladder_luta')
         
         # Preparar dados POST
         dados_post = {**form, **formset}
         
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_add_por_nao_admin.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_add_por_nao_admin.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 200)
         
         # Verificar erros
-        self.assertContains(response, 'Jogador não pode criar registros para ladder para terceiros')
+        self.assertContains(response, 'Jogador não pode criar desafios para ladder para terceiros')
         
-        # Verificar se registro não foi alterado
-        self.registro_ladder_add_por_nao_admin = RegistroLadder.objects.get(id=self.registro_ladder_add_por_nao_admin.id)
-        self.assertEqual(self.registro_ladder.desafiante, self.sena)
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.desafiado, self.teets)
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.score_desafiante, 3)
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.score_desafiado, 1)
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.desafio_coringa, False)
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.data_hora, self.horario_atual.replace(day=10))
-        self.assertEqual(self.registro_ladder_add_por_nao_admin.adicionado_por, self.sena)
+        # Verificar se desafio não foi alterado
+        self.desafio_ladder_add_por_nao_admin = DesafioLadder.objects.get(id=self.desafio_ladder_add_por_nao_admin.id)
+        self.assertEqual(self.desafio_ladder.desafiante, self.sena)
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.desafiado, self.teets)
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.score_desafiado, 1)
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.desafio_coringa, False)
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.data_hora, self.horario_atual.replace(day=10))
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.adicionado_por, self.sena)
         
-    def test_editar_registro_nao_validado_completo_sucesso(self):
-        """Testa editar registro de ladder completo não validado com sucesso"""
+    def test_editar_desafio_nao_validado_completo_sucesso(self):
+        """Testa editar desafio de ladder completo não validado com sucesso"""
         horario_atual = datetime.datetime.now().replace(day=4)
         
         # Guardar ids dos modelos relacionados a luta para verificar posteriormente se nenhuma nova foi criada
@@ -384,8 +384,8 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 1, 
                                       'desafio_coringa': True, 'data_hora': horario_atual}
         
-        lutas = Luta.objects.filter(lutaladder__registro_ladder=self.registro_ladder_completo).select_related('lutaladder') \
-                .order_by('lutaladder__indice_registro_ladder')
+        lutas = Luta.objects.filter(lutaladder__desafio_ladder=self.desafio_ladder_completo).select_related('lutaladder') \
+                .order_by('lutaladder__indice_desafio_ladder')
 
         formset_lutas = gerar_campos_formset([{'ganhador': self.sena.id, 'stage': self.stage.id, 
                                                'personagem_desafiante': self.fox.id, 'personagem_desafiado': self.fox.id},
@@ -394,75 +394,75 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                                {'ganhador': self.teets.id, 'stage': '',  
                                                 'personagem_desafiante': '', 'personagem_desafiado': self.marth.id},
                                                {'ganhador': self.sena.id, 'stage': self.stage.id, 
-                                                'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'registro_ladder_luta')
+                                                'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'desafio_ladder_luta')
 #         (cls.sena, cls.saraiva, 1, 3, cls.horario_atual.replace(day=5), False, cls.sena)
     
         # Preparar dados POST
         dados_post = {**form, **formset_lutas}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder_completo = RegistroLadder.objects.get(id=self.registro_ladder_completo.id)
-        self.assertEqual(self.registro_ladder_completo.desafiante, self.sena)
-        self.assertEqual(self.registro_ladder_completo.desafiado, self.teets)
-        self.assertEqual(self.registro_ladder_completo.score_desafiante, 3)
-        self.assertEqual(self.registro_ladder_completo.score_desafiado, 1)
-        self.assertEqual(self.registro_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder_completo.data_hora, timezone.make_aware(horario_atual))
-        self.assertEqual(self.registro_ladder_completo.adicionado_por, self.sena)
+        # Verificar alterações em desafio
+        self.desafio_ladder_completo = DesafioLadder.objects.get(id=self.desafio_ladder_completo.id)
+        self.assertEqual(self.desafio_ladder_completo.desafiante, self.sena)
+        self.assertEqual(self.desafio_ladder_completo.desafiado, self.teets)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiado, 1)
+        self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
         self.assertEqual(Luta.objects.count(), 4)
         self.assertEqual(JogadorLuta.objects.count(), 8)
         self.assertEqual(LutaLadder.objects.count(), 4)
         
-        lutas = self.registro_ladder_completo.lutaladder_set.all()
+        lutas = self.desafio_ladder_completo.lutaladder_set.all()
         self.assertEqual(lutas.count(), 4)
         
         # Luta 1
-        luta_1 = lutas.get(indice_registro_ladder=1).luta
+        luta_1 = lutas.get(indice_desafio_ladder=1).luta
         self.assertEqual(luta_1.ganhador, self.sena)
         self.assertEqual(luta_1.stage, self.stage)
-        self.assertEqual(luta_1.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_1.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_1.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 2
-        luta_2 = lutas.get(indice_registro_ladder=2).luta
+        luta_2 = lutas.get(indice_desafio_ladder=2).luta
         self.assertEqual(luta_2.ganhador, self.sena)
         self.assertEqual(luta_2.stage, self.stage)
-        self.assertEqual(luta_2.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_2.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_2.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, None), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 3
-        luta_3 = lutas.get(indice_registro_ladder=3).luta
+        luta_3 = lutas.get(indice_desafio_ladder=3).luta
         self.assertEqual(luta_3.ganhador, self.teets)
         self.assertEqual(luta_3.stage, None)
-        self.assertEqual(luta_3.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_3.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_3.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, None), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.marth.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 4
-        luta_4 = lutas.get(indice_registro_ladder=4).luta
+        luta_4 = lutas.get(indice_desafio_ladder=4).luta
         self.assertEqual(luta_4.ganhador, self.sena)
         self.assertEqual(luta_4.stage, self.stage)
-        self.assertEqual(luta_4.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_4.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_4.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_4.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_4.jogadorluta_set.all().values_list('jogador', 'personagem'))
@@ -480,8 +480,8 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         for luta_ladder_id in lutas_ladder_apos:
             self.assertIn(luta_ladder_id, lutas_ladder_antes)
         
-    def test_editar_registro_nao_validado_completo_sucesso_adicionando_1_luta(self):
-        """Testa editar registro de ladder completo não validado adicionando 1 luta, com sucesso"""
+    def test_editar_desafio_nao_validado_completo_sucesso_adicionando_1_luta(self):
+        """Testa editar desafio de ladder completo não validado adicionando 1 luta, com sucesso"""
         horario_atual = datetime.datetime.now().replace(day=4)
         
         # Verificar que existem apenas 4 lutas
@@ -501,90 +501,90 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                     {'ganhador': self.teets.id, 'stage': '', 
                                      'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.marth.id},
                                     {'ganhador': self.sena.id, 'stage': self.stage.id, 
-                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'registro_ladder_luta')
+                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'desafio_ladder_luta')
 #         (cls.sena, cls.saraiva, 1, 3, cls.horario_atual.replace(day=5), False, cls.sena)
         
         # Preparar dados POST
         dados_post = {**form, **formset_lutas}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder_completo = RegistroLadder.objects.get(id=self.registro_ladder_completo.id)
-        self.assertEqual(self.registro_ladder_completo.desafiante, self.sena)
-        self.assertEqual(self.registro_ladder_completo.desafiado, self.teets)
-        self.assertEqual(self.registro_ladder_completo.score_desafiante, 3)
-        self.assertEqual(self.registro_ladder_completo.score_desafiado, 2)
-        self.assertEqual(self.registro_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder_completo.data_hora, timezone.make_aware(horario_atual))
-        self.assertEqual(self.registro_ladder_completo.adicionado_por, self.sena)
+        # Verificar alterações em desafio
+        self.desafio_ladder_completo = DesafioLadder.objects.get(id=self.desafio_ladder_completo.id)
+        self.assertEqual(self.desafio_ladder_completo.desafiante, self.sena)
+        self.assertEqual(self.desafio_ladder_completo.desafiado, self.teets)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiado, 2)
+        self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
         self.assertEqual(Luta.objects.count(), 5)
         self.assertEqual(JogadorLuta.objects.count(), 10)
         self.assertEqual(LutaLadder.objects.count(), 5)
         
-        lutas = self.registro_ladder_completo.lutaladder_set.all()
+        lutas = self.desafio_ladder_completo.lutaladder_set.all()
         self.assertEqual(lutas.count(), 5)
         
         # Luta 1
-        luta_1 = lutas.get(indice_registro_ladder=1).luta
+        luta_1 = lutas.get(indice_desafio_ladder=1).luta
         self.assertEqual(luta_1.ganhador, self.sena)
         self.assertEqual(luta_1.stage, self.stage)
-        self.assertEqual(luta_1.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_1.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_1.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 2
-        luta_2 = lutas.get(indice_registro_ladder=2).luta
+        luta_2 = lutas.get(indice_desafio_ladder=2).luta
         self.assertEqual(luta_2.ganhador, self.sena)
         self.assertEqual(luta_2.stage, self.stage)
-        self.assertEqual(luta_2.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_2.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_2.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 3
-        luta_3 = lutas.get(indice_registro_ladder=3).luta
+        luta_3 = lutas.get(indice_desafio_ladder=3).luta
         self.assertEqual(luta_3.ganhador, self.teets)
         self.assertEqual(luta_3.stage, self.stage)
-        self.assertEqual(luta_3.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_3.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_3.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.marth.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 4
-        luta_4 = lutas.get(indice_registro_ladder=4).luta
+        luta_4 = lutas.get(indice_desafio_ladder=4).luta
         self.assertEqual(luta_4.ganhador, self.teets)
         self.assertEqual(luta_4.stage, None)
-        self.assertEqual(luta_4.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_4.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_4.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_4.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.marth.id), luta_4.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 5
-        luta_5 = lutas.get(indice_registro_ladder=5).luta
+        luta_5 = lutas.get(indice_desafio_ladder=5).luta
         self.assertEqual(luta_5.ganhador, self.sena)
         self.assertEqual(luta_5.stage, self.stage)
-        self.assertEqual(luta_5.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_5.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_5.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_5.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_5.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
-    def test_editar_registro_nao_validado_completo_sucesso_removendo_ultima_luta(self):
-        """Testa editar registro de ladder completo não validado removendo última luta, com sucesso"""
+    def test_editar_desafio_nao_validado_completo_sucesso_removendo_ultima_luta(self):
+        """Testa editar desafio de ladder completo não validado removendo última luta, com sucesso"""
         horario_atual = datetime.datetime.now().replace(day=4)
         
         # Verificar que existem apenas 4 lutas
@@ -605,66 +605,66 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                     {'ganhador': self.sena.id, 'stage': self.stage.id, 
                                      'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id},
                                     {'ganhador': self.sena.id, 'stage': self.stage.id, 
-                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'registro_ladder_luta')
+                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'desafio_ladder_luta')
 #         (cls.sena, cls.saraiva, 1, 3, cls.horario_atual.replace(day=5), False, cls.sena)
         
         # Preparar dados POST
         dados_post = {**form, **formset_lutas}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder_completo = RegistroLadder.objects.get(id=self.registro_ladder_completo.id)
-        self.assertEqual(self.registro_ladder_completo.desafiante, self.sena)
-        self.assertEqual(self.registro_ladder_completo.desafiado, self.teets)
-        self.assertEqual(self.registro_ladder_completo.score_desafiante, 3)
-        self.assertEqual(self.registro_ladder_completo.score_desafiado, 0)
-        self.assertEqual(self.registro_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder_completo.data_hora, timezone.make_aware(horario_atual))
-        self.assertEqual(self.registro_ladder_completo.adicionado_por, self.sena)
+        # Verificar alterações em desafio
+        self.desafio_ladder_completo = DesafioLadder.objects.get(id=self.desafio_ladder_completo.id)
+        self.assertEqual(self.desafio_ladder_completo.desafiante, self.sena)
+        self.assertEqual(self.desafio_ladder_completo.desafiado, self.teets)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiado, 0)
+        self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
         self.assertEqual(Luta.objects.count(), 3)
         self.assertEqual(JogadorLuta.objects.count(), 6)
         self.assertEqual(LutaLadder.objects.count(), 3)
         
-        lutas = self.registro_ladder_completo.lutaladder_set.all()
+        lutas = self.desafio_ladder_completo.lutaladder_set.all()
         self.assertEqual(lutas.count(), 3)
         
         # Luta 1
-        luta_1 = lutas.get(indice_registro_ladder=1).luta
+        luta_1 = lutas.get(indice_desafio_ladder=1).luta
         self.assertEqual(luta_1.ganhador, self.sena)
         self.assertEqual(luta_1.stage, self.stage)
-        self.assertEqual(luta_1.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_1.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_1.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 2
-        luta_2 = lutas.get(indice_registro_ladder=2).luta
+        luta_2 = lutas.get(indice_desafio_ladder=2).luta
         self.assertEqual(luta_2.ganhador, self.sena)
         self.assertEqual(luta_2.stage, self.stage)
-        self.assertEqual(luta_2.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_2.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_2.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_2.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 3
-        luta_3 = lutas.get(indice_registro_ladder=3).luta
+        luta_3 = lutas.get(indice_desafio_ladder=3).luta
         self.assertEqual(luta_3.ganhador, self.sena)
         self.assertEqual(luta_3.stage, self.stage)
-        self.assertEqual(luta_3.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_3.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_3.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
@@ -682,8 +682,8 @@ class ViewEditarRegistroLadderTestCase(TestCase):
         for luta_ladder_id in lutas_ladder_apos:
             self.assertIn(luta_ladder_id, lutas_ladder_antes)
             
-    def test_editar_registro_nao_validado_completo_sucesso_alterando_luta_meio(self):
-        """Testa editar registro de ladder completo não validado removendo luta do meio, com sucesso"""
+    def test_editar_desafio_nao_validado_completo_sucesso_alterando_luta_meio(self):
+        """Testa editar desafio de ladder completo não validado removendo luta do meio, com sucesso"""
         horario_atual = datetime.datetime.now().replace(day=4)
         
         # Verificar que existem apenas 4 lutas
@@ -704,60 +704,60 @@ class ViewEditarRegistroLadderTestCase(TestCase):
                                     {'ganhador': self.sena.id, 'stage': self.stage.id, 
                                      'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id, 'DELETE': True},
                                     {'ganhador': self.sena.id, 'stage': self.stage.id, 
-                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'registro_ladder_luta')
+                                     'personagem_desafiante': self.marth.id, 'personagem_desafiado': self.fox.id}], 'desafio_ladder_luta')
 #         (cls.sena, cls.saraiva, 1, 3, cls.horario_atual.replace(day=5), False, cls.sena)
         
         # Preparar dados POST
         dados_post = {**form, **formset_lutas}
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}),
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}),
                                    dados_post)
         self.assertEqual(response.status_code, 302)
         
-        url_esperada = reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id})
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id})
         self.assertRedirects(response, url_esperada)
                              
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_REGISTRO_LADDER)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
         
-        # Verificar alterações em registro
-        self.registro_ladder_completo = RegistroLadder.objects.get(id=self.registro_ladder_completo.id)
-        self.assertEqual(self.registro_ladder_completo.desafiante, self.sena)
-        self.assertEqual(self.registro_ladder_completo.desafiado, self.teets)
-        self.assertEqual(self.registro_ladder_completo.score_desafiante, 3)
-        self.assertEqual(self.registro_ladder_completo.score_desafiado, 0)
-        self.assertEqual(self.registro_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.registro_ladder_completo.data_hora, timezone.make_aware(horario_atual))
-        self.assertEqual(self.registro_ladder_completo.adicionado_por, self.sena)
+        # Verificar alterações em desafio
+        self.desafio_ladder_completo = DesafioLadder.objects.get(id=self.desafio_ladder_completo.id)
+        self.assertEqual(self.desafio_ladder_completo.desafiante, self.sena)
+        self.assertEqual(self.desafio_ladder_completo.desafiado, self.teets)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder_completo.score_desafiado, 0)
+        self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
+        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
         self.assertEqual(Luta.objects.count(), 2)
         self.assertEqual(JogadorLuta.objects.count(), 4)
         self.assertEqual(LutaLadder.objects.count(), 2)
         
-        lutas = self.registro_ladder_completo.lutaladder_set.all()
+        lutas = self.desafio_ladder_completo.lutaladder_set.all()
         self.assertEqual(lutas.count(), 2)
         
         # Luta 1
-        luta_1 = lutas.get(indice_registro_ladder=1).luta
+        luta_1 = lutas.get(indice_desafio_ladder=1).luta
         self.assertEqual(luta_1.ganhador, self.sena)
         self.assertEqual(luta_1.stage, self.stage)
-        self.assertEqual(luta_1.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_1.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_1.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_1.jogadorluta_set.all().values_list('jogador', 'personagem'))
         
         # Luta 2
-        self.assertFalse(lutas.filter(indice_registro_ladder=2).exists())
+        self.assertFalse(lutas.filter(indice_desafio_ladder=2).exists())
         
         # Luta 3
-        luta_3 = lutas.get(indice_registro_ladder=3).luta
+        luta_3 = lutas.get(indice_desafio_ladder=3).luta
         self.assertEqual(luta_3.ganhador, self.sena)
         self.assertEqual(luta_3.stage, self.stage)
-        self.assertEqual(luta_3.data, self.registro_ladder_completo.data_hora.date())
+        self.assertEqual(luta_3.data, self.desafio_ladder_completo.data_hora.date())
         self.assertEqual(luta_3.jogadorluta_set.all().count(), 2)
         self.assertIn((self.sena.id, self.marth.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
         self.assertIn((self.teets.id, self.fox.id), luta_3.jogadorluta_set.all().values_list('jogador', 'personagem'))
@@ -834,11 +834,11 @@ class ViewDetalharLutaTestCase(TestCase):
         self.assertIn(JogadorLuta.objects.get(personagem=self.marth, jogador=self.sena, luta=self.luta_completa), 
                          response.context['participantes'])
         
-class ViewDetalharRegistroLadderTestCase(TestCase):
-    """Testes para a view de detalhar registro da ladder"""
+class ViewDetalharDesafioLadderTestCase(TestCase):
+    """Testes para a view de detalhar desafio da ladder"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewDetalharRegistroLadderTestCase, cls).setUpTestData()
+        super(ViewDetalharDesafioLadderTestCase, cls).setUpTestData()
 
         criar_jogadores_teste()
         
@@ -851,9 +851,9 @@ class ViewDetalharRegistroLadderTestCase(TestCase):
         
         criar_ladder_teste()
         
-        cls.registro_ladder = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.sena)
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.sena)
         
-        cls.registro_ladder_completo = criar_registro_ladder_completo_teste(cls.sena, cls.teets, 3, 1, 
+        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, 
                                                                             timezone.now().replace(minute=0), False, cls.sena)
         
         # Preparar mês anterior para histórico
@@ -867,91 +867,91 @@ class ViewDetalharRegistroLadderTestCase(TestCase):
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
     def test_acesso_deslogado(self):
-        """Testa acesso a tela de detalhar registro da ladder sem logar"""
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        """Testa acesso a tela de detalhar desafio da ladder sem logar"""
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.registro_ladder, response.context['registro_ladder'])
+        self.assertEqual(self.desafio_ladder, response.context['desafio_ladder'])
         
         # Deve conter link para ladder
         self.assertContains(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Não deve conter link para validação
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         
     def test_acesso_logado(self):
-        """Testa acesso a tela de detalhar registro da ladder logado sem ser admin"""
+        """Testa acesso a tela de detalhar desafio da ladder logado sem ser admin"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.registro_ladder, response.context['registro_ladder'])
+        self.assertEqual(self.desafio_ladder, response.context['desafio_ladder'])
         
         # Deve conter link para ladder
         self.assertContains(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Não deve conter link para validação
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         
     def test_acesso_logado_admin(self):
-        """Testa acesso a tela de detalhar registro da ladder logado como admin"""
+        """Testa acesso a tela de detalhar desafio da ladder logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.registro_ladder, response.context['registro_ladder'])
+        self.assertEqual(self.desafio_ladder, response.context['desafio_ladder'])
         
         # Deve conter link para ladder
         self.assertContains(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Deve conter link para validação
-        self.assertContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        self.assertContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         
-    def test_registro_ladder_historico(self):
-        """Testa detalhamento de registro de histórico de ladder"""
-        self.registro_ladder.data_hora = self.registro_ladder.data_hora.replace(year=self.ano, month=self.mes)
-        self.registro_ladder.save()
+    def test_desafio_ladder_historico(self):
+        """Testa detalhamento de desafio de histórico de ladder"""
+        self.desafio_ladder.data_hora = self.desafio_ladder.data_hora.replace(year=self.ano, month=self.mes)
+        self.desafio_ladder.save()
         
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         
         # Deve conter link para histórico de ladder
-        self.assertContains(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.registro_ladder.data_hora.year,
-                                                                                          'mes': self.registro_ladder.data_hora.month}))
+        self.assertContains(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder.data_hora.year,
+                                                                                          'mes': self.desafio_ladder.data_hora.month}))
         
         
-    def test_registro_ladder_simples(self):
-        """Testa detalhamento de registro de ladder simples"""
+    def test_desafio_ladder_simples(self):
+        """Testa detalhamento ddesafioro de ladder simples"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
         
-        # Registros simples não permitem detalhar lutas
+        # Desafios simples não permitem detalhar lutas
         self.assertNotContains(response, 'Detalhar luta')
     
-    def test_registro_ladder_completo(self):
-        """Testa detalhamento de registro de ladder completo"""
+    def test_desafio_ladder_completo(self):
+        """Testa detalhamento de desafio de ladder completo"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
         self.assertEqual(response.status_code, 200)
         
-        # Verificar lutas do registro
-        registro_ladder = response.context['registro_ladder']
-        lutas = [luta_ladder.luta for luta_ladder in registro_ladder.lutaladder_set.all()]
+        # Verificar lutas do desafio
+        desafio_ladder = response.context['desafio_ladder']
+        lutas = [luta_ladder.luta for luta_ladder in desafio_ladder.lutaladder_set.all()]
         
-        # Registros completos permitem detalhar lutas
+        # Desafios completos permitem detalhar lutas
         self.assertContains(response, 'Detalhar luta')
         for luta in lutas:
             self.assertContains(response, reverse('ladder:detalhar_luta', kwargs={'luta_id': luta.id}))
             
-    def test_registro_atual_nao_deve_conter_link_ladder_historico(self):
-        """Testa acesso a tela de detalhar registro da ladder sem logar"""
-        response = self.client.get(reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+    def test_desafio_atual_nao_deve_conter_link_ladder_historico(self):
+        """Testa acesso a tela de detalhar desafio da ladder sem logar"""
+        response = self.client.get(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.registro_ladder, response.context['registro_ladder'])
+        self.assertEqual(self.desafio_ladder, response.context['desafio_ladder'])
         
         # Deve conter link para ladder
-        self.assertNotContains(response, reverse('ladder:detalhar_ladder_historico', kwargs={'mes': self.registro_ladder.data_hora.month, 
-                                                                                             'ano': self.registro_ladder.data_hora.year}))
+        self.assertNotContains(response, reverse('ladder:detalhar_ladder_historico', kwargs={'mes': self.desafio_ladder.data_hora.month, 
+                                                                                             'ano': self.desafio_ladder.data_hora.year}))
         
         # Não deve conter link para validação
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
 
 class ViewDetalharLadderAtualTestCase(TestCase):
     """Testes para a view de listar jogadores"""
@@ -1055,7 +1055,6 @@ class ViewListarHistoricoLadderTestCase(TestCase):
         ano = self.ano
         mes = self.mes
         for ladder in response.context['lista_ladders']:
-            print(ano, mes)
             self.assertEqual(ladder['ano'], ano)
             self.assertEqual(ladder['mes'], mes)
             
@@ -1130,11 +1129,11 @@ class ViewDetalharRegrasTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_regras_ladder'))
         self.assertEqual(response.status_code, 200)
         
-class ViewListarRegistrosLadderPendentesValidacaoTestCase(TestCase):
-    """Testes para a view de listar registros de ladder pendentes de validar"""
+class ViewListarDesafiosLadderPendentesValidacaoTestCase(TestCase):
+    """Testes para a view de listar desafios de ladder pendentes de validar"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewListarRegistrosLadderPendentesValidacaoTestCase, cls).setUpTestData()
+        super(ViewListarDesafiosLadderPendentesValidacaoTestCase, cls).setUpTestData()
         
         criar_jogadores_teste()
         criar_personagens_teste()
@@ -1158,71 +1157,71 @@ class ViewListarRegistrosLadderPendentesValidacaoTestCase(TestCase):
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
-        # Registros de ladder
-        cls.registro_ladder = criar_registro_ladder_simples_teste(cls.mad, cls.saraiva, 2, 3, horario_atual, False, cls.sena)
-        cls.registro_ladder_completo = criar_registro_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual, False, cls.saraiva)
+        # Desafios de ladder
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.mad, cls.saraiva, 2, 3, horario_atual, False, cls.sena)
+        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual, False, cls.saraiva)
         
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
-        cls.registro_ladder_historico = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
+        cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
         
-        cls.registro_ladder_validado = criar_registro_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
-        validar_registro_ladder_teste(cls.registro_ladder_validado, cls.teets)
+        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
+        validar_desafio_ladder_teste(cls.desafio_ladder_validado, cls.teets)
         
     def test_acesso_deslogado(self):
-        """Testa acesso a tela de listar registros de ladder pendentes sem logar"""
-        response = self.client.get(reverse('ladder:listar_registros_ladder_pendentes_validacao'))
+        """Testa acesso a tela de listar desafios de ladder pendentes sem logar"""
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar pendentes
-        self.assertEqual(len(response.context['registros_pendentes']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_historico, response.context['registros_pendentes'])
+        # 3 desafios devem estar pendentes
+        self.assertEqual(len(response.context['desafios_pendentes']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_pendentes'])
         
         # Não permitir validar
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
     def test_acesso_logado(self):
-        """Testa acesso a tela de listar registros de ladder pendentes logado"""
+        """Testa acesso a tela de listar desafios de ladder pendentes logado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_pendentes_validacao'))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar pendentes
-        self.assertEqual(len(response.context['registros_pendentes']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_historico, response.context['registros_pendentes'])
+        # 3 desafios devem estar pendentes
+        self.assertEqual(len(response.context['desafios_pendentes']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_pendentes'])
         
         # Não permitir validar
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertNotContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertNotContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
     def test_acesso_logado_admin(self):
-        """Testa acesso a tela de listar registros de ladder pendentes logado como admin"""
+        """Testa acesso a tela de listar desafios de ladder pendentes logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_pendentes_validacao'))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar pendentes
-        self.assertEqual(len(response.context['registros_pendentes']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_pendentes'])
-        self.assertIn(self.registro_ladder_historico, response.context['registros_pendentes'])
+        # 3 desafios devem estar pendentes
+        self.assertEqual(len(response.context['desafios_pendentes']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_pendentes'])
         
         # Não permitir validar
-        self.assertContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertContains(response, reverse('ladder:validar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertContains(response, reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
-class ViewListarRegistrosLadderEspecificaTestCase(TestCase):
-    """Testes para a view de listar registros de uma ladder específica"""
+class ViewListarDesafiosLadderEspecificaTestCase(TestCase):
+    """Testes para a view de listar desafios de uma ladder específica"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewListarRegistrosLadderEspecificaTestCase, cls).setUpTestData()
+        super(ViewListarDesafiosLadderEspecificaTestCase, cls).setUpTestData()
         
         criar_jogadores_teste()
         criar_personagens_teste()
@@ -1246,115 +1245,115 @@ class ViewListarRegistrosLadderEspecificaTestCase(TestCase):
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
-        # Registros de ladder
-        cls.registro_ladder = criar_registro_ladder_simples_teste(cls.mad, cls.saraiva, 2, 3, horario_atual, False, cls.sena)
-        cls.registro_ladder_completo = criar_registro_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual, False, cls.saraiva)
+        # Desafios de ladder
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.mad, cls.saraiva, 2, 3, horario_atual, False, cls.sena)
+        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual, False, cls.saraiva)
         
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
-        cls.registro_ladder_historico = criar_registro_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
+        cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
         
-        cls.registro_ladder_validado = criar_registro_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
-        validar_registro_ladder_teste(cls.registro_ladder_validado, cls.teets)
+        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
+        validar_desafio_ladder_teste(cls.desafio_ladder_validado, cls.teets)
         
     def test_acesso_deslogado_ladder_atual(self):
-        """Testa acesso a tela de listar registros de ladder atual sem logar"""
-        response = self.client.get(reverse('ladder:listar_registros_ladder_atual'))
+        """Testa acesso a tela de listar desafios de ladder atual sem logar"""
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_validado, response.context['registros_ladder'])
+        # 3 desafios devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_validado, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_validado.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_validado.id}))
         
     def test_acesso_logado_ladder_atual(self):
-        """Testa acesso a tela de listar registros de ladder atual logado"""
+        """Testa acesso a tela de listar desafios de ladder atual logado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_atual'))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_validado, response.context['registros_ladder'])
+        # 3 desafios devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_validado, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_validado.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_validado.id}))
         
     def test_acesso_logado_admin_ladder_atual(self):
-        """Testa acesso a tela de listar registros de ladder atual logado como admin"""
+        """Testa acesso a tela de listar desafios de ladder atual logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_atual'))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         
-        # 3 registros devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 3)
-        self.assertIn(self.registro_ladder, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_completo, response.context['registros_ladder'])
-        self.assertIn(self.registro_ladder_validado, response.context['registros_ladder'])
+        # 3 desafios devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 3)
+        self.assertIn(self.desafio_ladder, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_completo, response.context['desafios_ladder'])
+        self.assertIn(self.desafio_ladder_validado, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_completo.id}))
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_validado.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_completo.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_validado.id}))
         
     def test_acesso_deslogado_ladder_historico(self):
-        """Testa acesso a tela de listar registros de ladder histórica sem logar"""
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
+        """Testa acesso a tela de listar desafios de ladder histórica sem logar"""
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         
-        # 1 registro devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 1)
-        self.assertIn(self.registro_ladder_historico, response.context['registros_ladder'])
+        # 1 desafio devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 1)
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
     def test_acesso_logado_ladder_historico(self):
-        """Testa acesso a tela de listar registros de ladder histórica logado"""
+        """Testa acesso a tela de listar desafios de ladder histórica logado"""
         self.client.login(username=self.sena.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         
-        # 1 registro devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 1)
-        self.assertIn(self.registro_ladder_historico, response.context['registros_ladder'])
+        # 1 desafio devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 1)
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
     def test_acesso_logado_admin_ladder_historico(self):
-        """Testa acesso a tela de listar registros de ladder histórica logado como admin"""
+        """Testa acesso a tela de listar desafios de ladder histórica logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         
-        # 1 registro devem estar na lista
-        self.assertEqual(len(response.context['registros_ladder']), 1)
-        self.assertIn(self.registro_ladder_historico, response.context['registros_ladder'])
+        # 1 desafio devem estar na lista
+        self.assertEqual(len(response.context['desafios_ladder']), 1)
+        self.assertIn(self.desafio_ladder_historico, response.context['desafios_ladder'])
         
         # Permitir detalhar
-        self.assertContains(response, reverse('ladder:detalhar_registro_ladder', kwargs={'registro_id': self.registro_ladder_historico.id}))
+        self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_historico.id}))
         
     def test_erro_ano_futuro(self):
         """Testa erro caso seja informado ano futuro"""
         prox_mes = timezone.now().replace(day=calendar.monthrange(self.data_atual.year, self.data_atual.month)[1]) + datetime.timedelta(days=1)
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'mes': prox_mes.month, 'ano':prox_mes.year}))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'mes': prox_mes.month, 'ano':prox_mes.year}))
         self.assertEqual(response.status_code, 404)
         
     def test_erro_mes_invalido(self):
         """Testa erro caso apenas ano esteja preenchido"""
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'ano': self.ano, 'mes': 0}))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'ano': self.ano, 'mes': 0}))
         self.assertEqual(response.status_code, 404)
         
-        response = self.client.get(reverse('ladder:listar_registros_ladder_historico', kwargs={'ano': self.ano, 'mes': 13}))
+        response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'ano': self.ano, 'mes': 13}))
         self.assertEqual(response.status_code, 404)
         

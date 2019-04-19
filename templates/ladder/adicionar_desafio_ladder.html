@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
-{% block title %}- Adicionar registro para ladder{% endblock %}
+{% block title %}- Adicionar desafio para ladder{% endblock %}
 
 {% block content %}
-	<form class="col-12" action="{% url 'ladder:adicionar_registro_ladder' %}" method="post">
+	<form class="col-12" action="{% url 'ladder:adicionar_desafio_ladder' %}" method="post">
 	    {% csrf_token %}
 	    {% comment %}
-	    {{ form_registro_ladder }}
+	    {{ form_desafio_ladder }}
         {% endcomment %}
 	    
 	    {% comment %}
-	    {% if form_registro_ladder.non_field_errors %}
+	    {% if form_desafio_ladder.non_field_errors %}
         <ol role="alertdialog">
-            {% for error in form_registro_ladder.non_field_errors %}
+            {% for error in form_desafio_ladder.non_field_errors %}
             <li role="alert"><strong>{{ error|escape }}</strong></li>
             {% endfor %}
         </ol>
@@ -21,7 +21,7 @@
 
 		{% comment %}
 		<div class="row">
-        {% for field in form_registro_ladder %}
+        {% for field in form_desafio_ladder %}
 	        <div class="col-12 col-md-2 py-2" aria-required={% if field.field.required %}"true"{% else %}"false"{% endif %}>
 	            {{ field.label_tag }}{% if field.field.required %}<span class="required">*</span>{% endif %}
 	            {{ field }}
@@ -37,7 +37,7 @@
         </div>
         {% endcomment %}
         
-        {% include "form.html" with form=form_registro_ladder %}
+        {% include "form.html" with form=form_desafio_ladder %}
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}

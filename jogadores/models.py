@@ -2,7 +2,7 @@
 """Modelos usados para guardar jogadores"""
 from django.contrib.auth.models import User
 from django.db import models
-from ladder.models import RegistroLadder
+from ladder.models import DesafioLadder
 
 
 class Jogador(models.Model):
@@ -27,7 +27,7 @@ class Jogador(models.Model):
     
     def pode_usar_coringa_na_data(self, data):
         return self.ultimo_uso_coringa == None or \
-            (data - self.ultimo_uso_coringa).days >= RegistroLadder.PERIODO_ESPERA_DESAFIO_CORINGA
+            (data - self.ultimo_uso_coringa).days >= DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA
 
 class Personagem(models.Model):
     """Personagens disponíveis no jogo"""
