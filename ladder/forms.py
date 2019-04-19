@@ -30,15 +30,6 @@ class RegistroLadderForm(ModelForm):
         super(RegistroLadderForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
-#         for field in self.fields.values():
-#             if isinstance(field, BooleanField):
-#                 field.widget.attrs.update({
-#                         'class': 'form-control-checkbox'
-#                 })
-#             else:
-#                 field.widget.attrs.update({
-#                         'class': 'form-control'
-#                 })
     
     def clean_data_hora(self):
         data_hora = self.cleaned_data['data_hora']
