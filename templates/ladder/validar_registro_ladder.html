@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}- Registro de Ladder {{ registro_ladder.id  }}{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'ladder:validar_registro_ladder' registro_ladder.id %}" method="post">
+	    {% csrf_token %}
+		<input type="submit" class="btn btn-dark" name="salvar" value="Validar">
+	</form>
+{% endblock %}

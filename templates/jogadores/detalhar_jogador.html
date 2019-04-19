@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}- {{ jogador.nick }}{% endblock %}
+
+{% block content %}
+	<div>
+		<p>Nickname: <strong>{{ jogador.nick }}</strong></p>
+		<p>Main: <strong>{{ jogador.main|default:"Indefinido" }}</strong></p>
+		<p>Admin: <strong>{{ jogador.admin|yesno:"Sim,Não,Não" }}</strong></p>
+		<p>Último uso de coringa: <strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></p>
+	</div>
+	{% if request.user.username == jogador.user.username or request.user.jogador.admin %}
+	<div>
+		<a href="{% url 'jogadores:editar_jogador' jogador.user.username %}">Editar jogador</a>
+	</div>
+	{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}- Editar registro para ladder{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'ladder:editar_registro_ladder' form_registro_ladder.instance.id %}" method="post">
+	    {% csrf_token %}
+	    {% comment %}
+	    {{ form_registro_ladder }}
+	    
+	    {{ formset_lutas.management_form }}
+        {% for form in formset_lutas %}
+        	<div>
+	        	<h4>Luta {{ forloop.counter }}</h4>
+	        	{{ form }}
+        	</div>
+        {% endfor %}
+        {% endcomment %}
+        
+        {% include "form.html" with form=form_registro_ladder %}
+	    
+	    {{ formset_lutas.management_form }}
+        {% for form in formset_lutas %}
+        	<h3>Luta {{ forloop.counter }}</h3>
+        	{% comment %}
+        	{{ form }}
+        	{% endcomment %}
+        	
+        	{% include "form.html" with form=form %}
+        {% endfor %}
+	    <input type="submit" value="Salvar">
+	</form>
+{% endblock %}

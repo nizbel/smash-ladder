@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}- Registro de Ladder {{ registro_ladder.id  }}{% endblock %}
+
+{% block content %}
+	{% if registro_ladder.is_cancelado %}
+		<div>
+			<p>
+			Cancelado por {{ registro_ladder.cancelamentoregistroladder.jogador.nick }} em 
+			{{ registro_ladder.cancelamentoregistroladder.data_hora|date:"d/m/Y H:M" }}
+			</p>
+		</div>
+	{% else %}
+		{% if not registro_ladder.is_validado %}
+		<div>
+			<p>Este registro ainda está aguardando validação</p>
+			
+			{% if request.user.jogador.admin %}
+			<p>
+				<a href="{% url 'ladder:validar_registro_ladder' registro_ladder.id %}">Validar agora</a>
+			</p>
+			{% endif %}
+		</div>
+		{% endif %}
+	{% endif %}
+	
+	<div>
+		<p>{{ registro_ladder.desafiante.nick }} <strong>{{ registro_ladder.score_desafiante }}</strong> VS 
+		<strong>{{ registro_ladder.score_desafiado }}</strong> {{ registro_ladder.desafiado.nick }}</p>
+		<p>Data/hora: <strong>{{ registro_ladder.data_hora|date:"d/m/Y H:i" }}</strong></p>
+		<p>Coringa: <strong>{{ registro_ladder.desafio_coringa|yesno:"Sim,Não,Não" }}</strong></p>
+		<p>Admin validador: 
+			<strong>
+			{% if registro_ladder.admin_validador %}
+				{{ registro_ladder.admin_validador.nick }}
+			{% else %}
+				Não validado
+			{% endif %}
+			</strong>
+		</p>
+	</div>
+	
+	{% if registro_ladder.lutas %}
+	<ul>
+		{% for luta in registro_ladder.lutas %}
+		<li><span>Ganhador: {{ luta.ganhador.nick }}</span> <a href="{% url 'ladder:detalhar_luta' luta.id %}">Detalhar luta</a></li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+	
+	{% now "Y" as current_year%} 
+	{% now "n" as current_month %}
+	{% if registro_ladder.data_hora.month|stringformat:"i" != current_month or registro_ladder.data_hora.year|stringformat:"i" != current_year %}
+	<div>
+		<a href="{% url 'ladder:detalhar_ladder_historico' registro_ladder.data_hora.year registro_ladder.data_hora.month %}">Ver Ladder</a>
+	</div>
+	{% else %}
+		<a href="{% url 'ladder:detalhar_ladder_atual' %}">Ver Ladder</a>
+	{% endif %}
+{% endblock %}

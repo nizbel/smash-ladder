@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}- Registros de Ladder a validar{% endblock %}
+
+{% block content %}
+	<div>
+		{% for registro_ladder in registros_pendentes %}
+		<p>
+			{{ registro_ladder.data_hora|date:'d/m/Y H:n' }}: 
+			<span>
+				<a href="{% url 'jogadores:detalhar_jogador' registro_ladder.desafiante.user.username %}">{{ registro_ladder.desafiante.nick }}</a> 
+				{{registro_ladder.score_desafiante}} VS {{registro_ladder.score_desafiado}} 
+				<a href="{% url 'jogadores:detalhar_jogador' registro_ladder.desafiado.user.username %}">{{ registro_ladder.desafiado.nick }}</a>
+			<a href="{% url 'ladder:detalhar_registro_ladder' registro_ladder.id %}">Ver detalhes</a>
+			{% if request.user.jogador.admin %}<a href="{% url 'ladder:validar_registro_ladder' registro_ladder.id %}">Validar</a>{% endif %}
+		</p>
+		{% endfor %}
+	</div>
+{% endblock %}

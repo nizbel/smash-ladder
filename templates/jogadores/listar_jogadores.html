@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}- Lista de jogadores{% endblock %}
+
+{% block content %}
+	<div class="col-12">
+		<h1>Jogadores</h1>
+	</div>
+	
+	<div class="col-12">
+		<div class="row">
+			{% for jogador in jogadores %}
+			<div class="col-4 col-md-1 text-center py-3">
+				<span><a href="{% url 'jogadores:detalhar_jogador' jogador.user.username %}">{{ jogador.nick }}</a></span>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+{% endblock %}
