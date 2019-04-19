@@ -22,6 +22,7 @@ urlpatterns = [
     # Ladder
     path(r'atual/', views.detalhar_ladder_atual, name='detalhar_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/', views.detalhar_ladder_historico, name='detalhar_ladder_historico'),
+    path(r'historico/listar/', views.listar_ladder_historico, name='listar_ladder_historico'),
     path(r'atual/listar-registros/', views.listar_registros_ladder, name='listar_registros_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/listar-registros/', views.listar_registros_ladder, name='listar_registros_ladder_historico'),
     
