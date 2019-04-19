@@ -1,0 +1,60 @@
+/*
+	ffffff (255, 255, 255) 
+	000000 (0, 0, 0) 
+	cecccc (206, 204, 204) cinza-2
+	9d6381 (157, 99, 129) cinza-3
+	fdecef (253, 236, 239) cinza-1
+*/
+
+.site-header {
+    background-color: rgba(157, 99, 129, 1);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+}
+
+/*.site-header a {
+    color: #fdecef;
+    transition: ease-in-out color .15s;
+    text-decoration: none;
+	background-color: transparent;
+}
+
+.site-header a:hover {
+  color: #fff;
+}*/
+
+.bg-cinza-1 {
+    background-color: rgba(253, 236, 239, .8);
+}
+.bg-cinza-2 {
+    background-color: rgba(206, 204, 204, .8);
+}
+.bg-cinza-3 {
+    background-color: rgba(157, 99, 129, .8);
+}
+
+.lista-elemento {
+	padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: rgba(253, 236, 239, .5);
+    border: 1px solid rgba(0, 0, 0, .5);
+    border-radius: .25rem;
+}
+
+.form-control-checkbox {
+	display: block;
+	padding: .375rem .75rem;
+	font-size: 1rem;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #495057;
+	background-color: #fff;
+	background-clip: padding-box;
+	border: 1px solid #ced4da;
+	    border-top-color: rgb(206, 212, 218);
+	    border-right-color: rgb(206, 212, 218);
+	    border-bottom-color: rgb(206, 212, 218);
+	    border-left-color: rgb(206, 212, 218);
+	border-radius: .25rem;
+	transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}- Adicionar registro para ladder{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'ladder:adicionar_registro_ladder' %}" method="post">
+	    {% csrf_token %}
+	    {% comment %}
+	    {{ form_registro_ladder }}
+        {% endcomment %}
+	    
+	    {% comment %}
+	    {% if form_registro_ladder.non_field_errors %}
+        <ol role="alertdialog">
+            {% for error in form_registro_ladder.non_field_errors %}
+            <li role="alert"><strong>{{ error|escape }}</strong></li>
+            {% endfor %}
+        </ol>
+        {% endif %}
+		{% endcomment %}	
+
+		{% comment %}
+		<div class="row">
+        {% for field in form_registro_ladder %}
+	        <div class="col-12 col-md-2 py-2" aria-required={% if field.field.required %}"true"{% else %}"false"{% endif %}>
+	            {{ field.label_tag }}{% if field.field.required %}<span class="required">*</span>{% endif %}
+	            {{ field }}
+	            {% if field.help_text %}
+	            	<p class="help">{{ field.help_text|safe }}</p>
+	            {% endif %}
+	            
+	        	{% for error in field.errors %}
+	        		<div class="text-danger">{{ error }}</div>
+	        	{% endfor %}
+	        </div>
+        {% endfor %}
+        </div>
+        {% endcomment %}
+        
+        {% include "form.html" with form=form_registro_ladder %}
+	    
+	    {{ formset_lutas.management_form }}
+        {% for form in formset_lutas %}
+        	<h3>Luta {{ forloop.counter }}</h3>
+        	{% comment %}
+        	{{ form }}
+        	{% endcomment %}
+        	
+        	{% include "form.html" with form=form %}
+        {% endfor %}
+	    <input type="submit" value="Salvar">
+	</form>
+{% endblock %}

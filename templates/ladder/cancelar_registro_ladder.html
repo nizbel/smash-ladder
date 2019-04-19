@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}- Registro de Ladder {{ registro_ladder.id  }}{% endblock %}
+
+{% block content %}
+	{% if registro_ladder.is_validado %}
+	<div>
+		<p>Alterações na ladder:</p>
+	</div>
+	{% endif %}
+	<div>
+		<p>Deseja cancelar o seguinte registro de ladder? A operação de cancelamento não poderá ser desfeita posteriormente.</p>
+	</div>
+	
+	<div>
+		<p>{{ registro_ladder.desafiante.nick }} <strong>{{ registro_ladder.score_desafiante }}</strong> VS 
+		<strong>{{ registro_ladder.score_desafiado }}</strong> {{ registro_ladder.desafiado.nick }}</p>
+		<p>Data/hora: <strong>{{ registro_ladder.data_hora|date:"d/m/Y H:i" }}</strong></p>
+		<p>Coringa: <strong>{{ registro_ladder.desafio_coringa|yesno:"Sim,Não,Não" }}</strong></p>
+		<p>Admin validador: 
+			<strong>
+			{% if registro_ladder.admin_validador %}
+				{{ registro_ladder.admin_validador.nick }}
+			{% else %}
+				Não validado
+			{% endif %}
+			</strong>
+		</p>
+	</div>
+	
+	{% if registro_ladder.lutas %}
+	<ul>
+		{% for luta in registro_ladder.lutas %}
+		<li><span>Ganhador: {{ luta.ganhador.nick }}</span> <a href="{% url 'ladder:detalhar_luta' luta.id %}">Detalhar luta</a></li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+	
+	<p><strong>Esta operação não poderá ser desfeita</strong></p>
+	<form action="{% url 'ladder:cancelar_registro_ladder' registro_ladder.id %}" method="post">
+	    {% csrf_token %}
+	    <input type="submit" value="Confirmar">
+	</form>
+	
+{% endblock %}

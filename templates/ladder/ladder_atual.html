@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}- Ladder atual{% endblock %}
+
+{% block content %}
+	<div class="col-12 d-md-flex justify-content-md-center">
+		<ul class="list-group col-md-2">
+		{% for posicao_ladder in ladder %}
+			<li class="list-group-item d-flex">
+				<div class="col-2 pl-0"><strong>{{ posicao_ladder.posicao }}</strong></div>
+				{% if posicao_ladder.alteracao > 0 %}
+					<div class="col-4 pl-0 text-success"><i class="fas fa-arrow-up"></i> {{ posicao_ladder.alteracao }}</div>
+				{% elif posicao_ladder.alteracao < 0 %}
+					<div class="col-4 pl-0 text-danger"><i class="fas fa-arrow-down"></i> {{ posicao_ladder.alteracao }}</div>
+				{% endif %}
+				<a class="ml-auto" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador_id %}">{{ posicao_ladder.jogador.nick }}</a>
+			</li>
+		{% endfor %}
+		</ul>
+	</div>
+{% endblock %}
