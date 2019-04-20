@@ -361,7 +361,7 @@ def listar_desafios_ladder(request, ano=None, mes=None):
     # Buscar desafios para ladder especificada
     desafios_ladder = DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).order_by('data_hora')
     
-    return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder})
+    return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'mes': mes})
 
 def listar_desafios_ladder_pendentes_validacao(request):
     """Listar desafios de ladder pendentes de validação"""

@@ -2,59 +2,142 @@
 
 {% block title %}- Desafio de Ladder {{ desafio_ladder.id  }}{% endblock %}
 
+{% block page_header %}Desafio{% endblock %}
+
 {% block content %}
-	{% if desafio_ladder.is_cancelado %}
-		<div>
-			<p>
-			Cancelado por {{ desafio_ladder.cancelamentodesafioladder.jogador.nick }} em 
-			{{ desafio_ladder.cancelamentodesafioladder.data_hora|date:"d/m/Y H:M" }}
-			</p>
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-1">
+		    	Desafio
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Desafiante</h6>
+					    <h6 class="card-title">
+						    <a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiante.user.username %}">
+						    	<strong>{{ desafio_ladder.desafiante.nick }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Desafiado</h6>
+					    <h6 class="card-title">
+						    <a href="{% url 'jogadores:detalhar_jogador' desafio_ladder.desafiado.user.username %}">
+						    	<strong>{{ desafio_ladder.desafiado.nick }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Data/hora</h6>
+					    <h6 class="card-title"><strong>{{ desafio_ladder.data_hora|date:"d/m/Y H:i" }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Validador</h6>
+					    <h6 class="card-title"><strong>
+							{% if desafio_ladder.admin_validador %}
+								{{ desafio_ladder.admin_validador.nick }}
+							{% else %}
+								Não validado
+							{% endif %}
+							</strong>
+						</h6>
+				    </div>
+				    
+				    <div class="col-6">
+					    <h6 class="card-title">Coringa</h6>
+					    <h6 class="card-title"><strong>{{ desafio_ladder.desafio_coringa|yesno:"Sim,Não,Não" }}</strong></h6>
+				    </div>
+			    </div>
+				
+				{% if desafio_ladder.is_cancelado %}
+					<div class="alert alert-danger card-text">
+						Cancelado por {{ desafio_ladder.cancelamentodesafioladder.jogador.nick }} em 
+						{{ desafio_ladder.cancelamentodesafioladder.data_hora|date:"d/m/Y H:M" }}
+					</div>
+				{% else %}
+					{% if not desafio_ladder.is_validado %}
+						<div class="alert alert-primary card-text d-flex justify-content-between">
+							<span>Este desafio ainda está aguardando validação</span>
+							{% if request.user.jogador.admin %}
+								<a href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar desafio</a>
+							{% endif %}
+						</div>
+					{% endif %}
+				{% endif %}
+		  	</div>
 		</div>
-	{% else %}
-		{% if not desafio_ladder.is_validado %}
-		<div>
-			<p>Este desafio ainda está aguardando validação</p>
-			
-			{% if request.user.jogador.admin %}
-			<p>
-				<a href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar agora</a>
-			</p>
-			{% endif %}
-		</div>
-		{% endif %}
-	{% endif %}
-	
-	<div>
-		<p>{{ desafio_ladder.desafiante.nick }} <strong>{{ desafio_ladder.score_desafiante }}</strong> VS 
-		<strong>{{ desafio_ladder.score_desafiado }}</strong> {{ desafio_ladder.desafiado.nick }}</p>
-		<p>Data/hora: <strong>{{ desafio_ladder.data_hora|date:"d/m/Y H:i" }}</strong></p>
-		<p>Coringa: <strong>{{ desafio_ladder.desafio_coringa|yesno:"Sim,Não,Não" }}</strong></p>
-		<p>Admin validador: 
-			<strong>
-			{% if desafio_ladder.admin_validador %}
-				{{ desafio_ladder.admin_validador.nick }}
-			{% else %}
-				Não validado
-			{% endif %}
-			</strong>
-		</p>
 	</div>
 	
-	{% if desafio_ladder.lutas %}
-	<ul>
-		{% for luta in desafio_ladder.lutas %}
-		<li><span>Ganhador: {{ luta.ganhador.nick }}</span> <a href="{% url 'ladder:detalhar_luta' luta.id %}">Detalhar luta</a></li>
-		{% endfor %}
-	</ul>
-	{% endif %}
-	
-	{% now "Y" as current_year%} 
-	{% now "n" as current_month %}
-	{% if desafio_ladder.data_hora.month|stringformat:"i" != current_month or desafio_ladder.data_hora.year|stringformat:"i" != current_year %}
-	<div>
-		<a href="{% url 'ladder:detalhar_ladder_historico' desafio_ladder.data_hora.year desafio_ladder.data_hora.month %}">Ver Ladder</a>
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-1">
+		    	Resultado
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row pb-3">
+			  		<div class="col-5 text-left d-flex flex-column">
+				    	<h5 class="card-title {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
+			  				text-success
+			  			{% else %}
+			  				text-danger
+			  			{% endif %}">{{desafio_ladder.score_desafiante}}</h5>
+				    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiante.nick }}</h6>
+			    	</div>
+			  		<div class="col-2 text-center">
+				    	<h6 class="card-title">VS</h6>
+			    	</div>
+			  		<div class="col-5 text-right">
+				    	<h5 class="card-title
+			  			{% if desafio_ladder.score_desafiado > desafio_ladder.score_desafiante %}
+			  				text-success
+			  			{% else %}
+			  				text-danger
+			  			{% endif %}">{{desafio_ladder.score_desafiado}}</h5>
+				    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiado.nick }}</h6>
+			    	</div>
+			    </div>
+			    <p class="card-text">
+			    {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
+			    	<strong>{{ desafio_ladder.desafiante.nick }}</strong> toma a posição de <strong>{{ desafio_ladder.desafiado.nick }}</strong>
+			    {% else %}
+			    	<strong>{{ desafio_ladder.desafiado.nick }}</strong> defende a posição com sucesso contra <strong>{{ desafio_ladder.desafiante.nick }}</strong>
+			    {% endif %}
+			    </p>
+			    
+			    {% now "Y" as current_year%} 
+				{% now "n" as current_month %}
+				{% if desafio_ladder.data_hora.month|stringformat:"i" != current_month or desafio_ladder.data_hora.year|stringformat:"i" != current_year %}
+				<div>
+					<a href="{% url 'ladder:detalhar_ladder_historico' desafio_ladder.data_hora.year desafio_ladder.data_hora.month %}">Ver Ladder</a>
+				</div>
+				{% else %}
+					<a href="{% url 'ladder:detalhar_ladder_atual' %}">Ver Ladder</a>
+				{% endif %}
+		  	</div>
+		</div>
 	</div>
-	{% else %}
-		<a href="{% url 'ladder:detalhar_ladder_atual' %}">Ver Ladder</a>
-	{% endif %}
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-1">
+		    	Lutas
+		  	</div>
+		  	{% if desafio_ladder.lutas %}
+		  	<ul class="list-group list-group-flush">
+			  	{% for luta in desafio_ladder.lutas %}
+					<li class="list-group-item">
+						<a href="{% url 'ladder:detalhar_luta' luta.id %}">Luta {{ luta.lutaladder.indice_desafio_ladder }}: {{ luta.ganhador.nick }}</a>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	{% else %}
+		  	<div class="card-body">
+		  		<h6 class="card-title">Informações das lutas não foram cadastradas</h6>
+		  	</div>
+		  	{% endif %}
+		</div>
+	</div>
+	
 {% endblock %}

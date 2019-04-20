@@ -40,8 +40,8 @@
 			        		</a>
 			        		<div class="dropdown-menu" aria-labelledby="ladderDropdown">
 					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a>
+					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Histórico da Ladder</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Listar histórico da Ladder</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Listar desafios a validar</a>
 		        			</div>
 		        		</li>
@@ -88,9 +88,18 @@
 		  		</div>
 	  		
 				<div class="row mx-2 my-3">
-		    	{% block content %}
-		    	
-		    	{% endblock %}
+				
+					<div class="col-12 text-center mb-3">
+						<h1>
+						{% block page_header %}
+						
+						{% endblock %}
+						</h1>
+					</div>
+					
+			    	{% block content %}
+			    	
+			    	{% endblock %}
 		    	</div>
 	    	</div>
 	  	</main>

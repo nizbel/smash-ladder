@@ -2,7 +2,15 @@
 
 {% block title %}- Ladder de {{ mes }}/{{ ano }}{% endblock %}
 
+{% block page_header %}
+Ladder de {{ mes }}/{{ ano }}
+{% endblock %}
+
 {% block content %}
+	<div class="col-12 text-center mb-3">
+		<a href="{% url 'ladder:listar_desafios_ladder_historico' ano mes %}">Todos os desafios</a>
+	</div>
+	
 	<div class="col-12 d-md-flex justify-content-md-center">
 		<ul class="list-group col-md-2">
 		{% for posicao_ladder in ladder %}
