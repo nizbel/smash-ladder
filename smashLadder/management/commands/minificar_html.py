@@ -1,15 +1,18 @@
 # -*- encoding: utf-8 -*-
-from bagogold import settings
-from django.core.management.base import BaseCommand
 from os import walk
 import re
+
+from django.core.management.base import BaseCommand
+
+from smashLadder import settings
+
 
 class Command(BaseCommand):
     help = 'Minifica HTMLs na pasta templates'
 
     def handle(self, *args, **options):
         arqs = []
-        for (dirpath, _, arq_nomes) in walk(settings.PROJECT_ROOT + '/templates'):
+        for (dirpath, _, arq_nomes) in walk(settings.BASE_DIR + '/templates'):
             arqs.extend(['%s/%s' % (dirpath, arq_nome) for arq_nome in arq_nomes if arq_nome[-4:] == 'html'])
             
         for arq_nome in arqs:
