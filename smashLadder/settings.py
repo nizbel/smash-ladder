@@ -139,8 +139,10 @@ MESSAGE_TAGS = {
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "smashLadder/static"),
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
 # Login stuff
