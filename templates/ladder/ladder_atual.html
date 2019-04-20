@@ -2,9 +2,17 @@
 
 {% block title %}- Ladder atual{% endblock %}
 
+{% block page_header %}
+Ladder atual
+{% endblock %}
+
 {% block content %}
+	<div class="col-12 text-center mb-3">
+		<a href="{% url 'ladder:listar_desafios_ladder_atual' %}">Todos os desafios</a>
+	</div>
+	
 	<div class="col-12 d-md-flex justify-content-md-center">
-		<ul class="list-group col-md-2">
+		<ul class="list-group col-md-3">
 		{% for posicao_ladder in ladder %}
 			<li class="list-group-item d-flex">
 				<div class="col-2 pl-0"><strong>{{ posicao_ladder.posicao }}</strong></div>
