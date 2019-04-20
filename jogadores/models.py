@@ -75,6 +75,8 @@ class Stage(models.Model):
 
 class RegistroFerias(models.Model):
     """Registro de férias de jogador"""
+    PERIODO_MAX_FERIAS = 30
+    
     jogador = models.ForeignKey('Jogador', on_delete=models.CASCADE)
     data_inicio = models.DateField(u'Início das férias')
     data_fim = models.DateField(u'Fim das férias')

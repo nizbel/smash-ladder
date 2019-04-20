@@ -5,14 +5,17 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
+from django.utils import timezone
 
-from jogadores.models import Jogador
 from jogadores.forms import JogadorForm
+from jogadores.models import Jogador
 
 
 def detalhar_jogador(request, username):
     """Detalhar um jogador específico pelo nick"""
     jogador = get_object_or_404(Jogador, user__username=username)
+    
+    jogador.is_de_ferias = jogador.de_ferias_na_data(timezone.now().date())
     
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador})
 

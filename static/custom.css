@@ -12,17 +12,6 @@
     backdrop-filter: saturate(180%) blur(20px);
 }
 
-/*.site-header a {
-    color: #fdecef;
-    transition: ease-in-out color .15s;
-    text-decoration: none;
-	background-color: transparent;
-}
-
-.site-header a:hover {
-  color: #fff;
-}*/
-
 .bg-cinza-1 {
     background-color: rgba(253, 236, 239, 1);
 }
@@ -66,4 +55,12 @@
 .btn-dark {
 	background-color: #000;
 	border-color: #000;
+}
+
+.list-group-order {
+    list-style: decimal inside;
+}
+
+.list-group-item-order {
+    display: list-item;
 }

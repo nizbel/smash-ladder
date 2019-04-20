@@ -2,5 +2,93 @@
 
 {% block title %}- Regras{% endblock %}
 
+{% block page_header %}Regras{% endblock %}
+
 {% block content %}
+	<div class="col-12">
+		<ul class="list-group list-group-order">
+			<li class="list-group-item list-group-item-order">
+				Você só poderá desafiar alguém <strong>até {{ LIMITE_POSICOES_DESAFIO }} posições acima de você</strong>.
+			</li>
+			<li class="list-group-item list-group-item-order"> 
+				Se você for desafiado, não poderá nunca recusar o desafio.
+				<ul class="list-group list-group-order">
+					<li class="list-group-item list-group-item-order">
+						Os desafios podem ser feitos PESSOALMENTE OU ONLINE caso ambos possam realizar a partida na presente data do desafio, 
+						não podendo marcar desafios para posteriormente.
+					</li>
+					<li class="list-group-item list-group-item-order">
+						Caso você esteja participando da jogatina na data, você estará apto a ser alvo de desafios ou de desafiar.
+					</li>
+				</ul>
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Só é possível desafiar uma pessoa por vez, da mesma maneira, você só pode estar sendo desafiado por 1 pessoa por vez. Ou seja, 
+				você só pode estar em no máximo 2 desafios ao mesmo tempo: um que você tenha efetuado, e outro que você tenha sido alvo.
+				<ul class="list-group list-group-order">
+					<li class="list-group-item list-group-item-order">
+						Defesa de Posição: Atenção! O desafio feito pela pessoa abaixo de você deverá ser realizado primeiro! Ou seja, você 
+						deverá defender sua posição para poder prosseguir com o seu desafio contra a pessoa acima. Caso você perca o desafio e 
+						não fique com o raio de alcance (<strong>{{ LIMITE_POSICOES_DESAFIO }} posições</strong>) da pessoa que desafiou, 
+						este desafio será automaticamente cancelado. Caso você sustente sua posição, poderá então prosseguir 
+						normalmente com seu desafio.
+					</li>
+					<li class="list-group-item list-group-item-order">
+						Caso duas pessoas desafiem uma terceira pessoa ao mesmo tempo, a pessoa que estiver mais acima entre as duas deve 
+						realizar o desafio primeiro.
+					</li>
+				</ul>
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Se você desafiou e perdeu, nada acontece, se ganhou, toma a posição do perdedor.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Após jogar suas partidas com o adversário, não é permitido que os dois se enfrentem novamente por 
+				<strong>{{ PERIODO_ESPERA_MESMOS_JOGADORES }} dias</strong>. A regra vale somente para os adversários entre si, podendo 
+				desafiar outros jogadores livremente.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Se alguém quiser sair ou entrar, só me avisar.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Se a pessoa não jogar nenhuma partida durante o período de <strong>1 mês</strong>, ela cai duas posições.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Se uma pessoa cair três vezes por inatividade, ela é retirada da ladder.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Como descrito na regra 2.1, os desafios podem ser realizados online, bastando informar algum organizador o resultado e devendo 
+				ser realizado na presente data do desafio.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Todas as partidas de desafio seguem os moldes de ban dos torneios e serão realizadas em uma Melhor de {{ MELHOR_DE }}.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Todo player terá o direito a 1 desafio coringa, esse desafio te permite desafiar qualquer pessoa acima de você! Todos os 
+				coringas de todas as pessoas serão resetadas a cada <strong>{{ PERIODO_ESPERA_DESAFIO_CORINGA }} dias</strong>. O coringa, porém, não 
+				ultrapassa a regra de número 5.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Modo Férias: Se uma pessoa requisitar e for aprovado pelos moderadores, pode interromper seu prazo de inatividade por no 
+				máximo <strong>{{ PERIODO_MAX_FERIAS }} dias</strong>. Os jogadores nas posições abaixo que poderiam desafiar a pessoa que 
+				está no modo férias têm seu alcance de desafios aumentado em 1. Após o prazo de férias expirar, a contagem regressa 
+				quanto à inatividade continua de onde parou. A regra 8 prossegue também caso já tenha ficado inativo.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Qualquer dúvida, evite postar, pergunte via Mensagem privada.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				<strong>Todo dia 1º do mês</strong>, as posições atuais da smashcada serão salvas em um hall da fama.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Evitem realizar uma partida sem antes comprovar com a comissão se ela é válida. As pessoas da comissão são 
+				<strong>Tiago Kfouri</strong> e <strong>Gabriel Saraiva</strong>.
+			</li>
+			<li class="list-group-item list-group-item-order">
+				Para entrar e participar da ladder, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
+				range de sua modalidade(ou seja, os últimos colocados da respectiva ladder), só poderá utilizar o coringa o jogador que 
+				tiver realizado pelo menos 2 partidas.
+			</li>
+		</ul>
+	</div>
 {% endblock %}
