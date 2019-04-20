@@ -89,6 +89,11 @@ class DesafioLadder(models.Model):
             return HistoricoLadder.objects.filter(ano=ano, mes=mes)
         return PosicaoLadder.objects
     
+    def cancelavel_por_jogador(self, jogador):
+        if self.is_cancelado():
+            return False
+        return jogador.admin or (not self.is_validado() and jogador == self.adicionado_por)
+    
     def desafiante_venceu(self):
         """Retorna se desafiante foi o ganhador"""
         return self.score_desafiante > self.score_desafiado

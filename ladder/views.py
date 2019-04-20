@@ -192,7 +192,7 @@ def cancelar_desafio_ladder(request, desafio_id):
     
     if request.POST:
         confirmacao = request.POST.get('salvar')
-        if confirmacao == '1':
+        if confirmacao == None:
             # Cancelar desafio
             try:
                 with transaction.atomic():
@@ -247,6 +247,10 @@ def detalhar_desafio_ladder(request, desafio_id):
     """Detalhar um desafio de ladder"""
     desafio_ladder = get_object_or_404(DesafioLadder, id=desafio_id)
     
+    if request.user.is_authenticated:
+        desafio_ladder.is_cancelavel = desafio_ladder.cancelavel_por_jogador(request.user.jogador)
+    else:
+        desafio_ladder.is_cancelavel = False
     return render(request, 'ladder/detalhar_desafio_ladder.html', {'desafio_ladder': desafio_ladder})
 
 @login_required
@@ -361,12 +365,26 @@ def listar_desafios_ladder(request, ano=None, mes=None):
     # Buscar desafios para ladder especificada
     desafios_ladder = DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).order_by('data_hora')
     
+    # Verificar quais desafios usuário pode cancelar
+    for desafio_ladder in desafios_ladder:
+        if request.user.is_authenticated:
+            desafio_ladder.is_cancelavel = desafio_ladder.cancelavel_por_jogador(request.user.jogador)
+        else:
+            desafio_ladder.is_cancelavel = False
+    
     return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'mes': mes})
 
 def listar_desafios_ladder_pendentes_validacao(request):
     """Listar desafios de ladder pendentes de validação"""
     # Buscar desafios pendentes
     desafios_pendentes = DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).order_by('data_hora')
+    
+    # Verificar quais desafios usuário pode cancelar
+    for desafio_ladder in desafios_pendentes:
+        if request.user.is_authenticated:
+            desafio_ladder.is_cancelavel = desafio_ladder.cancelavel_por_jogador(request.user.jogador)
+        else:
+            desafio_ladder.is_cancelavel = False
     
     return render(request, 'ladder/listar_desafios_pendente_validacao.html', {'desafios_pendentes': desafios_pendentes})
 
