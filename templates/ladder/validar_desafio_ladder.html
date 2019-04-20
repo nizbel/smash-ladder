@@ -6,6 +6,6 @@
 	<form class="col-12" action="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}" method="post">
 	    {% csrf_token %}
 	    
-	  	<input class="btn btn-lg btn-dark btn-block" type="submit" name="salvar" value="Validar">
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Validar">
 	</form>
 {% endblock %}

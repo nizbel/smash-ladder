@@ -151,5 +151,10 @@ LOGOUT_REDIRECT_URL = 'inicio'
 # Nome do site
 NOME_SITE = 'CdL UNB'
 
+# Acelerar testes
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
+
 # Configuracoes extras
 from smashLadder.conf import *
