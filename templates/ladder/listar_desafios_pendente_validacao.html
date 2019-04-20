@@ -46,6 +46,8 @@ Desafios de Ladder a validar
 			    <a class="card-link" href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
 			    {% if request.user.jogador.admin %}
 			    	<a class="card-link" href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar</a>
+			    {% endif %}
+			    {% if desafio_ladder.is_cancelavel %}
 			    	<a class="card-link" href="{% url 'ladder:cancelar_desafio_ladder' desafio_ladder.id %}">Cancelar</a>
 		    	{% endif %}
 		  	</div>

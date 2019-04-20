@@ -54,17 +54,19 @@
 				{% if desafio_ladder.is_cancelado %}
 					<div class="alert alert-danger card-text">
 						Cancelado por {{ desafio_ladder.cancelamentodesafioladder.jogador.nick }} em 
-						{{ desafio_ladder.cancelamentodesafioladder.data_hora|date:"d/m/Y H:M" }}
+						{{ desafio_ladder.cancelamentodesafioladder.data_hora|date:"d/m/Y H:i" }}
 					</div>
-				{% else %}
-					{% if not desafio_ladder.is_validado %}
-						<div class="alert alert-primary card-text d-flex justify-content-between">
-							<span>Este desafio ainda está aguardando validação</span>
-							{% if request.user.jogador.admin %}
-								<a href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar desafio</a>
-							{% endif %}
-						</div>
-					{% endif %}
+				{% elif not desafio_ladder.is_validado %}
+					<div class="alert alert-primary card-text d-flex justify-content-between">
+						Este desafio ainda está aguardando validação
+					</div>
+				{% endif %}
+				
+				{% if not desafio_ladder.is_cancelado and not desafio_ladder.is_validado and request.user.jogador.admin %}
+					<a class="card-link" href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar</a>
+				{% endif %}
+				{% if desafio_ladder.is_cancelavel %}
+					<a class="card-link" href="{% url 'ladder:cancelar_desafio_ladder' desafio_ladder.id %}">Cancelar</a>
 				{% endif %}
 		  	</div>
 		</div>
@@ -109,11 +111,9 @@
 			    {% now "Y" as current_year%} 
 				{% now "n" as current_month %}
 				{% if desafio_ladder.data_hora.month|stringformat:"i" != current_month or desafio_ladder.data_hora.year|stringformat:"i" != current_year %}
-				<div>
-					<a href="{% url 'ladder:detalhar_ladder_historico' desafio_ladder.data_hora.year desafio_ladder.data_hora.month %}">Ver Ladder</a>
-				</div>
+					<a class="card-link" href="{% url 'ladder:detalhar_ladder_historico' desafio_ladder.data_hora.year desafio_ladder.data_hora.month %}">Ver Ladder</a>
 				{% else %}
-					<a href="{% url 'ladder:detalhar_ladder_atual' %}">Ver Ladder</a>
+					<a class="card-link" href="{% url 'ladder:detalhar_ladder_atual' %}">Ver Ladder</a>
 				{% endif %}
 		  	</div>
 		</div>

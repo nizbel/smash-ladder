@@ -936,7 +936,6 @@ class ViewDetalharDesafioLadderTestCase(TestCase):
         lutas = [luta_ladder.luta for luta_ladder in desafio_ladder.lutaladder_set.all()]
         
         # Desafios completos permitem detalhar lutas
-        self.assertContains(response, 'Detalhar luta')
         for luta in lutas:
             self.assertContains(response, reverse('ladder:detalhar_luta', kwargs={'luta_id': luta.id}))
             
