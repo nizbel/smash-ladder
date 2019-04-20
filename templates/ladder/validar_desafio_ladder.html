@@ -2,6 +2,8 @@
 
 {% block title %}- Desafio de Ladder {{ desafio_ladder.id  }}{% endblock %}
 
+{% block page_header %}Validar{% endblock %}
+
 {% block content %}
 	<form class="col-12" action="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}" method="post">
 	    {% csrf_token %}

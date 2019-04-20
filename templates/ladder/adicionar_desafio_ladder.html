@@ -1,54 +1,35 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}- Adicionar desafio para ladder{% endblock %}
+
+{% block page_header %}
+Adicionar desafio
+{% endblock %}
 
 {% block content %}
 	<form class="col-12" action="{% url 'ladder:adicionar_desafio_ladder' %}" method="post">
 	    {% csrf_token %}
-	    {% comment %}
-	    {{ form_desafio_ladder }}
-        {% endcomment %}
 	    
-	    {% comment %}
-	    {% if form_desafio_ladder.non_field_errors %}
-        <ol role="alertdialog">
-            {% for error in form_desafio_ladder.non_field_errors %}
-            <li role="alert"><strong>{{ error|escape }}</strong></li>
-            {% endfor %}
-        </ol>
-        {% endif %}
-		{% endcomment %}	
-
-		{% comment %}
-		<div class="row">
-        {% for field in form_desafio_ladder %}
-	        <div class="col-12 col-md-2 py-2" aria-required={% if field.field.required %}"true"{% else %}"false"{% endif %}>
-	            {{ field.label_tag }}{% if field.field.required %}<span class="required">*</span>{% endif %}
-	            {{ field }}
-	            {% if field.help_text %}
-	            	<p class="help">{{ field.help_text|safe }}</p>
-	            {% endif %}
-	            
-	        	{% for error in field.errors %}
-	        		<div class="text-danger">{{ error }}</div>
-	        	{% endfor %}
-	        </div>
-        {% endfor %}
-        </div>
-        {% endcomment %}
-        
         {% include "form.html" with form=form_desafio_ladder %}
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}
         	<h3>Luta {{ forloop.counter }}</h3>
-        	{% comment %}
-        	{{ form }}
-        	{% endcomment %}
         	
         	{% include "form.html" with form=form %}
         {% endfor %}
         
 	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
 	</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('.data-hora').mask('00/00/0000 00:00');
+});
+</script>
 {% endblock %}

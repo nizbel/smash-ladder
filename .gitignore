@@ -3,3 +3,5 @@
 .settings/
 __pycache__/
 smashLadder/conf/
+node_modules/
+templates/analytics.html
