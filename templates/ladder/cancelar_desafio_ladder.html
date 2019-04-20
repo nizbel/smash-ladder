@@ -40,7 +40,7 @@
 	<form action="{% url 'ladder:cancelar_desafio_ladder' desafio_ladder.id %}" method="post">
 	    {% csrf_token %}
 	    
-	  	<input class="btn btn-lg btn-dark btn-block" type="submit" value="Confirmar">
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Confirmar">
 	</form>
 	
 {% endblock %}

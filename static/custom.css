@@ -62,3 +62,8 @@
 	border-radius: .25rem;
 	transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
+
+.btn-dark {
+	background-color: #000;
+	border-color: #000;
+}
