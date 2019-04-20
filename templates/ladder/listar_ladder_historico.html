@@ -2,6 +2,10 @@
 
 {% block title %}- Histórico da Ladder{% endblock %}
 
+{% block page_header %}
+Histórico da Ladder
+{% endblock %}
+
 {% block content %}
 	<div class="col-12">
 		{% regroup lista_ladders by ano as ladder_por_ano %}

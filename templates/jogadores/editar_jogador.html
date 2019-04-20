@@ -2,8 +2,12 @@
 
 {% block title %}- Editar {{ jogador.nick }}{% endblock %}
 
+{% block page_header %}
+Editar {{ jogador.nick }}
+{% endblock %}
+
 {% block content %}
-	<form action="{% url 'jogadores:editar_jogador' jogador.user.username %}" method="post">
+	<form class="col-12" action="{% url 'jogadores:editar_jogador' jogador.user.username %}" method="post">
 	    {% csrf_token %}
     	{% include "form.html" with form=form_jogador %}
     	
