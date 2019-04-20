@@ -2,16 +2,50 @@
 
 {% block title %}- {{ jogador.nick }}{% endblock %}
 
+{% block page_header %}Jogador{% endblock %}
+
 {% block content %}
-	<div>
-		<p>Nickname: <strong>{{ jogador.nick }}</strong></p>
-		<p>Main: <strong>{{ jogador.main|default:"Indefinido" }}</strong></p>
-		<p>Admin: <strong>{{ jogador.admin|yesno:"Sim,Não,Não" }}</strong></p>
-		<p>Último uso de coringa: <strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></p>
+	<div class="col-12 my-2 d-md-flex justify-content-md-center">
+		<div class="card">
+		  	<div class="card-header bg-cinza-1">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Nickname</h6>
+					    <h6 class="card-title">
+						    <strong>{{ jogador.nick }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Main</h6>
+					    <h6 class="card-title">
+						    <strong>{{ jogador.main|default:"Indefinido" }}</strong>
+					    </h6>
+				    </div>
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Último coringa</h6>
+					    <h6 class="card-title"><strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Admin</h6>
+					    <h6 class="card-title"><strong>{{ jogador.admin|yesno:"Sim,Não,Não" }}</strong>
+						</h6>
+				    </div>
+			    </div>
+				
+				{% if desafio_ladder.is_de_ferias %}
+					<div class="alert alert-primary card-text d-flex justify-content-between">
+						Jogador está de férias
+					</div>
+				{% endif %}
+				
+				{% if request.user.username == jogador.user.username or request.user.jogador.admin %}
+				<a class="card-link" href="{% url 'jogadores:editar_jogador' jogador.user.username %}">Editar</a>
+				{% endif %}
+		  	</div>
+		</div>
 	</div>
-	{% if request.user.username == jogador.user.username or request.user.jogador.admin %}
-	<div>
-		<a href="{% url 'jogadores:editar_jogador' jogador.user.username %}">Editar jogador</a>
-	</div>
-	{% endif %}
 {% endblock %}

@@ -18,6 +18,7 @@ from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, validar_e_salvar_lutas_ladder
+from jogadores.models import RegistroFerias
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -344,7 +345,11 @@ def editar_desafio_ladder(request, desafio_id):
 def detalhar_regras(request):
     """Detalhar regras da ladder"""
     
-    return render(request, 'ladder/regras.html', {})
+    return render(request, 'ladder/regras.html', {'LIMITE_POSICOES_DESAFIO': DesafioLadder.LIMITE_POSICOES_DESAFIO, 
+                                                  'MELHOR_DE': DesafioLadder.MELHOR_DE, 
+                                                  'PERIODO_ESPERA_MESMOS_JOGADORES': DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES,
+                                                  'PERIODO_ESPERA_DESAFIO_CORINGA': DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA,
+                                                  'PERIODO_MAX_FERIAS': RegistroFerias.PERIODO_MAX_FERIAS})
 
 def listar_desafios_ladder(request, ano=None, mes=None):
     """Listar desafios de ladder específica"""
