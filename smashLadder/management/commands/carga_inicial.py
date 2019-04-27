@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 
 from django.contrib.auth.models import User
@@ -7,7 +8,9 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from jogadores.models import Personagem, Stage, Jogador
-from ladder.models import InicioLadder, PosicaoLadder
+from ladder.models import InicioLadder, PosicaoLadder, DesafioLadder, \
+    HistoricoLadder
+from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder
 
 
 # Mapeia stages que não existem, pois são cópias
@@ -22,6 +25,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             with transaction.atomic():
+                InicioLadder.objects.all().delete()
+                PosicaoLadder.objects.all().delete()
+                
                 # Personagens
                 with open('templates/personagens.json', 'r') as arq:
                     personagens = json.loads(arq.read())
@@ -43,6 +49,7 @@ class Command(BaseCommand):
                             if not Stage.objects.filter(nome=nome, modelo=modelo).exists():
                                 Stage.objects.create(nome=nome, modelo=modelo)
         
+                # Ladder
                 with open('templates/ladder_inicial.json', 'r') as arq:
                     posicoes_ladder = json.loads(arq.read())
                     for posicao_ladder in posicoes_ladder:
@@ -59,11 +66,65 @@ class Command(BaseCommand):
                                 username += caracter_novo
                         
                         # Criar jogador e usuário, todos sem admin na primeira carga
-                        user = User.objects.create_user(username=username, password='12345678')
-                        jogador = Jogador.objects.create(nick=nick_jogador, admin=False, user=user)
+                        if Jogador.objects.filter(nick=nick_jogador).exists():
+                            jogador = Jogador.objects.get(nick=nick_jogador)
+                        else:
+                            user = User.objects.create_user(username=username, password='12345678')
+                            jogador = Jogador.objects.create(nick=nick_jogador, admin=False, user=user)
                         
                         InicioLadder.objects.create(posicao=posicao, jogador=jogador)
                         PosicaoLadder.objects.create(posicao=posicao, jogador=jogador)
                         
+                # Desafios
+                with open('templates/desafios.json', 'r') as arq:
+                    desafios = json.loads(arq.read())
+                    
+                    # Teets fica como administrador responsável
+                    admin = Jogador.objects.get(nick='Teets')
+                    
+                    # Começar as 17:00 e ir avançando 10 min por luta, em 13/04/2019
+                    data_hora = datetime.datetime.now().replace(year=2019, month=4, day=13, hour=17, minute=0)
+                    for desafio in desafios:
+                        jogador_1 = desafio['jogador_1']
+                        score_1 = desafio['score_jogador_1']
+                        jogador_2 = desafio['jogador_2']
+                        score_2 = desafio['score_jogador_2']
+                        
+                        # Ver posição atual de cada jogador para definir quem desafiou quem
+                        posicao_1 = PosicaoLadder.objects.get(jogador__nick=jogador_1).posicao
+                        posicao_2 = PosicaoLadder.objects.get(jogador__nick=jogador_2).posicao
+                        
+                        if posicao_1 > posicao_2:
+                            desafiante = Jogador.objects.get(nick=jogador_1)
+                            score_desafiante = score_1
+                            desafiado = Jogador.objects.get(nick=jogador_2)
+                            score_desafiado = score_2
+                        else:
+                            desafiado = Jogador.objects.get(nick=jogador_1)
+                            score_desafiado = score_1
+                            desafiante = Jogador.objects.get(nick=jogador_2)
+                            score_desafiante = score_2
+                            
+                        # Adicionar desafio e depois chamar função de validar
+                        desafio_ladder = DesafioLadder(desafiante=desafiante, score_desafiante=score_desafiante, desafiado=desafiado, 
+                                                       score_desafiado=score_desafiado, data_hora=data_hora, desafio_coringa=False, 
+                                                       adicionado_por=admin)
+                        desafio_ladder.save()
+                        
+                        verificar_posicoes_desafiante_desafiado(desafio_ladder.ladder, desafio_ladder.desafiante,
+                                                             desafio_ladder.desafiado, desafio_ladder.data_hora,
+                                                             desafio_ladder.desafio_coringa)
+                    
+                        # Alterar ladder referência
+                        alterar_ladder(desafio_ladder)
+                        
+                        # Gravar validador
+                        desafio_ladder.admin_validador = admin
+                        desafio_ladder.save()
+                        
+                        # Passar horário
+                        data_hora = data_hora + datetime.timedelta(minutes=10)
+                
         except:
             raise
+        

@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+import datetime
+
 from django.contrib.auth.models import User
 from django.test.testcases import TestCase
 from django.urls.base import reverse
+from django.utils import timezone
 
 from jogadores.models import Jogador, Personagem
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, JOGADORES_TESTE
-from smashLadder import settings
+from ladder.models import DesafioLadder
 from ladder.tests.utils_teste import LADDER_FORMATO_TESTE
+from smashLadder import settings
 
 
 class ViewListarJogadoresTestCase(TestCase):
@@ -50,11 +54,50 @@ class ViewDetalharJogadorTestCase(TestCase):
         cls.jogador_1 = Jogador.objects.get(nick='sena')
         cls.jogador_2 = Jogador.objects.get(nick='teets')
         
+        dia_anterior = timezone.now() - datetime.timedelta(days=1)
+        # Gerar desafios para jogador_2
+        cls.desafio_validado_vitoria_1 = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=1),
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=1, score_desafiado=3, 
+                                                                      admin_validador=cls.jogador_2)
+        cls.desafio_validado_vitoria_2 = DesafioLadder.objects.create(desafiante=cls.jogador_2, desafiado=cls.jogador_1, 
+                                                                      data_hora=dia_anterior.replace(hour=2), 
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=3, score_desafiado=0, 
+                                                                      admin_validador=cls.jogador_2)
+        cls.desafio_validado_vitoria_3 = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=3), 
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=2, score_desafiado=3, 
+                                                                      admin_validador=cls.jogador_2)
+        cls.desafio_validado_derrota_1 = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=4), 
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=3, score_desafiado=1, 
+                                                                      admin_validador=cls.jogador_2)
+        cls.desafio_validado_derrota_2 = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=5),
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=3, score_desafiado=2, 
+                                                                      admin_validador=cls.jogador_2)
+        
+        
+        cls.desafio_nao_validado_vitoria = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=6),
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=1, score_desafiado=3)
+        cls.desafio_nao_validado_derrota = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
+                                                                      data_hora=dia_anterior.replace(hour=7),
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_1,
+                                                                      score_desafiante=3, score_desafiado=2)
+        
     def test_acesso_deslogado(self):
         """Testa acesso a tela de detalhar jogador sem logar"""
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['jogador'], self.jogador_2)
+        self.assertIn('desafios', response.context)
         self.assertNotContains(response, reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_2.user.username}))
         
     def test_acesso_logado(self):
@@ -63,6 +106,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['jogador'], self.jogador_2)
+        self.assertIn('desafios', response.context)
         self.assertNotContains(response, reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_2.user.username}))
         
     def test_acesso_logado_proprio_usuario(self):
@@ -71,6 +115,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['jogador'], self.jogador_2)
+        self.assertIn('desafios', response.context)
         self.assertContains(response, reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_2.user.username}), 1)
         
     def test_acesso_logado_admin(self):
@@ -79,7 +124,32 @@ class ViewDetalharJogadorTestCase(TestCase):
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['jogador'], self.jogador_1)
+        self.assertIn('desafios', response.context)
         self.assertContains(response, reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_1.user.username}), 1)
+        
+    def test_dados_desafio_jogador_sem_desafios(self):
+        """Testa dados de desafios de jogador sem desafios"""
+        # Remover desafios
+        DesafioLadder.objects.all().delete()
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.context['desafios'], {})
+        self.assertEqual(response.context['desafios']['feitos'], 0)
+        self.assertEqual(response.context['desafios']['recebidos'], 0)
+        self.assertEqual(response.context['desafios']['vitorias'], 0)
+        self.assertEqual(response.context['desafios']['derrotas'], 0)
+        
+    def test_dados_desafio_jogador_com_desafios(self):
+        """Testa dados de desafios de jogador com desafios"""
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.context['desafios'], {})
+        self.assertEqual(response.context['desafios']['feitos'], 1)
+        self.assertEqual(response.context['desafios']['recebidos'], 4)
+        self.assertEqual(response.context['desafios']['vitorias'], 3)
+        self.assertEqual(response.context['desafios']['derrotas'], 2)
+        
 
 class ViewEditarJogadorTestCase(TestCase):
     """Testes para a view de detalhar jogador"""

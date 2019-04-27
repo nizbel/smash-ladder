@@ -18,7 +18,6 @@ from django.contrib import messages
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
@@ -29,6 +28,7 @@ SECRET_KEY = '^secretsecret'
 DEBUG = True
 
 ALLOWED_HOSTS = []
+INTERNAL_IPS = ['127.0.0.1',]
 
 
 # Application definition
@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'smashLadder',
     'jogadores',
     'ladder',
+    
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'smashLadder.urls'
@@ -99,16 +102,10 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'OPTIONS': {
+            'min_length': 4,
+        }
     },
 ]
 
@@ -144,6 +141,9 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
+# Pastas do STATIC
+PASTA_IMAGENS = 'img/'
+
 
 # Login stuff
 LOGIN_URL = '/contas/login/'
@@ -151,7 +151,7 @@ LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'inicio'
 
 # Nome do site
-NOME_SITE = 'CdL UNB'
+NOME_SITE = 'CdL UnB'
 
 # Acelerar testes
 PASSWORD_HASHERS = [
@@ -159,4 +159,4 @@ PASSWORD_HASHERS = [
 ]
 
 # Configuracoes extras
-from smashLadder.conf import *
+from conf.conf import *

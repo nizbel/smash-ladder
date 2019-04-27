@@ -21,6 +21,7 @@ from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
     MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
 
+
 class ViewEditarDesafioLadderTestCase(TestCase):
     """Testes para a view de editar desafio para ladder"""
     @classmethod
@@ -796,6 +797,11 @@ class ViewDetalharLutaTestCase(TestCase):
         cls.marth = Personagem.objects.get(nome='Marth')
         cls.luta_completa = criar_luta_completa_teste([cls.sena, cls.teets], [cls.marth, cls.fox], cls.sena, 
                                                       timezone.now().date(), cls.teets, cls.stage_teste)
+        
+        # Luta depende de um desafio válido para existir
+        desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.teets)
+        LutaLadder.objects.create(desafio_ladder=desafio_ladder, indice_desafio_ladder=1, luta=cls.luta)
+        LutaLadder.objects.create(desafio_ladder=desafio_ladder, indice_desafio_ladder=2, luta=cls.luta_completa)
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de listar jogadores sem logar"""

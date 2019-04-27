@@ -15,14 +15,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic.base import TemplateView
+
+from smashLadder import views, settings
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('contas/', include('django.contrib.auth.urls')),
-    path('', TemplateView.as_view(template_name='home.html'), name='inicio'),
+    path('', views.home, name='inicio'),
     
     path('jogadores/', include('jogadores.urls')),
     path('ladder/', include('ladder.urls')),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))

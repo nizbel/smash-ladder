@@ -85,7 +85,7 @@ class DesafioLadderForm(ModelForm):
         
         # Verificar se período de espera para desafio foi respeitado
         lutas_mesmos_jogadores_em_data_proxima = DesafioLadder.objects \
-                .filter(desafiante=desafiante, desafiado=desafiado, 
+                .filter(desafiante=desafiante, desafiado=desafiado, cancelamentodesafioladder__isnull=True,
                         data_hora__range=[data_hora - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES),
                                           data_hora + datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES)])
         # Evitar verificar mesma instância

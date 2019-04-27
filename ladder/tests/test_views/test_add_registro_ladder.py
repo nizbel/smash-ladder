@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from jogadores.models import Jogador, Personagem
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
-    criar_stage_teste, criar_personagens_teste
+    criar_stage_teste, criar_personagens_teste, criar_jogador_teste
 from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
     LutaLadder, JogadorLuta
 from ladder.tests.utils_teste import criar_ladder_teste, \
@@ -18,17 +18,21 @@ from ladder.views import MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER
 from smashLadder import settings
 
 
-class ViewAddDesafioLadderCompTestCase(TestCase):
-    """TestCase da view"""
+class ViewAddDesafioLadderTestCase(TestCase):
+    """TestCase da view de adicionar desafio de ladder"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewAddDesafioLadderCompTestCase, cls).setUpTestData()
+        super(ViewAddDesafioLadderTestCase, cls).setUpTestData()
         
         # Configurar jogadores
         criar_jogadores_teste()
         cls.sena = Jogador.objects.get(nick='sena')
         cls.teets = Jogador.objects.get(nick='teets')
         cls.mad = Jogador.objects.get(nick='mad')
+        
+        # Jogadores fora da ladder
+        cls.new_1 = criar_jogador_teste('new1')
+        cls.new_2 = criar_jogador_teste('new2')
         
         # Stage
         cls.stage = criar_stage_teste()
@@ -68,7 +72,7 @@ class ViewAddDesafioLadderCompTestCase(TestCase):
         
         
     def test_adicionar_desafio_sucesso_sem_preencher_lutas(self):
-        """Testa adicionar desafio de ladder com sucesso, sem preencher_lutas"""
+        """Testa adicionar desafio de ladder com sucesso, sem preencher lutas"""
         # Garantir que não existe desafio de ladder
         self.assertEqual(DesafioLadder.objects.count(), 0)
          
@@ -599,4 +603,54 @@ class ViewAddDesafioLadderCompTestCase(TestCase):
         messages = list(response.context['messages'])
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), 'Resultado geral informado é incompatível com resultados das lutas')
+        
+    def test_adicionar_desafio_todos_fora_ladder(self):
+        """Testa adicionar desafio de ladder para 2 jogadores não participantes da ladder, com sucesso"""
+        # Garantir que não existe desafio de ladder
+        self.assertEqual(DesafioLadder.objects.count(), 0)
+         
+        horario_atual = datetime.datetime.now()
+        self.client.login(username=self.new_1.user.username, password=SENHA_TESTE)
+        
+        # Preencher form e formset para enviar no POST
+        form = {'desafiante': self.new_1.id, 'desafiado': self.new_2.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': horario_atual}
+        
+        formset_lutas = gerar_campos_formset([{'ganhador': '', 'stage': '', 
+                                     'personagem_desafiante': '', 'personagem_desafiado': ''},
+                                    {'ganhador': '', 'stage': '', 
+                                     'personagem_desafiante': '', 'personagem_desafiado': ''},
+                                    {'ganhador': '', 'stage': '', 
+                                     'personagem_desafiante': '', 'personagem_desafiado': ''},
+                                    {'ganhador': '', 'stage': '', 
+                                     'personagem_desafiante': '', 'personagem_desafiado': ''},
+                                    {'ganhador': '', 'stage': '', 
+                                     'personagem_desafiante': '', 'personagem_desafiado': ''}], 'desafio_ladder_luta')
+        
+        dados_post = {**form, **formset_lutas}
+        
+        response = self.client.post(reverse('ladder:adicionar_desafio_ladder'), 
+                                    dados_post)
+        self.assertEqual(response.status_code, 302)
+         
+        desafio_criado_id = DesafioLadder.objects.get(desafiante=self.new_1, desafiado=self.new_2).id
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_criado_id})
+        self.assertRedirects(response, url_esperada)
+         
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
+         
+        # Testar valores para desafio de ladder criado
+        self.assertEqual(DesafioLadder.objects.count(), 1)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.new_1, desafiado=self.new_2)
+        self.assertEqual(desafio_ladder.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(desafio_ladder.score_desafiante, 3)
+        self.assertEqual(desafio_ladder.score_desafiado, 2)
+        self.assertEqual(desafio_ladder.desafio_coringa, False)
+        self.assertEqual(desafio_ladder.adicionado_por, self.new_1)
+        
+        self.assertEqual(Luta.objects.count(), 0)
+    
         

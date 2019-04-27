@@ -3,27 +3,31 @@
 <html>
 	<head>
 	  	<meta charset="utf-8">
+	  	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
 	  	<title>{{ NOME_SITE }} {% block title %}{% endblock %}</title>
 	  	
+	  	{% comment %}
+	  	CSS
+	  	{% endcomment %}
 	  	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
-		
 		<link rel="stylesheet" href="{% static "custom.css" %}" type="text/css">
-		
         
 		{% block extra_header %}
 		
 		{% endblock %}
 		
-		{% if not PROD %}
-	        <!-- Google analytics -->
+		{% comment %}
+		Codigo para Google Analytics
+		{% endcomment %}
+		{% if PROD %}
 	        {% include "analytics.html" %}
         {% endif%}
 	</head>
-	<body>
+	<body class="bg-cinza-1">
 	  	<main>
 			<nav class="navbar navbar-expand-lg navbar-light navbar-dark site-header sticky-top">
-	  			<a class="navbar-brand" href="{% url 'inicio' %}">CdL UNB</a>
+	  			<a class="navbar-brand" href="{% url 'inicio' %}">CdL UnB</a>
 			  	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 			    	<span class="navbar-toggler-icon"></span>
 			  	</button>
@@ -50,7 +54,7 @@
 			        		</a>
 			        		<div class="dropdown-menu" aria-labelledby="ladderDropdown">
 					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Histórico da Ladder</a>
+					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Listar desafios a validar</a>
 		        			</div>
@@ -75,7 +79,7 @@
 		        			</li>
 		  				{% else %}
 		  					<li class="nav-item {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}">
-				        		<a class="nav-link" href="{% url 'login' %}">Login</a>
+				        		<a class="nav-link" href="{% url 'login' %}?next={{request.path}}">Login</a>
 				      		</li>
 			  				
 			  			{% endif %}

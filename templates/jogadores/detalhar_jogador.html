@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}- {{ jogador.nick }}{% endblock %}
 
 {% block page_header %}{{ jogador.nick }}{% endblock %}
 
 {% block content %}
-	<div class="col-12 my-2 d-md-flex justify-content-md-center">
+	<div class="col-12 col-md-4 my-2">
 		<div class="card">
-		  	<div class="card-header bg-cinza-1">
+		  	<div class="card-header bg-cinza-2">
 		    	Dados
 		  	</div>
 		  	<div class="card-body col-12">
@@ -21,6 +22,9 @@
 			  		<div class="col-6">
 					    <h6 class="card-title">Main</h6>
 					    <h6 class="card-title">
+					    	{% if jogador.main %}
+					    		<img class="icone-personagem mt-n1" src="{% static jogador.main.icone %}" />
+					    	{% endif %}
 						    <strong>{{ jogador.main|default:"Indefinido" }}</strong>
 					    </h6>
 				    </div>
@@ -45,6 +49,40 @@
 				{% if request.user.username == jogador.user.username or request.user.jogador.admin %}
 				<a class="card-link" href="{% url 'jogadores:editar_jogador' jogador.user.username %}">Editar</a>
 				{% endif %}
+		  	</div>
+		</div>
+	</div>
+		
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Desafios
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Feitos</h6>
+					    <h6 class="card-title">
+						    <strong>{{ desafios.feitos }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Recebidos</h6>
+					    <h6 class="card-title">
+						    <strong>{{ desafios.recebidos }}</strong>
+					    </h6>
+				    </div>
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Vitórias</h6>
+					    <h6 class="card-title"><strong>{{ desafios.vitorias }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Derrotas</h6>
+					    <h6 class="card-title"><strong>{{ desafios.derrotas }}</strong>
+						</h6>
+				    </div>
+			    </div>
 		  	</div>
 		</div>
 	</div>

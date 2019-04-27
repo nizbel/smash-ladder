@@ -7,18 +7,22 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models.aggregates import Count, Max
+from django.db.models.expressions import Case, When, Value
+from django.db.models.fields import IntegerField
+from django.db.models.query_utils import Q
 from django.forms.formsets import formset_factory
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
 
+from jogadores.models import RegistroFerias, Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, validar_e_salvar_lutas_ladder
-from jogadores.models import RegistroFerias
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -90,15 +94,16 @@ def add_desafio_ladder(request):
     
 def detalhar_ladder_atual(request):
     """Detalhar posição da ladder atual"""
-    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador'))
+    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user'))
     
+    data_atual = timezone.now()
     data_mes_anterior = timezone.now().replace(day=1) - datetime.timedelta(days=1)
     
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).exists():
-        ladder_anterior = HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year)
+        ladder_anterior = HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).select_related('jogador')
     else:
-        ladder_anterior = InicioLadder.objects.all()
+        ladder_anterior = InicioLadder.objects.all().select_related('jogador')
     ladder_anterior = list(ladder_anterior)
     
     # Considerar última posição de ladder atual caso jogador não esteja na anterior
@@ -114,16 +119,76 @@ def detalhar_ladder_atual(request):
             
         if not preencheu_alteracao:
             posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
+            
     
-    return render(request, 'ladder/ladder_atual.html', {'ladder': ladder})
+    # Guardar destaques da ladder
+    destaques = {}
+    
+    # Verificar qual jogador possui mais desafios na ladder
+    if DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False,
+             data_hora__month=data_atual.month, data_hora__year=data_atual.year).exists():
+        # Qtd de desafios feitos
+        desafios_feitos = dict(Jogador.objects.all().annotate(qtd_desafios=(Count(Case(
+            When(desafiante__cancelamentodesafioladder__isnull=True, desafiante__admin_validador__isnull=False, 
+                 desafiante__data_hora__month=data_atual.month, desafiante__data_hora__year=data_atual.year, then=True),
+            output_field=IntegerField(),
+        )))).values_list('nick', 'qtd_desafios'))
+        
+        # Qtd de desafios recebidos
+        desafios_recebidos = dict(Jogador.objects.all().annotate(qtd_desafios=(Count(Case(
+            When(desafiado__cancelamentodesafioladder__isnull=True, desafiado__admin_validador__isnull=False, 
+                 desafiado__data_hora__month=data_atual.month, desafiado__data_hora__year=data_atual.year, then=True),
+            output_field=IntegerField(),
+        )))).values_list('nick', 'qtd_desafios'))
+    
+        # Somar
+        desafios = { k: desafios_feitos.get(k, 0) + desafios_recebidos.get(k, 0) for k in set(desafios_feitos) | set(desafios_recebidos) }
+        
+        valor_maximo = desafios[(max(desafios, key=lambda key: desafios[key]))]
+        
+        destaques['jogadores_mais_desafios'] = [key for key, value in desafios.items() if value == valor_maximo]
+        
+        # Sequencia de vitórias superior a 5
+        # Buscar todos os desafios
+        desafios = DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
+             data_hora__month=data_atual.month, data_hora__year=data_atual.year).order_by('data_hora').select_related('desafiante', 'desafiado')
+        
+        # Buscar participantes da ladder
+        jogadores = {posicao.jogador.nick: 0 for posicao in ladder}
+        
+        # Iterar por desafios, cada ganhador adiciona 1 na streak, cada perdedor reseta
+        for desafio in desafios:
+            if desafio.score_desafiante > desafio.score_desafiado:
+                jogadores[desafio.desafiante.nick] += 1
+                jogadores[desafio.desafiado.nick] = 0
+            else:
+                jogadores[desafio.desafiado.nick] += 1
+                jogadores[desafio.desafiante.nick] = 0
+        
+        # Destacar quem tiver mais de 5 vitórias
+        destaques['jogadores_streak_vitorias'] = [key for key, value in jogadores.items() if value >= 5]
+        for posicao_ladder in ladder:
+            if posicao_ladder.jogador.nick in destaques['jogadores_streak_vitorias']:
+                posicao_ladder.jogador.streak = jogadores[posicao_ladder.jogador.nick]
+                
+        # Marcar todos os jogadores com destaques
+        for posicao_ladder in ladder:
+            for destaque in destaques:
+                if posicao_ladder.jogador.nick in destaques[destaque]:
+                    posicao_ladder.jogador.tem_destaque = True
+                    break
+        
+    return render(request, 'ladder/ladder_atual.html', {'ladder': ladder, 'destaques': destaques})
     
 def detalhar_ladder_historico(request, ano, mes):
     """Detalhar histórico da ladder em mês/ano específico"""
+    # TODO adicionar destaques
+    
     # Testa se existe histórico para mês/ano apontados
     if not HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
         raise Http404('Não há ladder para o mês/ano inseridos')
     ladder = HistoricoLadder.objects.filter(ano=ano, mes=mes).order_by('posicao') \
-        .select_related('jogador')
+        .select_related('jogador__user')
     
     # Pegar mês/ano anterior
     mes_anterior = mes - 1
@@ -193,7 +258,7 @@ def cancelar_desafio_ladder(request, desafio_id):
     
     if request.POST:
         confirmacao = request.POST.get('salvar')
-        if confirmacao == None:
+        if confirmacao != None:
             # Cancelar desafio
             try:
                 with transaction.atomic():
@@ -248,10 +313,13 @@ def detalhar_desafio_ladder(request, desafio_id):
     """Detalhar um desafio de ladder"""
     desafio_ladder = get_object_or_404(DesafioLadder, id=desafio_id)
     
+    # Verificar se usuário pode alterar desafio
     if request.user.is_authenticated:
         desafio_ladder.is_cancelavel = desafio_ladder.cancelavel_por_jogador(request.user.jogador)
+        desafio_ladder.is_editavel = desafio_ladder.editavel_por_jogador(request.user.jogador)
     else:
         desafio_ladder.is_cancelavel = False
+        desafio_ladder.is_editavel = False
     return render(request, 'ladder/detalhar_desafio_ladder.html', {'desafio_ladder': desafio_ladder})
 
 @login_required
@@ -368,7 +436,8 @@ def listar_desafios_ladder(request, ano=None, mes=None):
     
     
     # Buscar desafios para ladder especificada
-    desafios_ladder = DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).order_by('data_hora')
+    desafios_ladder = DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).order_by('data_hora') \
+        .select_related('desafiante__user', 'desafiado__user', 'cancelamentodesafioladder', 'admin_validador')
     
     # Verificar quais desafios usuário pode cancelar
     for desafio_ladder in desafios_ladder:
@@ -382,7 +451,8 @@ def listar_desafios_ladder(request, ano=None, mes=None):
 def listar_desafios_ladder_pendentes_validacao(request):
     """Listar desafios de ladder pendentes de validação"""
     # Buscar desafios pendentes
-    desafios_pendentes = DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).order_by('data_hora')
+    desafios_pendentes = DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).order_by('data_hora') \
+        .select_related('desafiante__user', 'desafiado__user', 'cancelamentodesafioladder', 'admin_validador')
     
     # Verificar quais desafios usuário pode cancelar
     for desafio_ladder in desafios_pendentes:
