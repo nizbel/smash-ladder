@@ -11,4 +11,7 @@ fabfile.py
 # Docker
 .dockerignore
 Dockerfile
+
+
 **/img/
+backups/
