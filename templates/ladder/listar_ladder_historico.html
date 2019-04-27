@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}- Histórico da Ladder{% endblock %}
+{% block title %}- Hall da Fama{% endblock %}
 
 {% block page_header %}
-Histórico da Ladder
+Hall da Fama
 {% endblock %}
 
 {% block content %}
@@ -27,7 +27,7 @@ Histórico da Ladder
 		<div class="d-flex flex-column" id="accordion">
 			{% for ladder_ano in ladder_por_ano %}
 		  	<div class="card my-2 d-flex border-0">
-		    	<div class="card-header bg-cinza-1 text-center py-3 clicavel" id="header-{{ ladder_ano.grouper }}" 
+		    	<div class="card-header bg-cinza-2 text-center py-3 clicavel" id="header-{{ ladder_ano.grouper }}" 
 		    	data-toggle="collapse" data-target="#collapse{{ ladder_ano.grouper }}" aria-expanded="true" aria-controls="collapse{{ ladder_ano.grouper }}">
 		        	<h4 class="my-0">
 			        	<span href="javascript:;" class="my-0">
@@ -52,6 +52,12 @@ Histórico da Ladder
 			    	</div>
 	    		</div>
 	  		</div>
+	  		
+			{% empty %}
+			<div class="col-12 text-center">
+				<h5>Sem histórico de Ladder</h5>
+			</div>
+			
 	  		{% endfor %}
   		</div>
 	</div>

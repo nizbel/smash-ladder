@@ -30,8 +30,8 @@ class JogadorLuta(models.Model):
 class DesafioLadder(models.Model):
     """Desafio para ladder"""
     LIMITE_POSICOES_DESAFIO = 2 # Diferença máxima de posições para haver desafio
-    PERIODO_ESPERA_MESMOS_JOGADORES = 4 # Quantidade de dias a esperar para refazer um desafio
-    PERIODO_ESPERA_DESAFIO_CORINGA = 90 # Quantidade de dias a esperar para utilizar um coringa
+    PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
+    PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
     MELHOR_DE = 5 # Quantidade máxima de lutas que um desafio pode ter
     SCORE_VITORIA = 3 # Score para vitória
@@ -84,15 +84,25 @@ class DesafioLadder(models.Model):
     
     @property
     def ladder(self):
+        """Ladder a qual desafio se refere"""
         if self.is_historico():
             mes, ano = self.mes_ano_ladder
             return HistoricoLadder.objects.filter(ano=ano, mes=mes)
         return PosicaoLadder.objects
     
     def cancelavel_por_jogador(self, jogador):
+        """Determina se jogador pode cancelar desafio"""
         if self.is_cancelado():
             return False
+        # Admin sempre pode cancelar, criador apenas se não validado
         return jogador.admin or (not self.is_validado() and jogador == self.adicionado_por)
+    
+    def editavel_por_jogador(self, jogador):
+        """Determinar se jogador pode editar desafio"""
+        if self.is_cancelado():
+            return False
+        # Contanto que não esteja validado, jogador precisa ser admin ou criador
+        return not self.is_validado() and (jogador.admin or jogador == self.adicionado_por)
     
     def desafiante_venceu(self):
         """Retorna se desafiante foi o ganhador"""
@@ -114,7 +124,7 @@ class InicioLadder(models.Model):
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     
     class Meta():
-        unique_together = ('posicao', 'jogador')
+        unique_together = (('posicao',), ('jogador',))
         
     def __str__(self):
         return f'{self.posicao}: {self.jogador}'
@@ -125,7 +135,7 @@ class PosicaoLadder(models.Model):
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     
     class Meta():
-        unique_together = ('posicao', 'jogador')
+        unique_together = (('posicao',), ('jogador',))
         
     def __str__(self):
         return f'{self.posicao}: {self.jogador}'

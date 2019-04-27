@@ -71,7 +71,12 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         # Adicionar novo entrante na ladder
         cls.new = criar_jogador_teste('new')
         cls.desafio_ladder_novo_entrante = criar_desafio_ladder_simples_teste(cls.new, cls.tiovsky, 3, 1, 
-                                                                          horario_atual.replace(hour=8), False, cls.sena)
+                                                                          horario_atual.replace(hour=8), False, cls.tiovsky)
+        
+        # Adicionar segundo novo entrante na ladder
+        cls.new_2 = criar_jogador_teste('new2')
+        cls.desafio_ladder_novos_entrantes = criar_desafio_ladder_simples_teste(cls.new, cls.new_2, 3, 1, 
+                                                                          horario_atual.replace(hour=8), False, cls.new_2)
         
         
     def test_acesso_deslogado(self):
@@ -427,4 +432,39 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         
         # A ladder deve possuir um jogador a mais
         self.assertTrue(len(situacao_ladder_antes) + 1 == len(situacao_ladder_apos))
+        
+    def test_validar_desafio_novos_entrantes(self):
+        """Testar validação de desafio com novos entrantes, ladder adiciona 2 posições, desafiante ganhando na frente"""
+        # Verificar posições na ladder
+        situacao_ladder_antes = PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao')
+        self.assertNotIn(self.new.id, [jogador_posicao[0] for jogador_posicao in situacao_ladder_antes])
+        self.assertNotIn(self.new_2.id, [jogador_posicao[0] for jogador_posicao in situacao_ladder_antes])
+        
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novos_entrantes.id}),
+                                   {'salvar': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
+        
+        # Ver confirmação no messages
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER)
+        
+        # Desafio deve ter validador
+        self.desafio_ladder_novos_entrantes = DesafioLadder.objects.get(id=self.desafio_ladder_novos_entrantes.id)
+        self.assertEqual(self.desafio_ladder_novos_entrantes.admin_validador, self.teets)
+        
+        # Verificar alterações na ladder
+        situacao_ladder_apos = PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao')
+        
+        self.assertIn((self.new.id, 11), situacao_ladder_apos)
+        self.assertIn((self.new_2.id, 12), situacao_ladder_apos)
+        
+        # Jogadores abaixo no ranking permanecem inalterados
+        for situacao_antes, situacao_apos in zip(situacao_ladder_antes[:10], situacao_ladder_apos[:10]):
+            self.assertEqual(situacao_antes, situacao_apos)
+        
+        # A ladder deve possuir um jogador a mais
+        self.assertTrue(len(situacao_ladder_antes) + 2 == len(situacao_ladder_apos))
         

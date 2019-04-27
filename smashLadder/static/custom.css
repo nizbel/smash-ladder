@@ -64,3 +64,23 @@
 .list-group-item-order {
     display: list-item;
 }
+
+.icone-personagem {
+	width: 20px;
+	height: auto;
+}
+
+ul.ladder li:nth-child(1) .posicao-ladder {
+	font-size: 40px;
+	margin: -10% 0 -10% 0;
+}
+
+ul.ladder li:nth-child(2) .posicao-ladder {
+	font-size: 32px;
+	margin: -10% 0 -10% 0;
+}
+
+ul.ladder li:nth-child(3) .posicao-ladder {
+	font-size: 24px;
+	margin: -10% 0 -10% 0;
+}

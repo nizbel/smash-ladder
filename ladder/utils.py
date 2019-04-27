@@ -25,20 +25,53 @@ def alterar_ladder(desafio_ladder):
             ladder_para_alterar = PosicaoLadder.objects
             
         
-        # Verificar se desafiante já estava na ladder
+        # Verificar posição do desafiado
+        desafiado_esta_na_ladder = True
+        if ladder_para_alterar.filter(jogador=desafiado).exists():
+            posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
+        else:
+            # Se não está na ladder, posição do desafiado é atrás do último
+            posicao_desafiado = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
+            desafiado_esta_na_ladder = False
+            
+            # Criar posição desafiado
+            if desafio_ladder.is_historico():
+                novo_entrante = HistoricoLadder(posicao=posicao_desafiado, jogador=desafiado, mes=mes, ano=ano)
+            else:
+                novo_entrante = PosicaoLadder(posicao=posicao_desafiado, jogador=desafiado)
+            novo_entrante.save()
+        
+        # Verificar posição do desafiante
         if ladder_para_alterar.filter(jogador=desafiante).exists():
             posicao_desafiante = ladder_para_alterar.get(jogador=desafiante).posicao
         else:
-            posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-            
+            # Se não está na ladder, posição do desafiante é atrás do desafiado
+            if desafiado_esta_na_ladder:
+                posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
+            else:
+                posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 2
+                
             # Criar posição desafiante
             if desafio_ladder.is_historico():
                 novo_entrante = HistoricoLadder(posicao=posicao_desafiante, jogador=desafiante, mes=mes, ano=ano)
             else:
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
             novo_entrante.save()
-            
-        posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
+        
+#         # Verificar se desafiante já estava na ladder
+#         if ladder_para_alterar.filter(jogador=desafiante).exists():
+#             posicao_desafiante = ladder_para_alterar.get(jogador=desafiante).posicao
+#         else:
+#             posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
+#             
+#             # Criar posição desafiante
+#             if desafio_ladder.is_historico():
+#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiante, jogador=desafiante, mes=mes, ano=ano)
+#             else:
+#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
+#             novo_entrante.save()
+#             
+#         posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
         
         posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__lte=posicao_desafiante, 
                                                                 posicao__gte=posicao_desafiado).order_by('-posicao'))
@@ -212,30 +245,44 @@ def verificar_posicoes_desafiante_desafiado(ladder, desafiante, desafiado, data_
     if desafiante == desafiado:
         raise ValueError(DesafioLadder.MENSAGEM_ERRO_MESMO_JOGADOR)
     
+    # Verificar posição do desafiado
+    desafiado_esta_na_ladder = True
+    if ladder.filter(jogador=desafiado).exists():
+        posicao_desafiado = ladder.get(jogador=desafiado).posicao
+    else:
+        # Se não está na ladder, posição do desafiado é atrás do último
+        posicao_desafiado = ladder.all().order_by('-posicao')[0].posicao + 1
+        desafiado_esta_na_ladder = False
+    
+    # Verificar posição do desafiante
     if ladder.filter(jogador=desafiante).exists():
         posicao_desafiante = ladder.get(jogador=desafiante).posicao
     else:
-        # Se não está na ladder, posição do desafiante é atrás do último
-        posicao_desafiante = ladder.all().order_by('-posicao')[0].posicao + 1
-    
-    posicao_desafiado = ladder.get(jogador=desafiado).posicao
+        # Se não está na ladder, posição do desafiante é atrás do desafiado
+        if desafiado_esta_na_ladder:
+            posicao_desafiante = ladder.all().order_by('-posicao')[0].posicao + 1
+        else:
+            posicao_desafiante = ladder.all().order_by('-posicao')[0].posicao + 2
     
     if posicao_desafiante < posicao_desafiado:
         raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO)
     elif not desafio_coringa:
-        # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
-        desafiaveis = list()
-        for jogador_posicao in ladder.filter(posicao__lt=posicao_desafiante).order_by('-posicao'):
-            if not jogador_posicao.jogador.de_ferias_na_data(data_hora.date()):
-                desafiaveis.append(jogador_posicao.jogador)
-                
-                # Verifica se quantidade de desafiáveis já supre o limite de posições acima
-                if len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
-                    break
-        
-        # Desafiado é desafiável?
-        if desafiado not in desafiaveis:
-            raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
+        # Verificar se desafiado está na ladder
+        if desafiado_esta_na_ladder:
+            
+            # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
+            desafiaveis = list()
+            for jogador_posicao in ladder.filter(posicao__lt=posicao_desafiante).order_by('-posicao'):
+                if not jogador_posicao.jogador.de_ferias_na_data(data_hora.date()):
+                    desafiaveis.append(jogador_posicao.jogador)
+                    
+                    # Verifica se quantidade de desafiáveis já supre o limite de posições acima
+                    if len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+                        break
+            
+            # Desafiado é desafiável?
+            if desafiado not in desafiaveis:
+                raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
         
 def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
     """Valida lutas em um formset para adicioná-las a desafio de ladder"""

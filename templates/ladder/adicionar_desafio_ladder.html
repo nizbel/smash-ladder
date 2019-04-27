@@ -7,6 +7,10 @@
 Adicionar desafio
 {% endblock %}
 
+{% block extra_header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
 	<form class="col-12" action="{% url 'ladder:adicionar_desafio_ladder' %}" method="post">
 	    {% csrf_token %}
@@ -25,10 +29,12 @@ Adicionar desafio
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 <script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
 
 <script type="text/javascript">
 $(document).ready(function(){
+	$('select').select2();
 	$('.data-hora').mask('00/00/0000 00:00');
 });
 </script>

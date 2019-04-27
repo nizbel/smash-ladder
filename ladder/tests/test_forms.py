@@ -224,7 +224,9 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa adição de desafio sem respeitar período de espera entre mesmos jogadores"""
         # Gerar desafio passado
         DesafioLadder.objects.create(desafiante=self.sena, desafiado=self.teets, score_desafiante=1, score_desafiado=3,
-                                      desafio_coringa=False, data_hora=(timezone.now() - datetime.timedelta(days=3)), adicionado_por=self.teets)
+                                      desafio_coringa=False, 
+                                      data_hora=(timezone.now() - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES-1)), 
+                                      adicionado_por=self.teets)
         
         form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 1, 
                                       'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.sena.id})

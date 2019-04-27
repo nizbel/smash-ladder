@@ -7,55 +7,53 @@ Desafios de Ladder a validar
 {% endblock %}
 
 {% block content %}
-	<div class="col-12">
-		{% for desafio_ladder in desafios_pendentes %}
-		<div class="card col-12 col-md-3">
-		  	<div class="card-body">
-		  		<div class="row d-flex">
-			  		<div class="col-5 text-left d-flex flex-column">
-				    	<h5 class="card-title mb-0">{{ desafio_ladder.desafiante.nick }}</h5>
-				    	<h6 class="card-title {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
-			  				text-success
-			  			{% else %}
-			  				text-danger
-			  			{% endif %}">{{desafio_ladder.score_desafiante}}</h6>
-			    	</div>
-			  		<div class="col-2 text-center">
-				    	<h5 class="card-title">VS</h5>
-			    	</div>
-			  		<div class="col-5 text-right">
-				    	<h5 class="card-title mb-0">{{ desafio_ladder.desafiado.nick }}</h5>
-				    	<h6 class="card-title
-			  			{% if desafio_ladder.score_desafiado > desafio_ladder.score_desafiante %}
-			  				text-success
-			  			{% else %}
-			  				text-danger
-			  			{% endif %}">{{desafio_ladder.score_desafiado}}</h6>
-			    	</div>
+	{% for desafio_ladder in desafios_pendentes %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	  		<div class="row d-flex">
+		  		<div class="col-5 text-left d-flex flex-column">
+			    	<h5 class="card-title mb-0">{{ desafio_ladder.desafiante.nick }}</h5>
+			    	<h6 class="card-title {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
+		  				text-success
+		  			{% else %}
+		  				text-danger
+		  			{% endif %}">{{desafio_ladder.score_desafiante}}</h6>
 		    	</div>
-		    	
-			    <h6 class="card-subtitle mb-2 text-muted">{{ desafio_ladder.data_hora|date:'d/m/Y H:i' }}</h6>
-			    
-			    {% if desafio_ladder.is_cancelado %}
-			    	<p class="card-text">Desafio cancelado</p>
-			    {% elif desafio_ladder.is_validado %}
-			    	<p class="card-text">Desafio validado</p>
-			    {% else %}
-			    	<p class="card-text">Desafio aguardando validação</p>
-			    {% endif %}
-			    <a class="card-link" href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
-			    {% if request.user.jogador.admin %}
-			    	<a class="card-link" href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar</a>
-			    {% endif %}
-			    {% if desafio_ladder.is_cancelavel %}
-			    	<a class="card-link" href="{% url 'ladder:cancelar_desafio_ladder' desafio_ladder.id %}">Cancelar</a>
-		    	{% endif %}
-		  	</div>
-		</div>
-		{% empty %}
-		<div class="text-center">
-			<h5>Sem desafios pendentes</h5>
-		</div>
-		{% endfor %}
+		  		<div class="col-2 text-center">
+			    	<h5 class="card-title">VS</h5>
+		    	</div>
+		  		<div class="col-5 text-right">
+			    	<h5 class="card-title mb-0">{{ desafio_ladder.desafiado.nick }}</h5>
+			    	<h6 class="card-title
+		  			{% if desafio_ladder.score_desafiado > desafio_ladder.score_desafiante %}
+		  				text-success
+		  			{% else %}
+		  				text-danger
+		  			{% endif %}">{{desafio_ladder.score_desafiado}}</h6>
+		    	</div>
+	    	</div>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ desafio_ladder.data_hora|date:'d/m/Y H:i' }}</h6>
+		    
+		    {% if desafio_ladder.is_cancelado %}
+		    	<p class="card-text">Desafio cancelado</p>
+		    {% elif desafio_ladder.is_validado %}
+		    	<p class="card-text">Desafio validado</p>
+		    {% else %}
+		    	<p class="card-text">Desafio aguardando validação</p>
+		    {% endif %}
+		    <a class="card-link" href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
+		    {% if request.user.jogador.admin %}
+		    	<a class="card-link" href="{% url 'ladder:validar_desafio_ladder' desafio_ladder.id %}">Validar</a>
+		    {% endif %}
+		    {% if desafio_ladder.is_cancelavel %}
+		    	<a class="card-link" href="{% url 'ladder:cancelar_desafio_ladder' desafio_ladder.id %}">Cancelar</a>
+	    	{% endif %}
+	  	</div>
 	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Sem desafios pendentes</h5>
+	</div>
+	{% endfor %}
 {% endblock %}

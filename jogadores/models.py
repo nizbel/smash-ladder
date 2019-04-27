@@ -32,6 +32,7 @@ class Jogador(models.Model):
 class Personagem(models.Model):
     """Personagens disponíveis no jogo"""
     nome = models.CharField(u'Nome', max_length=30)
+    icone = models.CharField(u'Ícone', max_length=50)
     
     def __str__(self):
         return self.nome
@@ -47,8 +48,8 @@ class Stage(models.Model):
     TIPO_BATTLEFIELD = 2
     TIPO_OMEGA = 3
     
-    TIPO_NORMAL_DESCRICAO = 'Normal'
-    TIPO_BATTLEFIELD_DESCRICAO = 'Battlefield'
+    TIPO_NORMAL_DESCRICAO = 'Padrão'
+    TIPO_BATTLEFIELD_DESCRICAO = 'BF'
     TIPO_OMEGA_DESCRICAO = 'Omega'
     
     ESCOLHAS_MODELO = [(TIPO_NORMAL,TIPO_NORMAL_DESCRICAO), 
@@ -82,5 +83,6 @@ class RegistroFerias(models.Model):
     data_fim = models.DateField(u'Fim das férias')
      
     class Meta():
+        verbose_name_plural = 'registros de férias'
         unique_together = (('jogador', 'data_inicio'), ('jogador', 'data_fim'))
         

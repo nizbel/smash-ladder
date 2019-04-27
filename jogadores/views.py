@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from jogadores.forms import JogadorForm
 from jogadores.models import Jogador
+from ladder.models import DesafioLadder
 
 
 def detalhar_jogador(request, username):
@@ -17,11 +18,24 @@ def detalhar_jogador(request, username):
     
     jogador.is_de_ferias = jogador.de_ferias_na_data(timezone.now().date())
     
-    return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador})
+    # Detalhar resultados de desafios do jogador
+    desafios = {}
+    desafios_feitos = list(DesafioLadder.objects.filter(desafiante=jogador, admin_validador__isnull=False))
+    desafios_recebidos = list(DesafioLadder.objects.filter(desafiado=jogador, admin_validador__isnull=False))
+    
+    desafios['feitos'] = len(desafios_feitos)
+    desafios['recebidos'] = len(desafios_recebidos)
+    desafios['vitorias'] = len([vitoria for vitoria in desafios_feitos if vitoria.score_desafiante > vitoria.score_desafiado]) \
+        + len([vitoria for vitoria in desafios_recebidos if vitoria.score_desafiante < vitoria.score_desafiado])
+    desafios['derrotas'] = len([derrota for derrota in desafios_feitos if derrota.score_desafiante < derrota.score_desafiado]) \
+        + len([derrota for derrota in desafios_recebidos if derrota.score_desafiante > derrota.score_desafiado]) \
+    
+    
+    return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
 def listar_jogadores(request):
     """Lista todos os jogadores"""
-    jogadores = Jogador.objects.all()
+    jogadores = Jogador.objects.all().select_related('user')
     
     return render(request, 'jogadores/listar_jogadores.html', {'jogadores': list(jogadores)})
 

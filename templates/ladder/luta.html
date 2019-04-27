@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Luta {{ desafio_ladder.id  }}{% endblock %}
+
+{% block page_header %}Luta{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 offset-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Detalhes
+		  	</div>
+		  	<div class="card-body col-12">
+				{% if luta.lutaladder.desafio_ladder.is_cancelado %}
+					<div class="col-12 alert alert-danger card-text">
+						Luta cancelada por {{ luta.lutaladder.desafio_ladder.cancelamentodesafioladder.jogador.nick }} em 
+						{{ luta.lutaladder.desafio_ladder.cancelamentodesafioladder.data_hora|date:"d/m/Y H:i" }}
+					</div>
+				{% endif %}
+		  		<div class="row">
+					
+		  			{% for participante in participantes %}
+			  		<div class="col-6">
+					    <h6 class="card-title">Jogador {{ forloop.counter }} 
+					    {% if participante.jogador == luta.ganhador %}<i class="fas fa-trophy" title="Ganhador"></i>{% endif %}</h6>
+					    <h6 class="card-title">
+						    <a href="{% url 'jogadores:detalhar_jogador' participante.jogador.user.username %}">
+						    	<strong>{{ participante.jogador.nick }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Personagem {{ forloop.counter }}</h6>
+					    <h6 class="card-title">
+					    	{% if participante.personagem %}
+					    		<img class="icone-personagem mt-n1" src="{% static participante.personagem.icone %}"/>
+				    		{% endif %}
+					    	<strong>{{ participante.personagem|default:"Indefinido" }}</strong></h6>
+				    </div>
+				    {% endfor %}
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Data</h6>
+					    <h6 class="card-title"><strong>{{ luta.lutaladder.desafio_ladder.data_hora|date:"d/m/Y" }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Stage</h6>
+					    <h6 class="card-title"><strong>{{ luta.stage|default:"Indefinido" }}</strong></h6>
+				    </div>
+				    
+				    <div class="col-6">
+					    <h6 class="card-title">Desafio</h6>
+					    <h6 class="card-title">
+					    	<a href="{% url 'ladder:detalhar_desafio_ladder' luta.lutaladder.desafio_ladder_id %}">
+					    		<strong>Desafio {{ luta.lutaladder.desafio_ladder_id }}</strong></h6>
+				    		</a>
+			    		</h6
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+{% endblock %}
