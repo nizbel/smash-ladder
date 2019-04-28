@@ -36,6 +36,10 @@ Ladder atual
 					{% if posicao_ladder.jogador.nick in destaques.jogadores_streak_vitorias %}
 						<i title="On fire! Sequência de {{ posicao_ladder.jogador.streak }} vitórias" class="fas fa-fire-alt"></i>
 					{% endif %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.jogadores_5_defesas %}
+						<i title="{{ posicao_ladder.jogador.qtd_defesas }} defesas de posição com sucesso!" class="fas fa-shield-alt"></i>
+					{% endif %}
 					</div>
 				{% endif %}
 				
