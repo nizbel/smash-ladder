@@ -165,11 +165,22 @@ def detalhar_ladder_atual(request):
                 jogadores[desafio.desafiado.nick] += 1
                 jogadores[desafio.desafiante.nick] = 0
         
-        # Destacar quem tiver mais de 5 vitórias
+        # Destacar quem tiver mais de 5 vitórias consecutivas
         destaques['jogadores_streak_vitorias'] = [key for key, value in jogadores.items() if value >= 5]
         for posicao_ladder in ladder:
             if posicao_ladder.jogador.nick in destaques['jogadores_streak_vitorias']:
                 posicao_ladder.jogador.streak = jogadores[posicao_ladder.jogador.nick]
+                
+        # Verificar jogadores que fizeram 5 defesas com sucesso
+        defesas_sucesso_5 = dict(DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
+             data_hora__month=data_atual.month, data_hora__year=data_atual.year, score_desafiado=3).values('desafiado').order_by('desafiado') \
+             .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
+        
+        # Destacar jogadores que fizeram 5 defesas com sucesso
+        destaques['jogadores_5_defesas'] = [key for key, value in defesas_sucesso_5.items()]
+        for posicao_ladder in ladder:
+            if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
+                posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
                 
         # Marcar todos os jogadores com destaques
         for posicao_ladder in ladder:
