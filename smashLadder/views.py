@@ -7,9 +7,9 @@ from ladder.models import PosicaoLadder, DesafioLadder
 def home(request):
     """Detalhar regras da ladder"""
     
-    top_10_ladder = PosicaoLadder.objects.filter(posicao__lte=10).order_by('posicao')
+    top_10_ladder = PosicaoLadder.objects.filter(posicao__lte=10).order_by('posicao').select_related('jogador__user')
     
-    ultimos_desafios_ladder = DesafioLadder.objects.all().order_by('-data_hora')[:4]
+    ultimos_desafios_ladder = DesafioLadder.objects.all().order_by('-data_hora').select_related('desafiante', 'desafiado', 'cancelamentodesafioladder')[:4]
     
     if request.user.is_authenticated:
         for desafio in ultimos_desafios_ladder:
