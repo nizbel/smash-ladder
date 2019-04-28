@@ -30,6 +30,7 @@ def detalhar_jogador(request, username):
     desafios['derrotas'] = len([derrota for derrota in desafios_feitos if derrota.score_desafiante < derrota.score_desafiado]) \
         + len([derrota for derrota in desafios_recebidos if derrota.score_desafiante > derrota.score_desafiado]) \
     
+    jogador.percentual_vitorias = desafios['vitorias'] * 100 / (desafios['vitorias'] + desafios['derrotas'])
     
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
