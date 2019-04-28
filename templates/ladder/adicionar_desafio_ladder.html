@@ -36,6 +36,7 @@ Adicionar desafio
 $(document).ready(function(){
 	$('select').select2();
 	$('.data-hora').mask('00/00/0000 00:00');
+	$('.data-hora').attr("placeholder", "DD/MM/AAAA hh:mm");
 });
 </script>
 {% endblock %}
