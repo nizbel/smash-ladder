@@ -73,6 +73,14 @@ class Stage(models.Model):
                 return opcao[1]
         
         raise ValueError(f'{self.nome} tem modelo indefinido')
+    
+    @property
+    def valida_para_ladder(self):
+        return hasattr(self, 'stagevalidaladder')
+    
+class StageValidaLadder(models.Model):
+    """Estágios válidos para desafios de ladder"""
+    stage = models.OneToOneField('Stage', on_delete=models.CASCADE)
 
 class RegistroFerias(models.Model):
     """Registro de férias de jogador"""

@@ -5,6 +5,10 @@
 
 {% block page_header %}{{ jogador.nick }}{% endblock %}
 
+{% block extra_header %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
@@ -91,4 +95,60 @@
 		  	</div>
 		</div>
 	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Histórico para % de vitórias
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+		  			<div class="col-12">
+						<canvas id="myChart" width="auto"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js"></script>
+
+<script type="text/javascript">
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+    	labels: [{% for item in jogador.grafico_percentual_vitorias %}'',{% endfor %}],
+        datasets: [{
+            label: '% de vitórias',
+            data: {{ jogador.grafico_percentual_vitorias }},
+            borderWidth: 0,
+            lineTension: 0
+        }]
+    },
+    options: {
+    	legend: {
+    		display: false
+		},
+        scales: {
+            xAxes: [{
+            	scaleLabel: {
+	            	display: true,
+	                labelString: 'Desafios'
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true,
+                    callback: function(value, index, values) {
+                        return value + '%';
+                    }
+                }
+            }]
+        }
+    }
+});
+</script>
 {% endblock %}
