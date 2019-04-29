@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- {{ stage.nome }} ({{ stage.descricao_modelo }}){% endblock %}
+
+{% block page_header %}{{ stage.nome }} ({{ stage.descricao_modelo }}){% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Nome</h6>
+					    <h6 class="card-title">
+						    <strong>{{ stage.nome }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Modelo</h6>
+					    <h6 class="card-title">
+						    <strong>{{ stage.descricao_modelo }}</strong>
+					    </h6>
+				    </div>
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Válida p/ Ladder</h6>
+					    <h6 class="card-title"><strong>{{ stage.valida_para_torneio|yesno:'Sim,Não,Não' }}</strong></h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	{% if stage.qtd_lutas > 0 %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Lutas
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Quantidade</h6>
+					    <h6 class="card-title">
+						    <strong>{{ stage.qtd_lutas }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Maior ganhador</h6>
+					    <h6 class="card-title">
+					    	{% if stage.maior_ganhador %}
+						    <a href="{% url 'jogadores:detalhar_jogador' stage.maior_ganhador.user.username %}">
+						    	<strong>{{ stage.maior_ganhador.nick }}</strong>
+					    	</a>
+					    	{% else %}
+					    	<strong>Indefinido</strong>
+					    	{% endif %}
+					    </h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	{% endif %}
+{% endblock %}

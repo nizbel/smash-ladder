@@ -45,6 +45,19 @@
 	  							<a class="dropdown-item" href="{% url 'jogadores:listar_jogadores' %}">Ver jogadores</a>
 		        			</div>
 		        		</li>
+		        		
+		        		<li class="nav-item dropdown {% if 'stages' in request.resolver_match.namespace %}active{% endif %}"">
+			        		<a class="nav-link dropdown-toggle" href="#" id="stagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			          			Stages
+			        		</a>
+			        		<div class="dropdown-menu" aria-labelledby="stagesDropdown">
+	  							<a class="dropdown-item" href="{% url 'stages:editar_stages_validas' %}">Editar stages válidas p/ Ladder</a>
+	  							<a class="dropdown-item" href="{% url 'stages:listar_stages' %}">Ver stages</a>
+	  							<a class="dropdown-item" href="{% url 'stages:listar_stages_validas' %}">Ver stages válidas p/ Ladder</a>
+	  							
+		        			</div>
+		        		</li>
+		        		
 		        		<li class="nav-item dropdown 
 		        		{% if 'ladder' in request.resolver_match.namespace and not request.resolver_match.url_name == 'detalhar_regras_ladder' %}
 		        		active
@@ -56,7 +69,7 @@
 					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a>
 					  			<a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Listar desafios a validar</a>
+					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a>
 		        			</div>
 		        		</li>
 			      		<li class="nav-item {% if request.resolver_match.url_name == 'detalhar_regras_ladder' %}active{% endif %}">

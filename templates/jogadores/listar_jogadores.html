@@ -7,13 +7,11 @@ Jogadores
 {% endblock %}
 
 {% block content %}	
-	<div class="col-12">
-		<div class="row">
-			{% for jogador in jogadores %}
-			<div class="col-4 col-md-1 text-center py-3">
-				<span><a href="{% url 'jogadores:detalhar_jogador' jogador.user.username %}">{{ jogador.nick }}</a></span>
-			</div>
-			{% endfor %}
-		</div>
+	{% for jogador in jogadores %}
+	<div class="card col-6 col-md-1">
+	  	<div class="card-body text-center">
+	  		<p class="card-text"><a href="{% url 'jogadores:detalhar_jogador' jogador.user.username %}">{{ jogador.nick }}</a></p>
+	  	</div>
 	</div>
+	{% endfor %}
 {% endblock %}

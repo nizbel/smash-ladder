@@ -6,9 +6,10 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem
+from jogadores.models import Jogador, Personagem, Stage, StageValidaLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
-    criar_personagens_teste, JOGADORES_TESTE
+    criar_personagens_teste, JOGADORES_TESTE, criar_stages_teste,\
+    criar_stage_teste
 from ladder.models import DesafioLadder
 from ladder.tests.utils_teste import LADDER_FORMATO_TESTE
 from smashLadder import settings
@@ -139,6 +140,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.context['desafios']['recebidos'], 0)
         self.assertEqual(response.context['desafios']['vitorias'], 0)
         self.assertEqual(response.context['desafios']['derrotas'], 0)
+        self.assertEqual(response.context['jogador'].percentual_vitorias, 0)
         
     def test_dados_desafio_jogador_com_desafios(self):
         """Testa dados de desafios de jogador com desafios"""
@@ -149,6 +151,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.context['desafios']['recebidos'], 4)
         self.assertEqual(response.context['desafios']['vitorias'], 3)
         self.assertEqual(response.context['desafios']['derrotas'], 2)
+        self.assertEqual(response.context['jogador'].percentual_vitorias, 60)
         
 
 class ViewEditarJogadorTestCase(TestCase):
@@ -246,3 +249,83 @@ class ViewEditarJogadorTestCase(TestCase):
         self.assertEqual(self.jogador_2.admin, False)
         self.assertEqual(self.jogador_2.main, marth)
         self.assertEqual(self.jogador_2.nick, 'teets2')
+        
+class ViewListarStagesTestCase(TestCase):
+    """Testes para a view de listar stages"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewListarStagesTestCase, cls).setUpTestData()
+        criar_stages_teste()
+        criar_jogadores_teste(['sena',])
+        
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
+        
+        cls.stages = list(Stage.objects.all().order_by('nome', 'modelo'))
+        
+        # Definir 2 stages como válidas para torneio
+        StageValidaLadder.objects.create(stage=Stage.objects.get(nome='Final Destination', modelo=Stage.TIPO_NORMAL))
+        StageValidaLadder.objects.create(stage=Stage.objects.get(nome='Dreamland', modelo=Stage.TIPO_NORMAL))
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de listar stages sem logar"""
+        response = self.client.get(reverse('stages:listar_stages'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('stages', response.context)
+        self.assertEqual(response.context['stages'], self.stages)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de listar stages logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('stages:listar_stages'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('stages', response.context)
+        self.assertEqual(response.context['stages'], self.stages)
+        
+    def test_indicar_stages_validas_ladder(self):
+        """Verificar se página indica stages válidas para ladder"""
+        response = self.client.get(reverse('stages:listar_stages'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Válida para Ladder', 2)
+        
+    def test_ver_apenas_stages_validas_ladder(self):
+        """Verificar se a página traz apenas stages válidas caso seja chamada pela URL de ladder"""
+        response = self.client.get(reverse('stages:listar_stages_validas'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['stages']), 2)
+        self.assertContains(response, 'Válida para Ladder', 2)
+        
+class ViewDetalharStageTestCase(TestCase):
+    """Testes para a view de detalhar stage"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewDetalharStageTestCase, cls).setUpTestData()
+        cls.stage = criar_stage_teste()
+        criar_jogadores_teste(['sena',])
+        
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de detalhar stage sem logar"""
+        response = self.client.get(reverse('stages:detalhar_stage_por_id', kwargs={'stage_id': self.stage.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('stage', response.context)
+        self.assertEqual(response.context['stage'], self.stage)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de detalhar stage logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('stages:detalhar_stage_por_id', kwargs={'stage_id': self.stage.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('stage', response.context)
+        self.assertEqual(response.context['stage'], self.stage)
+        
+    def test_indicar_stages_validas_torneio(self):
+        """Verificar se página indica stage válida para ladder"""
+        # Validar para ladder
+        StageValidaLadder.objects.create(stage=self.stage)
+        
+        response = self.client.get(reverse('stages:detalhar_stage_por_id', kwargs={'stage_id': self.stage.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['stage'].valida_para_ladder)
+        
+        
