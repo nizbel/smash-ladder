@@ -26,13 +26,14 @@ class JogadorForm(ModelForm):
         preparar_classes_form(self)
 
 class StagesValidasForm(Form):
-    stages_validas = forms.MultipleChoiceField(choices=[(stage.id, f'{stage.nome} ({stage.descricao_modelo})') for stage in Stage.objects.all()])
+    stages_validas = forms.MultipleChoiceField()
     
     def __init__(self,*args,**kwargs):
         super(StagesValidasForm,self).__init__(*args,**kwargs)
         print('Inicial', self.fields['stages_validas'].initial, self.initial)
-#         self.fields['stages_validas'].initial = Stage.objects.filter(stagevalidaladder__isnull=False).values_list('id', flat=True)
         self.fields['stages_validas'].label = 'Stages válidas para Ladder'
+        self.fields['stages_validas'].choices = [(stage.id, f'{stage.nome} ({stage.descricao_modelo})') for stage in Stage.objects.all()]
+        
         self.fields['stages_validas'].widget.attrs.update({
             'class': 'form-control col-12'
         })

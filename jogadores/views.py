@@ -39,7 +39,8 @@ def detalhar_jogador(request, username):
     jogador.grafico_percentual_vitorias = list()
     qtd_vitorias = 0
     qtd_desafios = 0
-    for desafio in DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador), cancelamentodesafioladder__isnull=True):
+    for desafio in DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador), cancelamentodesafioladder__isnull=True) \
+            .order_by('data_hora'):
         if desafio.desafiante == jogador and desafio.score_desafiante > desafio.score_desafiado:
             qtd_vitorias += 1
         elif desafio.desafiado == jogador and desafio.score_desafiante < desafio.score_desafiado:

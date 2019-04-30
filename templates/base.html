@@ -51,7 +51,9 @@
 			          			Stages
 			        		</a>
 			        		<div class="dropdown-menu" aria-labelledby="stagesDropdown">
-	  							<a class="dropdown-item" href="{% url 'stages:editar_stages_validas' %}">Editar stages válidas p/ Ladder</a>
+	  							{% if request.user.jogador.admin %}
+	  								<a class="dropdown-item" href="{% url 'stages:editar_stages_validas' %}">Editar stages válidas p/ Ladder</a>
+  								{% endif %}
 	  							<a class="dropdown-item" href="{% url 'stages:listar_stages' %}">Ver stages</a>
 	  							<a class="dropdown-item" href="{% url 'stages:listar_stages_validas' %}">Ver stages válidas p/ Ladder</a>
 	  							
