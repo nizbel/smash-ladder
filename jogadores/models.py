@@ -2,6 +2,8 @@
 """Modelos usados para guardar jogadores"""
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
+
 from ladder.models import DesafioLadder
 
 
@@ -20,6 +22,10 @@ class Jogador(models.Model):
         verbose_name_plural = 'jogadores'
         unique_together = ('nick',)
         ordering = ('nick',)
+        
+    def is_de_ferias(self):
+        """Verifica se jogador está de férias"""
+        return self.de_ferias_na_data(timezone.now().date())
         
     def de_ferias_na_data(self, data):
         """Verifica se jogador está de férias na data apontada"""

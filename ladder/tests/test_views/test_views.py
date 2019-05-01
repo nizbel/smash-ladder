@@ -8,7 +8,7 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem
+from jogadores.models import Jogador, Personagem, RegistroFerias
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, criar_stage_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, JogadorLuta, \
@@ -960,12 +960,16 @@ class ViewDetalharDesafioLadderTestCase(TestCase):
 
 class ViewDetalharLadderAtualTestCase(TestCase):
     """Testes para a view de listar jogadores"""
+    # TODO adicionar testes para destaques
     @classmethod
     def setUpTestData(cls):
         super(ViewDetalharLadderAtualTestCase, cls).setUpTestData()
         cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
         
         criar_jogadores_teste()
+        
+        cls.sena = Jogador.objects.get(nick='sena')
+        cls.teets = Jogador.objects.get(nick='teets')
         
         criar_ladder_teste()
         
@@ -991,12 +995,31 @@ class ViewDetalharLadderAtualTestCase(TestCase):
             self.assertContains(response, nick)
         
     def test_ordem_ladder(self):
+        """Testar ordem da lista, as mais recentes devem vir primeiro"""
         response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
         # Testar posição
         posicao = 1
         for jogador in response.context['ladder']:
             self.assertEqual(jogador.posicao, posicao)
             posicao += 1
+            
+    def test_jogador_de_ferias(self):
+        """Testa se jogadores de férias estão com a classe para férias"""
+        # Colocar 2 jogadores de férias
+        RegistroFerias.objects.create(jogador=self.sena, data_inicio=timezone.now() - datetime.timedelta(days=5), 
+                                      data_fim=timezone.now() + datetime.timedelta(days=5))
+        RegistroFerias.objects.create(jogador=self.teets, data_inicio=timezone.now() - datetime.timedelta(days=5), 
+                                      data_fim=timezone.now() + datetime.timedelta(days=5))
+        
+        response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
+        self.assertContains(response, 'title="Jogador está de férias"', 2)
+        for jogador_posicao in response.context['ladder']:
+            if jogador_posicao.jogador in [self.teets, self.sena]:
+                self.assertTrue(jogador_posicao.jogador.is_de_ferias())
+            else:
+                self.assertFalse(jogador_posicao.jogador.is_de_ferias())
+        
+        
         
 class ViewListarHistoricoLadderTestCase(TestCase):
     """Testes para a view de listar históricos de ladder"""
