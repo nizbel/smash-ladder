@@ -84,3 +84,12 @@ ul.ladder li:nth-child(3) .posicao-ladder {
 	font-size: 24px;
 	margin: -10% 0 -10% 0;
 }
+
+ul.ladder li {
+	background-image: linear-gradient(to right, #cecccc, #fff)
+}
+
+ul.ladder li.ladder-ferias {
+	#background-color: #cecccc;
+	background-image: linear-gradient(to right, #9d6381, #fff)
+}

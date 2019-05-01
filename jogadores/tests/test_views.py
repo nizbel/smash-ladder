@@ -6,7 +6,8 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem, Stage, StageValidaLadder
+from jogadores.models import Jogador, Personagem, Stage, StageValidaLadder,\
+    RegistroFerias
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, JOGADORES_TESTE, criar_stages_teste,\
     criar_stage_teste
@@ -152,6 +153,16 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.context['desafios']['vitorias'], 3)
         self.assertEqual(response.context['desafios']['derrotas'], 2)
         self.assertEqual(response.context['jogador'].percentual_vitorias, 60)
+        
+    def test_jogador_de_ferias(self):
+        """Testa mensagem de jogador de férias"""
+        # Colocar jogador de férias
+        RegistroFerias.objects.create(jogador=self.jogador_2, data_inicio=timezone.now() - datetime.timedelta(days=5), 
+                                      data_fim=timezone.now() + datetime.timedelta(days=5))
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Jogador está de férias')
         
 
 class ViewEditarJogadorTestCase(TestCase):

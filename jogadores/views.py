@@ -19,8 +19,6 @@ def detalhar_jogador(request, username):
     """Detalhar um jogador específico pelo nick"""
     jogador = get_object_or_404(Jogador, user__username=username)
     
-    jogador.is_de_ferias = jogador.de_ferias_na_data(timezone.now().date())
-    
     # Detalhar resultados de desafios do jogador
     desafios = {}
     desafios_feitos = list(DesafioLadder.objects.filter(desafiante=jogador, admin_validador__isnull=False))
