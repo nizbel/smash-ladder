@@ -40,7 +40,7 @@ Hall da Fama
 	      			<div class="d-flex justify-content-center py-1">
 	        			<ul class="list-group list-group-horizontal-md">
 				        {% for ladder in ladder_ano.list %}
-							<li class="list-group-item text-center">
+							<li class="list-group-item text-center border-0">
 								<h5>
 									<a href="{% url 'ladder:detalhar_ladder_historico' ladder.ano ladder.mes %}">
 										{{ ladder.mes }}/{{ ladder.ano }}
