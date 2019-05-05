@@ -23,15 +23,13 @@ class Command(BaseCommand):
         
         
 def preparar_backup():
-    str_tabelas = buscar_tabelas_string()
-    
     arquivo_dump = 'db_dump.sh'
     arquivo_base = 'db_dump.txt'
 
     # Alterar db_dump.sh correspondente
     with open(arquivo_dump, 'w+') as arquivo:
 
-        arquivo.write(render_to_string(arquivo_base, {'tabelas': str_tabelas, 'nome_db': settings.DATABASES['default']['NAME'],
+        arquivo.write(render_to_string(arquivo_base, {'nome_db': settings.DATABASES['default']['NAME'],
                                                       'user': settings.DATABASES['default']['USER'], 
                                                       'host': settings.DATABASES['default']['HOST'], 'project_path': settings.BASE_DIR}))
         
@@ -48,14 +46,6 @@ def preparar_backup():
             for nome_arquivo in [nome for nome in nomes_arquivo if pattern.match(nome)]:
                 backup(nome_arquivo)
                 
-def buscar_tabelas_string():
-    cursor = connection.cursor()
-    lista_tabelas = connection.introspection.get_table_list(cursor)
-    lista_tabelas = [tabela.name for tabela in lista_tabelas if tabela.type == 't']
-    str_lista = ['--table "public.%s"' % (tabela) for tabela in sorted(lista_tabelas)]
-    str_lista = ' '.join(str_lista)
-    return str_lista
-
 def backup(file_name):
     """Envia para o Dropbox"""
     dbx = dropbox.Dropbox(DROPBOX_OAUTH2_TOKEN)
