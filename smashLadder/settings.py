@@ -91,7 +91,8 @@ DATABASES = {
         'NAME': 'smash-ladder',
         'USER': 'smash',
         'PASSWORD': 'smash',
-        'HOST': 'localhost',
+#         'HOST': 'localhost',
+        'HOST': '172.64.0.64',
         'PORT': 5432
     }
 }

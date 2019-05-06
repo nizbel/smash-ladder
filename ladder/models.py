@@ -49,14 +49,16 @@ class DesafioLadder(models.Model):
     desafiante = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='desafiante')
     desafiado = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='desafiado')
     desafio_coringa = models.BooleanField(u'É desafio coringa?')
-    score_desafiante = models.SmallIntegerField(u'Vitórias do desafiante', validators=[MinValueValidator(0), MaxValueValidator(3)])
-    score_desafiado = models.SmallIntegerField(u'Vitórias do desafiado', validators=[MinValueValidator(0), MaxValueValidator(3)])
+    score_desafiante = models.SmallIntegerField(u'Vitórias do desafiante', validators=[MinValueValidator(0), MaxValueValidator(SCORE_VITORIA)])
+    score_desafiado = models.SmallIntegerField(u'Vitórias do desafiado', validators=[MinValueValidator(0), MaxValueValidator(SCORE_VITORIA)])
     admin_validador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, blank=True, null=True, related_name='admin_validador')
     data_hora = models.DateTimeField(u'Data e hora do resultado')
     adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='criador_desafio')
+    posicao_desafiante = models.SmallIntegerField(u'Posição do desafiante', validators=[MinValueValidator(1)])
+    posicao_desafiado = models.SmallIntegerField(u'Posição do desafiado', validators=[MinValueValidator(1)])
     
     class Meta():
-        unique_together = ('desafiante', 'desafiado', 'data_hora')
+        unique_together = (('desafiante', 'data_hora'), ('desafiado', 'data_hora'))
     
     @property
     def lutas(self):
