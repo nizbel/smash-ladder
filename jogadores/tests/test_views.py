@@ -164,6 +164,22 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Jogador está de férias')
         
+    def test_jogador_sem_destaques(self):
+        """Testa detalhamento de jogador sem destaques"""
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertNotContains(response, 'Destaques')
+        
+    def test_jogador_com_destaques(self):
+        """Testa detalhamento de jogador sem destaques"""
+        # TODO Adicionar destaques para o jogador
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertContains(response, 'Destaques')
+        
 
 class ViewEditarJogadorTestCase(TestCase):
     """Testes para a view de detalhar jogador"""
