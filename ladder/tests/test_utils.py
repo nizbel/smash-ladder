@@ -80,6 +80,9 @@ class AlterarLadderTestCase(TestCase):
                                                                           horario_atual.replace(day=15), False, cls.jogador_pos_1)
         cls.desafio_ladder_novo_entrante_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 0, 3, 
                                                                           horario_atual.replace(day=5), False, cls.jogador_pos_1)
+                                                                          
+        # Criar outro novo entrante
+        cls.new_2 = criar_jogador_teste('new_2')
         
     def test_alterar_ladder_atual_vitoria(self):
         """Testa alterar ladder atual por um desafio de vitória"""
@@ -249,6 +252,167 @@ class AlterarLadderTestCase(TestCase):
             
         # Novo entrante deve estar na 11
         self.assertIn((self.new.id, 11), ladder_apos)
+        
+    def test_alterar_ladder_desafio_anterior(self):
+        """Testa alteração de ladder com desafio anterior a último validado"""
+        # Preparar desafios
+        # Jogador posição 3 ganhou de jogador posição 2
+        desafio_anterior = self.desafio_ladder
+        # Jogador posição 3 ganhou de jogador posição 1
+        desafio_posterior = self.desafio_ladder_historico
+        
+        # Alterar ladder com desafio posterior
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar que resultados indicam queda de jogadores 2 e 1
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 3)
+        self.assertIn({'jogador': self.jogador_pos_1.id, 'alteracao_posicao': 2}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_2.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_3.id, 'alteracao_posicao': -2}, resultados)
+        
+        self.assertEqual(desafio_posterior.posicao_desafiante, 3)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 1)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        alterar_ladder(desafio_anterior)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes, ladder_apos):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_1.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_3.id, 'alteracao_posicao': -1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 3)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 2)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 2)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 1)
+        
+    def test_alterar_ladder_desafio_anterior_novo_entrante(self):
+        """Testa alteração de ladder com desafio anterior a último validado com novo entrante"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio_anterior = self.desafio_ladder_novo_entrante_vitoria 
+        desafio_anterior.data_hora = timezone.now() - datetime.timedelta(days=5)
+        desafio_anterior.save()
+        
+        desafio_posterior = self.desafio_ladder
+        desafio_posterior.desafiante = self.jogador_pos_10
+        desafio_posterior.desafiado = self.jogador_pos_9
+        desafio_posterior.adicionado_por = self.jogador_pos_10
+        desafio_posterior.save()
+        
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar resultados
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': -1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_9.id, 'alteracao_posicao': 1}, resultados)
+        
+        # Verificar posições no desafio
+        self.assertEqual(desafio_posterior.posicao_desafiante, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 9)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        alterar_ladder(desafio_anterior)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve aumentar 1 posição
+        self.assertEqual(len(ladder_antes) + 1, len(ladder_apos))
+            
+        # Novo entrante está em décimo primeiro
+        # Outras posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[:10], ladder_apos[:10]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante deve estar na 11
+        self.assertIn((self.new.id, 11), ladder_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 3)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': -2}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_9.id, 'alteracao_posicao': 2}, resultados)
+        self.assertIn({'jogador': self.new.id, 'alteracao_posicao': 1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 9)
+        
+    def test_alterar_ladder_desafio_anterior_alterando_novo_entrante(self):
+        """Testa alteração de ladder para marcar entrada anterior para novo entrante"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio_anterior = self.desafio_ladder_novo_entrante_vitoria 
+        desafio_anterior.data_hora = timezone.now() - datetime.timedelta(days=5)
+        desafio_anterior.save()
+        
+        desafio_posterior = self.desafio_ladder
+        desafio_posterior.desafiante = self.new_2
+        desafio_posterior.desafiado = self.jogador_pos_10
+        desafio_posterior.adicionado_por = self.jogador_pos_10
+        desafio_posterior.save()
+        
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar resultados
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': -1}, resultados)
+        self.assertIn({'jogador': self.new_2.id, 'alteracao_posicao': 1}, resultados)
+        
+        # Verificar posições no desafio
+        self.assertEqual(desafio_posterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 10)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        alterar_ladder(desafio_anterior)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve aumentar 1 posição
+        self.assertEqual(len(ladder_antes) + 1, len(ladder_apos))
+            
+        # Outras posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[:9], ladder_apos[:9]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante 1 deve estar na 10
+        self.assertIn((self.new.id, 10), ladder_apos)
+        # Novo entrante 2 deve estar na 11
+        self.assertIn((self.new_2.id, 11), ladder_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafio_set.all().values('jogador', 'alteracao_posicao'):
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.new_2.id, 'alteracao_posicao': -1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 12)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 11)
 
 class RecalcularLadderTestCase(TestCase):
     """Testes para a função de recalcular ladder"""
