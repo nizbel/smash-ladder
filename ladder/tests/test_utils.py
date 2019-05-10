@@ -632,3 +632,203 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
                     verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
             else:
                 verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+
+class CopiarLadderTestCase(TestCase):
+    """Testes para a função que copia uma ladder em outra"""
+    @classmethod
+    def setUpTestData(cls):
+        super(CopiarLadderTestCase, cls).setUpTestData()
+        
+        criar_jogadores_teste()
+        
+        # Pegar objetos de jogador de acordo com sua posição
+        cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
+        cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva')
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena')
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad')
+        cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer')
+        cls.jogador_pos_6 = Jogador.objects.get(nick='frodo')
+        cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils')
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
+        cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
+        
+        # Criar ladders para verificar que adicionar desafio não as afeta
+        criar_ladder_teste()
+        
+        # Preparar mês anterior para histórico
+        data_atual = timezone.now().date()
+        cls.ano = data_atual.year
+        cls.mes = data_atual.month - 1
+        if cls.mes == 0:
+            cls.mes = 12
+            cls.ano -= 1
+        
+        criar_ladder_historico_teste(cls.ano, cls.mes)
+        
+    def test_copiar_registros_ladders_iguais(self):
+        """Testa copiar registros entre ladders iguais"""
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes, ladder_destino_depois):
+            self.assertEqual(registro_antes, registro_depois)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem, registro_depois)
+    
+    def test_copiar_registros_mesmos_jogadores(self):
+        """Testa copiar registros entre ladders com mesmos jogadores porém posições diferentes"""
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        # Alterar posições na ladder original, jogador 5 vai parar posição 3, 3 para 4 e 4 para 5
+        jogador_3 = ladder_destino.get(posicao=3)
+        jogador_4 = ladder_destino.get(posicao=4)
+        jogador_5 = ladder_destino.get(posicao=5)
+        
+        # Remover posição para poder atualizar
+        jogador_5.posicao = 0
+        jogador_5.save()
+        
+        jogador_4.posicao = 5
+        jogador_4.save()
+        jogador_3.posicao = 4
+        jogador_3.save()
+        jogador_5.posicao = 3
+        jogador_5.save()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        # Posições 1 e 2 devem estar iguais
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:2], ladder_destino_depois[:2]):
+            self.assertEqual(registro_antes, registro_depois)
+        
+        # Posições 3 a 5 devem estar diferentes
+        for registro_antes, registro_depois in zip(ladder_destino_antes[2:5], ladder_destino_depois[2:5]):
+            self.assertNotEqual(registro_antes, registro_depois)
+            
+        # Da posição 6 em diante deve estar igual
+        for registro_antes, registro_depois in zip(ladder_destino_antes[5:], ladder_destino_depois[5:]):
+            self.assertEqual(registro_antes, registro_depois)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem, registro_depois)
+        
+    def test_copiar_registros_para_historico(self):
+        """Testa copiar registros para uma ladder de histórico"""
+        ladder_destino = HistoricoLadder.objects.all()
+        ladder_origem = PosicaoLadder.objects.all()
+        
+        # Alterar posições na ladder original, jogador 5 vai parar posição 3, 3 para 4 e 4 para 5
+        jogador_3 = ladder_destino.get(posicao=3)
+        jogador_4 = ladder_destino.get(posicao=4)
+        jogador_5 = ladder_destino.get(posicao=5)
+        
+        # Remover posição para poder atualizar
+        jogador_5.posicao = 0
+        jogador_5.save()
+        
+        jogador_4.posicao = 5
+        jogador_4.save()
+        jogador_3.posicao = 4
+        jogador_3.save()
+        jogador_5.posicao = 3
+        jogador_5.save()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        # Posições 1 e 2 devem estar iguais
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:2], ladder_destino_depois[:2]):
+            self.assertEqual(registro_antes, registro_depois)
+        
+        # Posições 3 a 5 devem estar diferentes
+        for registro_antes, registro_depois in zip(ladder_destino_antes[2:5], ladder_destino_depois[2:5]):
+            self.assertNotEqual(registro_antes, registro_depois)
+            
+        # Da posição 6 em diante deve estar igual
+        for registro_antes, registro_depois in zip(ladder_destino_antes[5:], ladder_destino_depois[5:]):
+            self.assertEqual(registro_antes, registro_depois)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem, registro_depois)
+        
+    def test_erro_copiar_ladder_destino_vazia(self):
+        """Testa erro ao copiar para uma ladder que está vazia"""
+        # Apagar registros de ladder original
+        PosicaoLadder.objects.all().delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        with self.assertRaises(ValueError, 'Ladder de destino não pode estar vazia'):
+            copiar_ladder(ladder_destino, ladder_origem)
+        
+    def test_erro_copiar_ladder_origem_vazia(self):
+        """Testa erro ao copiar de uma ladder que está vazia"""
+        # Apagar registros de ladder de origem
+        HistoricoLadder.objects.all().delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        with self.assertRaises(ValueError, 'Ladder de origem não pode estar vazia'):
+            copiar_ladder(ladder_destino, ladder_origem)
+        
+    def test_copiar_ladder_origem_com_mais_registros(self):
+        """Testa copiar ladder com mais registros que destino"""
+        # Remover registros da ladder destino
+        PosicaoLadder.objects.filter(posicao__gte=9).delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_antes), 8)
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_depois), 10)
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:8], ladder_destino_depois[:8]):
+            self.assertEqual(registro_antes, registro_depois)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem, registro_depois)
+        
+    def test_copiar_ladder_origem_com_menos_registros(self):
+        """Testa copiar ladder com menos registros que destino"""
+        # Remover registros da ladder de origem
+        HistoricoLadder.objects.filter(posicao__gte=9).delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_antes), 10)
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_depois), 8)
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:8], ladder_destino_depois[:8]):
+            self.assertEqual(registro_antes, registro_depois)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem, registro_depois)
