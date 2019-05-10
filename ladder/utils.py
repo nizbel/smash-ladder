@@ -376,29 +376,35 @@ def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
     # Apagar lutas que não são mais válidas para desafio ladder
     Luta.objects.filter(lutaladder__desafio_ladder=desafio_ladder).exclude(id__in=lutas_validas_desafio_ladder).delete()
     
-def copiar_ladder(ladder_original, nova_ladder):
-    """Copia as posições de nova_ladder para ladder_original"""
+def copiar_ladder(ladder_destino, ladder_origem):
+    """Copia as posições de ladder de origem para ladder de destino"""
+    # Verifica se ladders não estão vazias
+    if len(ladder_destino) == 0:
+        raise ValueError('Ladder de destino não pode estar vazia')
+    if len(ladder_origem) == 0:
+        raise ValueError('Ladder de origem não pode estar vazia')
+    
     # Deixa as posições negativas para que não atrapalhem ao copiar
-    for posicao_orig in ladder_original:
-        posicao_orig.posicao = -posicao_ladder.posicao
-        posicao_orig.save()
+    for posicao_dest in ladder_destino:
+        posicao_dest.posicao = -posicao_dest.posicao
+        posicao_dest.save()
         
     # Copia posições
-    for posicao_nova in nova_ladder:
+    for posicao_orig in ladder_origem:
         # Buscar jogador na ladder original
-        for posicao_orig in ladder_original:
-            if posicao_nova.jogador_id == posicao_orig.jogador_id:
-                posicao_orig.posicao = posicao_nova.posicao
-                posicao_orig.save()
+        for posicao_dest in ladder_destino:
+            if posicao_orig.jogador_id == posicao_dest.jogador_id:
+                posicao_dest.posicao = posicao_orig.posicao
+                posicao_dest.save()
                 break
         else:
-            if nova_ladder.model is PosicaoLadder:
-                PosicaoLadder(jogador=posicao_nova.jogador, posicao=posicao_nova.posicao)
-            elif nova_ladder.model is HistoricoLadder:
-                mes, ano = ladder_original[0].mes_ano_ladder
-                HistoricoLadder(jogador=posicao_nova.jogador, posicao=posicao_nova.posicao, mes=mes, ano=ano)
+            if ladder_destino.model is PosicaoLadder:
+                PosicaoLadder(jogador=posicao_orig.jogador, posicao=posicao_orig.posicao)
+            elif ladder_destino.model is HistoricoLadder:
+                mes, ano = ladder_destino[0].mes_ano_ladder
+                HistoricoLadder(jogador=posicao_orig.jogador, posicao=posicao_orig.posicao, mes=mes, ano=ano)
                 
     # Apaga posições que se mantiverem negativas (jogadores não presentes na ladder)
-    for posicao_orig in ladder_original:
-        if posicao_orig.posicao < 0:
-            posicao_orig.delete()
+    for posicao_dest in ladder_destino:
+        if posicao_dest.posicao < 0:
+            posicao_dest.delete()
