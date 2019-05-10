@@ -375,3 +375,30 @@ def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
     
     # Apagar lutas que não são mais válidas para desafio ladder
     Luta.objects.filter(lutaladder__desafio_ladder=desafio_ladder).exclude(id__in=lutas_validas_desafio_ladder).delete()
+    
+def copiar_ladder(ladder_original, nova_ladder):
+    """Copia as posições de nova_ladder para ladder_original"""
+    # Deixa as posições negativas para que não atrapalhem ao copiar
+    for posicao_orig in ladder_original:
+        posicao_orig.posicao = -posicao_ladder.posicao
+        posicao_orig.save()
+        
+    # Copia posições
+    for posicao_nova in nova_ladder:
+        # Buscar jogador na ladder original
+        for posicao_orig in ladder_original:
+            if posicao_nova.jogador_id == posicao_orig.jogador_id:
+                posicao_orig.posicao = posicao_nova.posicao
+                posicao_orig.save()
+                break
+        else:
+            if nova_ladder.model is PosicaoLadder:
+                PosicaoLadder(jogador=posicao_nova.jogador, posicao=posicao_nova.posicao)
+            elif nova_ladder.model is HistoricoLadder:
+                mes, ano = ladder_original[0].mes_ano_ladder
+                HistoricoLadder(jogador=posicao_nova.jogador, posicao=posicao_nova.posicao, mes=mes, ano=ano)
+                
+    # Apaga posições que se mantiverem negativas (jogadores não presentes na ladder)
+    for posicao_orig in ladder_original:
+        if posicao_orig.posicao < 0:
+            posicao_orig.delete()
