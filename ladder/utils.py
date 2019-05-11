@@ -45,11 +45,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
-#                 print('MÊS/ANO', mes, ano)
                 if mes != None and ano != None:
-#                     HistoricoLadder.objects.filter(ano=ano, mes__gt=mes).delete()
-#                     HistoricoLadder.objects.filter(ano__gt=ano).delete()
-#                     PosicaoLadder.objects.all().delete()
                     
                     # Desfazer desafios para ladder do desafio
                     desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).filter(data_hora__month=mes, 
@@ -61,15 +57,8 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                                                                list(HistoricoLadder.objects.filter(mes=mes, ano=ano)))
                     
                     copiar_ladder(HistoricoLadder.objects.filter(mes=mes, ano=ano).order_by('posicao'), ladder_resultante)
-#                     HistoricoLadder.objects.filter(mes=mes, ano=ano).delete()
-#                     for posicao_resultante in ladder_resultante:
-#                         nova_posicao = HistoricoLadder(posicao=posicao_resultante.posicao, jogador = posicao_resultante.jogador, 
-#                                                        mes=mes, ano=ano)
-#                         nova_posicao.save()
                     
                 else:
-#                     for _ in PosicaoLadder.objects.all().order_by('posicao'):
-#                         print(_)
                     desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora))
                     if desafio_ladder.is_cancelado():
                         desafios_a_desfazer.append(desafio_ladder)
@@ -77,14 +66,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     ladder_resultante = desfazer_lote_desafios(desafios_a_desfazer, list(PosicaoLadder.objects.all()))
                     
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), ladder_resultante)
-#                     PosicaoLadder.objects.all().delete()
-#                     for posicao_resultante in ladder_resultante:
-#                         nova_posicao = PosicaoLadder(posicao=posicao_resultante.posicao, jogador = posicao_resultante.jogador)
-#                         nova_posicao.save()
                             
-#                     for _ in PosicaoLadder.objects.all().order_by('posicao'):
-#                         print(_)
-                    
             elif informou_ladder_atual:
                 data_atual = timezone.localdate()
                 mes_atual = data_atual.month
@@ -93,7 +75,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 desafios = list(DesafioLadder.validados.filter(data_hora__month=mes_atual, data_hora__year=ano_atual) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
                 
-#                 PosicaoLadder.objects.all().delete()
                 
                 # Copiar último histórico ou inicial
                 if HistoricoLadder.objects.all().exists():
@@ -101,15 +82,9 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     mes, ano = HistoricoLadder.objects.all().order_by('-ano', '-mes').values_list('mes', 'ano')[0]
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), 
                                   HistoricoLadder.objects.filter(ano=ano, mes=mes).order_by('posicao'))
-#                     for posicao_ladder in HistoricoLadder.objects.filter(ano=ano, mes=mes).order_by('posicao'):
-#                         posicao_atual = PosicaoLadder(posicao=posicao_ladder.posicao, jogador=posicao_ladder.jogador)
-#                         posicao_atual.save()
                 else:
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), 
                                   InicioLadder.objects.all().order_by('posicao'))
-#                     for posicao_ladder in InicioLadder.objects.all().order_by('posicao'):
-#                         posicao_atual = PosicaoLadder(posicao=posicao_ladder.posicao, jogador=posicao_ladder.jogador)
-#                         posicao_atual.save()
                 
                 mes = None
                 ano = None
@@ -118,10 +93,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 data = timezone.make_aware(timezone.datetime(ano, mes, 1))
                 desafios = list(DesafioLadder.validados.filter(data_hora__gte=data) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
-                
-#                 HistoricoLadder.objects.filter(ano=ano, mes__gte=mes).delete()
-#                 HistoricoLadder.objects.filter(ano__gt=ano).delete()
-#                 PosicaoLadder.objects.all().delete()
                 
                 # Copiar último histórico ou inicial
                 mes_anterior = mes - 1
@@ -143,12 +114,9 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                                                         mes=mes, ano=ano)
                         posicao_atual.save()
             
-#             ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios).delete()
-            
             mes_atual = mes
             ano_atual = ano
             
-#             print(desafios)
             
             # Reescrever
             for desafio in desafios:
@@ -174,18 +142,10 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                                 # Gerar ladder atual
                                 copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), 
                                               HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'))
-#                                 for historico in HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'):
-#                                     posicao_ladder = PosicaoLadder(posicao=historico.posicao, 
-#                                                                      jogador=historico.jogador)
-#                                     posicao_ladder.save()
                             else:
                                 # Gerar histórico de ladder
                                 copiar_ladder(HistoricoLadder.objects.filter(mes=prox_mes, ano=prox_ano).order_by('posicao'), 
                                               HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'))
-#                                 for historico in HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'):
-#                                     novo_historico = HistoricoLadder(mes=prox_mes, ano=prox_ano, posicao=historico.posicao, 
-#                                                                      jogador=historico.jogador)
-#                                     novo_historico.save()
                                 
                             mes_atual = prox_mes
                             ano_atual = prox_ano
@@ -205,10 +165,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                             # Gerar histórico de ladder
                             copiar_ladder(HistoricoLadder.objects.filter(mes=prox_mes, ano=prox_ano).order_by('posicao'),
                                           HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'))
-#                             for historico in HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'):
-#                                 novo_historico = HistoricoLadder(mes=prox_mes, ano=prox_ano, posicao=historico.posicao, 
-#                                                                  jogador=historico.jogador)
-#                                 novo_historico.save()
                                 
                             mes_atual = prox_mes
                             ano_atual = prox_ano
@@ -244,18 +200,10 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     # Gerar ladder atual
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), 
                                   HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'))
-#                     for historico in HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'):
-#                         posicao_ladder = PosicaoLadder(posicao=historico.posicao, 
-#                                                          jogador=historico.jogador)
-#                         posicao_ladder.save()
                 else:
                     # Gerar histórico de ladder
                     copiar_ladder(HistoricoLadder.objects.filter(mes=prox_mes, ano=prox_ano).order_by('posicao'), 
                                   HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'))
-#                     for historico in HistoricoLadder.objects.filter(mes=mes_atual, ano=ano_atual).order_by('posicao'):
-#                         novo_historico = HistoricoLadder(mes=prox_mes, ano=prox_ano, posicao=historico.posicao, 
-#                                                          jogador=historico.jogador)
-#                         novo_historico.save()
                     
                 mes_atual = prox_mes
                 ano_atual = prox_ano
@@ -268,7 +216,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
 
 def alterar_ladder(desafio_ladder, verificar_posteriores=True):
     """Altera posições da ladder com base em um desafio de ladder"""
-#     print(desafio_ladder.data_hora)
     # Verifica se há desafios validados posteriores, se sim, recalcular ladder
     if verificar_posteriores:
         if DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).exclude(id=desafio_ladder.id).exists():
@@ -292,10 +239,7 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
             
         
         # Verificar posição do desafiado
-        # TODO alterar forma de buscar posição
-#         desafiado_esta_na_ladder = True
         posicao_desafiado = desafiado.posicao_em(desafio_ladder.data_hora)
-#         print('Posição desafiado', posicao_desafiado)
         if posicao_desafiado == 0:
             posicao_desafiado = gerar_posicao_novo_entrante(desafio_ladder, desafiado)
             
@@ -306,23 +250,8 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiado, jogador=desafiado)
             novo_entrante.save()
             
-#         if ladder_para_alterar.filter(jogador=desafiado).exists():
-#             posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
-#         else:
-#             # Se não está na ladder, posição do desafiado é atrás do último
-#             posicao_desafiado = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-# #             desafiado_esta_na_ladder = False
-#             
-#             # Criar posição desafiado
-#             if desafio_ladder.is_historico():
-#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiado, jogador=desafiado, mes=mes, ano=ano)
-#             else:
-#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiado, jogador=desafiado)
-#             novo_entrante.save()
-        
         # Verificar posição do desafiante
         posicao_desafiante = desafiante.posicao_em(desafio_ladder.data_hora)
-#         print('Posição desafiante vitoria', posicao_desafiante)
         if posicao_desafiante == 0:
             posicao_desafiante = gerar_posicao_novo_entrante(desafio_ladder, desafiante)
             # Criar posição desafiante
@@ -331,37 +260,6 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
             else:
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
             novo_entrante.save()
-        
-#         if ladder_para_alterar.filter(jogador=desafiante).exists():
-#             posicao_desafiante = ladder_para_alterar.get(jogador=desafiante).posicao
-#         else:
-#             # Se não está na ladder, posição do desafiante é atrás do desafiado
-# #             if desafiado_esta_na_ladder:
-#             posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-# #             else:
-# #                 posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 2
-#                 
-#             # Criar posição desafiante
-#             if desafio_ladder.is_historico():
-#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiante, jogador=desafiante, mes=mes, ano=ano)
-#             else:
-#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
-#             novo_entrante.save()
-        
-#         # Verificar se desafiante já estava na ladder
-#         if ladder_para_alterar.filter(jogador=desafiante).exists():
-#             posicao_desafiante = ladder_para_alterar.get(jogador=desafiante).posicao
-#         else:
-#             posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-#             
-#             # Criar posição desafiante
-#             if desafio_ladder.is_historico():
-#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiante, jogador=desafiante, mes=mes, ano=ano)
-#             else:
-#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
-#             novo_entrante.save()
-#             
-#         posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
         
         posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__lte=posicao_desafiante, 
                                                                 posicao__gte=posicao_desafiado).order_by('-posicao'))
@@ -398,9 +296,7 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
             ladder_para_alterar = PosicaoLadder.objects
         
         # Pegar posições de jogadores
-#         desafiado_esta_na_ladder = True
         posicao_desafiado = desafiado.posicao_em(desafio_ladder.data_hora)
-#         print('Posição desafiado', posicao_desafiado)
         if posicao_desafiado == 0:
             posicao_desafiado = gerar_posicao_novo_entrante(desafio_ladder, desafiado)
             # Criar posição desafiado
@@ -410,22 +306,7 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiado, jogador=desafiado)
             novo_entrante.save()
         
-#         if ladder_para_alterar.filter(jogador=desafiado).exists():
-#             posicao_desafiado = ladder_para_alterar.get(jogador=desafiado).posicao
-#         else:
-#             # Se não está na ladder, posição do desafiado é atrás do último
-#             posicao_desafiado = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-# #             desafiado_esta_na_ladder = False
-#             
-#             # Criar posição desafiado
-#             if desafio_ladder.is_historico():
-#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiado, jogador=desafiado, mes=mes, ano=ano)
-#             else:
-#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiado, jogador=desafiado)
-#             novo_entrante.save()
-            
         posicao_desafiante = desafiante.posicao_em(desafio_ladder.data_hora)
-#         print('Posição desafiante derrota', posicao_desafiante)
         if posicao_desafiante == 0:
             posicao_desafiante = gerar_posicao_novo_entrante(desafio_ladder, desafiante)
             # Criar posição desafiante
@@ -435,21 +316,6 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
             novo_entrante.save()
 
-#         if ladder_para_alterar.filter(jogador=desafiante).exists():
-#             posicao_desafiante = ladder_para_alterar.get(jogador=desafiante).posicao
-#         else:
-# #             if desafiado_esta_na_ladder:
-#             posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 1
-# #             else:
-# #                 posicao_desafiante = ladder_para_alterar.all().order_by('-posicao')[0].posicao + 2
-#             
-#             # Criar posição desafiante
-#             if desafio_ladder.is_historico():
-#                 novo_entrante = HistoricoLadder(posicao=posicao_desafiante, jogador=desafiante, mes=mes, ano=ano)
-#             else:
-#                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
-#             novo_entrante.save()
-        
     # Salvar posições de desafiante e desafiado, pré-desafio
     desafio_ladder.posicao_desafiante = posicao_desafiante
     desafio_ladder.posicao_desafiado = posicao_desafiado
@@ -538,11 +404,6 @@ def recalcular_ladder_old(mes=None, ano=None):
                                                                          data_hora__year=ano).order_by('data_hora'):
                         # Verificar posições
                         verificar_posicoes_desafiante_desafiado(desafio_ladder)
-#                         # Validar uso coringa
-#                         if desafio_ladder.desafio_coringa:
-#                             # Verificar se desafiante pode utilizar desafio coringa
-#                             if not desafio_ladder.desafiante.pode_usar_coringa_na_data(desafio_ladder.data_hora.date()):
-#                                 raise ValueError(DesafioLadder.MENSAGEM_ERRO_PERIODO_ESPERA_CORINGA)
                             
                         alterar_ladder(desafio_ladder)
                 except Exception as e:
@@ -581,9 +442,7 @@ def recalcular_ladder_old(mes=None, ano=None):
         
     
             
-# def verificar_posicoes_desafiante_desafiado(ladder, desafiante, desafiado, data_hora, desafio_coringa):
 def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
-#     print(desafio_ladder.data_hora)
     """Verifica se desafiante está abaixo e com a distância correta de desafiado na ladder"""
     desafiante = desafio_ladder.desafiante
     desafiado = desafio_ladder.desafiado
@@ -602,34 +461,15 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
     # Verificar posição do desafiado
     desafiado_esta_na_ladder = True
     posicao_desafiado = desafiado.posicao_em(desafio_ladder.data_hora)
-#     print('desafiado inicial', posicao_desafiado)
     if posicao_desafiado == 0:
         desafiado_esta_na_ladder = False
         posicao_desafiado = gerar_posicao_novo_entrante(desafio_ladder, desafiado)
-#     print('desafiado final', posicao_desafiado)
-#     desafiado_esta_na_ladder = True
-#     if ladder.filter(jogador=desafiado).exists():
-#         posicao_desafiado = ladder.get(jogador=desafiado).posicao
-#     else:
-#         # Se não está na ladder, posição do desafiado é atrás do último
-#         posicao_desafiado = ladder.all().order_by('-posicao')[0].posicao + 1
-#         desafiado_esta_na_ladder = False
     
     # Verificar posição do desafiante
     posicao_desafiante = desafiante.posicao_em(desafio_ladder.data_hora)
-#     print('desafiante inicial', posicao_desafiante)
     if posicao_desafiante == 0:
         desafiado_esta_na_ladder = False
         posicao_desafiante = gerar_posicao_novo_entrante(desafio_ladder, desafiante)
-#     print('desafiante final', posicao_desafiante)
-#     if ladder.filter(jogador=desafiante).exists():
-#         posicao_desafiante = ladder.get(jogador=desafiante).posicao
-#     else:
-#         # Se não está na ladder, posição do desafiante é atrás do desafiado
-#         if desafiado_esta_na_ladder:
-#             posicao_desafiante = ladder.all().order_by('-posicao')[0].posicao + 1
-#         else:
-#             posicao_desafiante = ladder.all().order_by('-posicao')[0].posicao + 2
     
     if posicao_desafiante < posicao_desafiado:
         raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO)
@@ -689,9 +529,6 @@ def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
         if form_luta.cleaned_data.get('DELETE', False) and form_luta.instance.id:
             form_luta.instance.delete()
             continue
-        
-#         # Adicionar 1 a índice da luta pois começa em 0
-#         indice_luta += 1
         
         luta = form_luta.save(commit=False)
          
@@ -810,7 +647,6 @@ def desfazer_lote_desafios(desafios, ladder):
                 
     # Ordenar ladder após alterações
     ladder.sort(key=lambda x: x.posicao)
-#     print(ladder)
     
     # Verificar quais jogadores já existiam na ladder
     desafio_mais_antigo = sorted(desafios, key=lambda x: x.data_hora)[0]
@@ -819,11 +655,9 @@ def desfazer_lote_desafios(desafios, ladder):
         if Jogador.objects.get(id=posicao_ladder.jogador_id).posicao_em(desafio_mais_antigo.data_hora) == 0:
             novos_entrantes.append(posicao_ladder)
     
-#     print(novos_entrantes)
     for posicao in novos_entrantes:
         ladder.remove(posicao)
     
-#     print(ladder)
     
     return ladder
 
@@ -868,9 +702,7 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
             
 def copiar_ladder(ladder_destino, ladder_origem, mes_destino=None, ano_destino=None):
     """Copia as posições de ladder de origem para ladder de destino"""
-    # Verifica se ladders não estão vazias
-#     if len(ladder_destino) == 0:
-#         raise ValueError('Ladder de destino não pode estar vazia')
+    # Verifica se ladder de origem não está vazia
     if len(ladder_origem) == 0:
         raise ValueError('Ladder de origem não pode estar vazia')
     
