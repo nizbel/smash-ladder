@@ -85,6 +85,9 @@ class AlterarLadderTestCase(TestCase):
                                                                           horario_atual.replace(day=15), False, cls.jogador_pos_1)
         cls.desafio_ladder_novo_entrante_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 0, 3, 
                                                                           horario_atual.replace(day=5), False, cls.jogador_pos_1)
+                                                                          
+        # Criar outro novo entrante
+        cls.new_2 = criar_jogador_teste('new_2')
         
     def test_alterar_ladder_atual_vitoria(self):
         """Testa alterar ladder atual por um desafio de vitória"""
