@@ -14,7 +14,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
-    recalcular_ladder
+    recalcular_ladder, copiar_ladder
 
 
 class AlterarLadderTestCase(TestCase):
@@ -33,6 +33,8 @@ class AlterarLadderTestCase(TestCase):
         cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer')
         cls.jogador_pos_6 = Jogador.objects.get(nick='frodo')
         cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils')
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
         cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
         
         # Jogadores para validar alterações no ranking
@@ -57,23 +59,26 @@ class AlterarLadderTestCase(TestCase):
         # Criar novo entrante
         cls.new = criar_jogador_teste('new')
         
+        # Criar outro novo entrante
+        cls.new_2 = criar_jogador_teste('new_2')
+        
         horario_atual = timezone.now()
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
         
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 3, 1, 
                                                                           horario_atual, False, cls.jogador_pos_1)
         cls.desafio_ladder_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_6, 0, 3, 
-                                                                          horario_atual, False, cls.jogador_pos_1)
+                                                                          horario_atual + datetime.timedelta(minutes=1), False, cls.jogador_pos_1)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_2, 3, 1, 
                                                                           horario_historico, True, cls.jogador_pos_1)
         cls.desafio_ladder_historico_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_5, 0, 3, 
-                                                                          horario_historico, True, cls.jogador_pos_1)
+                                                                          horario_historico + datetime.timedelta(minutes=1), True, cls.jogador_pos_1)
         
         # Desafios coringa
         cls.desafio_ladder_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_1, 3, 1, 
-                                                                          horario_atual, False, cls.jogador_pos_1)
+                                                                          horario_atual + datetime.timedelta(minutes=2), False, cls.jogador_pos_1)
         cls.desafio_ladder_historico_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_2, 3, 1, 
-                                                                          horario_historico, True, cls.jogador_pos_1)
+                                                                          horario_historico + datetime.timedelta(minutes=2), True, cls.jogador_pos_1)
         
         # Desafios de novo entrante
         cls.desafio_ladder_novo_entrante_vitoria = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 3, 1, 
@@ -249,6 +254,196 @@ class AlterarLadderTestCase(TestCase):
             
         # Novo entrante deve estar na 11
         self.assertIn((self.new.id, 11), ladder_apos)
+        
+    def test_alterar_ladder_desafio_anterior(self):
+        """Testa alteração de ladder com desafio anterior a último validado"""
+        # Preparar desafios
+        # Jogador posição 3 ganhou de jogador posição 2
+        desafio_anterior = self.desafio_ladder_historico
+        # Jogador posição 3 ganhou de jogador posição 1
+        desafio_posterior = self.desafio_ladder
+        
+        # Alterar ladder com desafio posterior
+        desafio_posterior.admin_validador = self.jogador_pos_1
+        desafio_posterior.save()
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar que resultados indicam queda de jogadores 2 e 1
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 3)
+        self.assertIn({'jogador': self.jogador_pos_1.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_2.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_3.id, 'alteracao_posicao': -2}, resultados)
+        
+        self.assertEqual(desafio_posterior.posicao_desafiante, 3)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 1)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Validar e alterar
+        desafio_anterior.admin_validador = self.jogador_pos_1
+        desafio_anterior.save()
+        alterar_ladder(desafio_anterior)
+        
+        # Atualizar desafios
+        desafio_anterior.refresh_from_db()
+        desafio_posterior.refresh_from_db()
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes, ladder_apos):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_1.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_3.id, 'alteracao_posicao': -1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 3)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 2)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 2)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 1)
+        
+    def test_alterar_ladder_desafio_anterior_novo_entrante(self):
+        """Testa alteração de ladder com desafio anterior a último validado com novo entrante"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio_anterior = DesafioLadder(data_hora=self.desafio_ladder_novo_entrante_vitoria.data_hora - datetime.timedelta(days=5), 
+                                          desafiante=self.desafio_ladder_novo_entrante_vitoria.desafiante,
+                                          desafiado=self.desafio_ladder_novo_entrante_vitoria.desafiado,
+                                          adicionado_por=self.desafio_ladder_novo_entrante_vitoria.adicionado_por,
+                                          score_desafiante=3, score_desafiado=1, desafio_coringa=False)
+        desafio_anterior.save()
+        
+        desafio_posterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora, score_desafiante=3, score_desafiado=1,
+                                          desafio_coringa=False)
+        desafio_posterior.desafiante = self.jogador_pos_10
+        desafio_posterior.desafiado = self.jogador_pos_9
+        desafio_posterior.adicionado_por = self.jogador_pos_10
+        desafio_posterior.admin_validador = self.jogador_pos_1
+        desafio_posterior.save()
+        
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar resultados
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': -1}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_9.id, 'alteracao_posicao': 1}, resultados)
+        
+        # Verificar posições no desafio
+        self.assertEqual(desafio_posterior.posicao_desafiante, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 9)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Validar e alterar
+        desafio_anterior.admin_validador = self.jogador_pos_1
+        desafio_anterior.save()
+        alterar_ladder(desafio_anterior)
+        
+        # Atualizar
+        desafio_anterior.refresh_from_db()
+        desafio_posterior.refresh_from_db()
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve aumentar 1 posição
+        self.assertEqual(len(ladder_antes) + 1, len(ladder_apos))
+            
+        # Novo entrante está em décimo primeiro
+        # Outras posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[:10], ladder_apos[:10]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante deve estar na 11
+        self.assertIn((self.new.id, 11), ladder_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 3)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': -2}, resultados)
+        self.assertIn({'jogador': self.jogador_pos_9.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.new.id, 'alteracao_posicao': 1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 9)
+        
+    def test_alterar_ladder_desafio_anterior_alterando_novo_entrante(self):
+        """Testa alteração de ladder para marcar entrada anterior para novo entrante"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio_anterior = self.desafio_ladder_novo_entrante_vitoria 
+        desafio_anterior.data_hora = timezone.now() - datetime.timedelta(days=5)
+        desafio_anterior.save()
+        
+        desafio_posterior = self.desafio_ladder
+        desafio_posterior.desafiante = self.new_2
+        desafio_posterior.desafiado = self.jogador_pos_10
+        desafio_posterior.adicionado_por = self.jogador_pos_10
+        desafio_posterior.admin_validador = self.jogador_pos_1
+        desafio_posterior.save()
+        
+        alterar_ladder(desafio_posterior)
+        
+        # Verificar resultados
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.new_2.id, 'alteracao_posicao': -1}, resultados)
+        
+        # Verificar posições no desafio
+        self.assertEqual(desafio_posterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 10)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Validar e alterar
+        desafio_anterior.admin_validador = self.jogador_pos_1
+        desafio_anterior.save()
+        alterar_ladder(desafio_anterior)
+        
+        # Atualizar
+        desafio_anterior.refresh_from_db()
+        desafio_posterior.refresh_from_db()
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve aumentar 1 posição
+        self.assertEqual(len(ladder_antes) + 1, len(ladder_apos))
+            
+        # Outras posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[:9], ladder_apos[:9]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante 1 deve estar na 10
+        self.assertIn((self.new.id, 10), ladder_apos)
+        # Novo entrante 2 deve estar na 11
+        self.assertIn((self.new_2.id, 11), ladder_apos)
+            
+        # Resultados de desafio posterior devem ser alterados
+        resultados = desafio_posterior.resultadodesafioladder_set.all().values('jogador', 'alteracao_posicao')
+        self.assertEqual(len(resultados), 2)
+        self.assertIn({'jogador': self.jogador_pos_10.id, 'alteracao_posicao': 1}, resultados)
+        self.assertIn({'jogador': self.new_2.id, 'alteracao_posicao': -1}, resultados)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio_anterior.posicao_desafiante, 11)
+        self.assertEqual(desafio_anterior.posicao_desafiado, 10)
+        self.assertEqual(desafio_posterior.posicao_desafiante, 12)
+        self.assertEqual(desafio_posterior.posicao_desafiado, 11)
 
 class RecalcularLadderTestCase(TestCase):
     """Testes para a função de recalcular ladder"""
@@ -281,7 +476,7 @@ class RecalcularLadderTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         cls.ano = horario_atual.date().year
         cls.mes = horario_atual.date().month - 1
         if cls.mes == 0:
@@ -300,13 +495,13 @@ class RecalcularLadderTestCase(TestCase):
         cls.desafio_ladder_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_6, 0, 3, 
                                                                           horario_atual.replace(hour=6), False, cls.jogador_pos_1)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_2, 3, 1, 
-                                                                          horario_historico.replace(hour=5), True, cls.jogador_pos_1)
+                                                                          horario_historico.replace(hour=5), False, cls.jogador_pos_1)
         cls.desafio_ladder_historico_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_5, 0, 3, 
-                                                                          horario_historico.replace(hour=6), True, cls.jogador_pos_1)
+                                                                          horario_historico.replace(hour=6), False, cls.jogador_pos_1)
         
         # Desafios coringa
         cls.desafio_ladder_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_1, 3, 1, 
-                                                                          horario_atual.replace(hour=7), False, cls.jogador_pos_1)
+                                                                          horario_atual.replace(hour=7), True, cls.jogador_pos_1)
         cls.desafio_ladder_historico_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_3, 3, 1, 
                                                                           horario_historico.replace(hour=7), True, cls.jogador_pos_1)
         
@@ -320,13 +515,12 @@ class RecalcularLadderTestCase(TestCase):
     def test_erro_recalcular_ladder_apenas_mes(self):
         """Testa erro por chamar função sem especificar ano"""
         with self.assertRaisesMessage(ValueError, 'Informe um ano'):
-            recalcular_ladder(self.mes)
+            recalcular_ladder(mes=self.mes)
         
     def test_erro_recalcular_ladder_apenas_ano(self):
         """Testa erro por chamar função sem especificar mês"""
         with self.assertRaisesMessage(ValueError, 'Informe um mês'):
             recalcular_ladder(ano=self.ano)
-        
         
     def test_recalcular_ladder_atual_com_historico(self):
         """Testa recalcular posições de ladder atual partindo de histórico anterior"""
@@ -424,7 +618,7 @@ class RecalcularLadderTestCase(TestCase):
         criar_ladder_historico_teste(ano_hist_anterior, mes_hist_anterior)
         
         # Recalcula ladder histórico
-        recalcular_ladder(self.mes, self.ano)
+        recalcular_ladder(mes=self.mes, ano=self.ano)
         
         # Buscar ladder atual
         ladder = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao').values_list('jogador', 'posicao'))
@@ -456,7 +650,7 @@ class RecalcularLadderTestCase(TestCase):
         HistoricoLadder.objects.all().delete()
         
         # Recalcula ladder atual
-        recalcular_ladder(self.mes, self.ano)
+        recalcular_ladder(mes=self.mes, ano=self.ano)
         
         # Buscar ladder atual
         ladder = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao').values_list('jogador', 'posicao'))
@@ -482,15 +676,16 @@ class RecalcularLadderTestCase(TestCase):
         # Jogador 3 derrotou o 1 esse mês
         validar_desafio_ladder_teste(self.desafio_ladder, self.jogador_pos_1)
         # Jogador 6 derrotou o 3 mês passado
-        validar_desafio_ladder_teste(self.desafio_ladder_historico_coringa, self.jogador_pos_1)
+        with self.assertRaises(ValueError):
+            validar_desafio_ladder_teste(self.desafio_ladder_historico_coringa, self.jogador_pos_1)
         
-        # Simular sumiço de ladder atual
-        PosicaoLadder.objects.all().delete()
+#         # Simular sumiço de ladder atual
+#         PosicaoLadder.objects.all().delete()
         
-        # Recalcula ladder atual, deve dar erro na validação de desafio para jogador 3 derrotando jogador 1
-        regex = re.escape(f'Desafio Ladder {self.desafio_ladder.id}: ') + r'.+'
-        with self.assertRaisesRegex(ValueError, regex):
-            recalcular_ladder()
+#         # Recalcula ladder atual, deve dar erro na validação de desafio para jogador 3 derrotando jogador 1
+#         regex = re.escape(f'Desafio Ladder {self.desafio_ladder.id}: ') + r'.+'
+#         with self.assertRaisesRegex(ValueError, regex):
+#             recalcular_ladder()
 
 class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
     """Testes para a função que verifica se desafiante está abaixo do desafiado na ladder"""
@@ -518,7 +713,7 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localdate()
         cls.ano = data_atual.year
         cls.mes = data_atual.month - 1
         if cls.mes == 0:
@@ -529,48 +724,71 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         
     def test_desafiante_desafiado_mesmo_jogador(self):
         """Desafiante e desafiado são o mesmo jogador"""
+        desafio = DesafioLadder(desafiante=self.jogador_pos_3, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_MESMO_JOGADOR):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_3, self.jogador_pos_3, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_3, self.jogador_pos_3, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_1_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo 1 posição portanto pode desafiar, ladder atual"""
-        verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_4, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_2_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo 2 posições portanto pode desafiar, ladder atual"""
-        verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_3_posicao_desafiado_ladder_atual(self):
         """Desafiante está abaixo 3 posições portanto não pode desafiar, ladder atual"""
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_abaixo_1_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo 1 posição portanto pode desafiar, ladder histórico"""
-        verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-                                                              self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_4, desafiado=self.jogador_pos_3, 
+                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
+#                                                               self.jogador_pos_4, self.jogador_pos_3, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_2_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo 2 posições portanto pode desafiar, ladder histórico"""
-        verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-                                                              self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_3, 
+                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
+#                                                               self.jogador_pos_5, self.jogador_pos_3, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafiante_abaixo_3_posicao_desafiado_ladder_historico(self):
         """Desafiante está abaixo 3 posições portanto não pode desafiar, ladder histórico"""
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, 
+                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
-            verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-                                                                  self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
+#                                                                   self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_acima_desafiado_ladder_atual(self):
         """Desafiante está acima de desafiado no ranking portanto não pode desafiar, ladder atual"""
+        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_6, 
+                                data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_acima_desafiado_ladder_historico(self):
         """Desafiante está acima de desafiado no ranking portanto não pode desafiar, ladder histórico"""
+        desafio = DesafioLadder(desafiante=self.jogador_pos_5, desafiado=self.jogador_pos_6, 
+                                data_hora=timezone.now().replace(month=self.mes, year=self.ano), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO):
-            verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
-                                                              self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes), 
+#                                                               self.jogador_pos_5, self.jogador_pos_6, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_ferias(self):
         """Desafiante está de férias portanto não pode desafiar ninguém"""
@@ -578,8 +796,11 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         RegistroFerias.objects.create(jogador=self.jogador_pos_6, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
                                       data_fim=(timezone.now() + datetime.timedelta(days=10)))
         
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_5, 
+                                data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_FERIAS):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiado_ferias(self):
         """Jogador desafiado está de férias portanto não pode ser desafiado"""
@@ -587,8 +808,11 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
                                       data_fim=(timezone.now() + datetime.timedelta(days=10)))
         
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_5, 
+                                data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIADO_FERIAS):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_5, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_3_posicoes_abaixo_proximo_com_ferias(self):
         """Desafiante está 3 posições abaixo, mas o jogador logo acima está de férias, pode desafiar"""
@@ -596,7 +820,10 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
                                       data_fim=(timezone.now() + datetime.timedelta(days=10)))
         
-        verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_3, 
+                                data_hora=timezone.now(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_3, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_4_posicoes_abaixo_proximo_com_ferias(self):
         """Desafiante está 4 abaixo e o próximo acima está de férias, portanto não pode desafiar"""
@@ -604,8 +831,11 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
                                       data_fim=(timezone.now() + datetime.timedelta(days=10)))
         
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_2, 
+                                data_hora=timezone.now(), desafio_coringa=False)
         with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO):
-            verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
+#             verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
+            verificar_posicoes_desafiante_desafiado(desafio)
     
     def test_desafiante_4_posicoes_abaixo_2_proximos_com_ferias(self):
         """Desafiante está 4 abaixo mas os 2 próximos jogadores estão de férias, portanto pode desafiar"""
@@ -615,7 +845,10 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         RegistroFerias.objects.create(jogador=self.jogador_pos_4, data_inicio=(timezone.now() - datetime.timedelta(days=10)),
                                       data_fim=(timezone.now() + datetime.timedelta(days=10)))
         
-        verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
+        desafio = DesafioLadder(desafiante=self.jogador_pos_6, desafiado=self.jogador_pos_2, 
+                                data_hora=timezone.now(), desafio_coringa=False)
+#         verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_6, self.jogador_pos_2, timezone.now(), False)
+        verificar_posicoes_desafiante_desafiado(desafio)
         
     def test_desafio_coringa_ladder_atual(self):
         """Desafiante usa desafio coringa na ladder atual, basta desafiado não estar de férias"""
@@ -628,7 +861,234 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
             if jogador == self.jogador_pos_7:
                 pass
             elif jogador == self.jogador_pos_3:
+                desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=jogador, 
+                                        data_hora=timezone.now(), desafio_coringa=True)
                 with self.assertRaisesMessage(ValueError, DesafioLadder.MENSAGEM_ERRO_DESAFIADO_FERIAS):
-                    verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+#                     verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+                    verificar_posicoes_desafiante_desafiado(desafio)
             else:
-                verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+                desafio = DesafioLadder(desafiante=self.jogador_pos_7, desafiado=jogador, 
+                                        data_hora=timezone.now(), desafio_coringa=True)
+#                 verificar_posicoes_desafiante_desafiado(PosicaoLadder.objects, self.jogador_pos_7, jogador, timezone.now(), True)
+                verificar_posicoes_desafiante_desafiado(desafio)
+
+class CopiarLadderTestCase(TestCase):
+    """Testes para a função que copia uma ladder em outra"""
+    @classmethod
+    def setUpTestData(cls):
+        super(CopiarLadderTestCase, cls).setUpTestData()
+        
+        criar_jogadores_teste()
+        
+        # Pegar objetos de jogador de acordo com sua posição
+        cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
+        cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva')
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena')
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad')
+        cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer')
+        cls.jogador_pos_6 = Jogador.objects.get(nick='frodo')
+        cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils')
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
+        cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
+        
+        # Criar ladders para verificar que adicionar desafio não as afeta
+        criar_ladder_teste()
+        
+        # Preparar mês anterior para histórico
+        data_atual = timezone.now().date()
+        cls.ano = data_atual.year
+        cls.mes = data_atual.month - 1
+        if cls.mes == 0:
+            cls.mes = 12
+            cls.ano -= 1
+        
+        criar_ladder_historico_teste(cls.ano, cls.mes)
+        
+    def test_copiar_registros_ladders_iguais(self):
+        """Testa copiar registros entre ladders iguais"""
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes, ladder_destino_depois):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+    
+    def test_copiar_registros_mesmos_jogadores(self):
+        """Testa copiar registros entre ladders com mesmos jogadores porém posições diferentes"""
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        # Alterar posições na ladder de destino, jogador 5 vai parar posição 3, 3 para 4 e 4 para 5
+        jogador_3 = ladder_destino.get(posicao=3)
+        jogador_4 = ladder_destino.get(posicao=4)
+        jogador_5 = ladder_destino.get(posicao=5)
+        
+        # Remover posição para poder atualizar
+        jogador_5.posicao = 0
+        jogador_5.save()
+        
+        jogador_4.posicao = 5
+        jogador_4.save()
+        jogador_3.posicao = 4
+        jogador_3.save()
+        jogador_5.posicao = 3
+        jogador_5.save()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        # Posições 1 e 2 devem estar iguais
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:2], ladder_destino_depois[:2]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+        
+        # Posições 3 a 5 devem estar diferentes
+        for registro_antes, registro_depois in zip(ladder_destino_antes[2:5], ladder_destino_depois[2:5]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertNotEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        # Da posição 6 em diante deve estar igual
+        for registro_antes, registro_depois in zip(ladder_destino_antes[5:], ladder_destino_depois[5:]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+        
+    def test_copiar_registros_para_historico(self):
+        """Testa copiar registros para uma ladder de histórico"""
+        ladder_destino = HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano)
+        ladder_origem = PosicaoLadder.objects.all()
+        
+        # Alterar posições na ladder de destino, jogador 5 vai parar posição 3, 3 para 4 e 4 para 5
+        jogador_3 = ladder_destino.get(posicao=3)
+        jogador_4 = ladder_destino.get(posicao=4)
+        jogador_5 = ladder_destino.get(posicao=5)
+        
+        # Remover posição para poder atualizar
+        jogador_5.posicao = 0
+        jogador_5.save()
+        
+        jogador_4.posicao = 5
+        jogador_4.save()
+        jogador_3.posicao = 4
+        jogador_3.save()
+        jogador_5.posicao = 3
+        jogador_5.save()
+        
+        # Remover última posição na ladder de destino
+        ladder_destino.get(posicao=10).delete()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        
+        # Posições 1 e 2 devem estar iguais
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:2], ladder_destino_depois[:2]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+        
+        # Posições 3 a 5 devem estar diferentes
+        for registro_antes, registro_depois in zip(ladder_destino_antes[2:5], ladder_destino_depois[2:5]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertNotEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        # Da posição 6 em diante deve estar igual
+        for registro_antes, registro_depois in zip(ladder_destino_antes[5:], ladder_destino_depois[5:]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+        
+    def test_erro_copiar_ladder_origem_vazia(self):
+        """Testa erro ao copiar de uma ladder que está vazia"""
+        # Apagar registros de ladder de origem
+        HistoricoLadder.objects.all().delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        with self.assertRaisesMessage(ValueError, 'Ladder de origem não pode estar vazia'):
+            copiar_ladder(ladder_destino, ladder_origem)
+            
+    def test_copiar_ladder_destino_historico_vazia(self):
+        """Testa copiar para uma ladder de histórico que está vazia"""
+        # Apagar registros de ladder de destino
+        HistoricoLadder.objects.all().delete()
+        
+        ladder_destino = HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano)
+        ladder_origem = PosicaoLadder.objects.all()
+        
+        copiar_ladder(ladder_destino, ladder_origem, self.mes, self.ano)
+        
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+        
+    def test_copiar_ladder_origem_com_mais_registros(self):
+        """Testa copiar ladder com mais registros que destino"""
+        # Remover registros da ladder destino
+        PosicaoLadder.objects.filter(posicao__gte=9).delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_antes), 8)
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_depois), 10)
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:8], ladder_destino_depois[:8]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+        
+    def test_copiar_ladder_origem_com_menos_registros(self):
+        """Testa copiar ladder com menos registros que destino"""
+        # Remover registros da ladder de origem
+        HistoricoLadder.objects.filter(posicao__gte=9).delete()
+        
+        ladder_destino = PosicaoLadder.objects.all()
+        ladder_origem = HistoricoLadder.objects.all()
+        
+        ladder_destino_antes = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_antes), 10)
+        
+        copiar_ladder(ladder_destino, ladder_origem)
+        
+        ladder_destino_depois = list(ladder_destino.order_by('posicao'))
+        self.assertEqual(len(ladder_destino_depois), 8)
+        
+        for registro_antes, registro_depois in zip(ladder_destino_antes[:8], ladder_destino_depois[:8]):
+            self.assertEqual(registro_antes.posicao, registro_depois.posicao)
+            self.assertEqual(registro_antes.jogador, registro_depois.jogador)
+            
+        for registro_origem, registro_depois in zip(list(ladder_origem.order_by('posicao')), ladder_destino_depois):
+            self.assertEqual(registro_origem.posicao, registro_depois.posicao)
+            self.assertEqual(registro_origem.jogador, registro_depois.jogador)
+            
