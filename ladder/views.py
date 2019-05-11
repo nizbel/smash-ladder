@@ -219,7 +219,7 @@ def detalhar_ladder_historico(request, ano, mes):
         preencheu_alteracao = False
         # Procurar jogador na ladder anterior
         for posicao_ladder_anterior in ladder_anterior:
-            if posicao_ladder_anterior.jogador == posicao_ladder.jogador:
+            if posicao_ladder_anterior.jogador_id == posicao_ladder.jogador_id:
                 posicao_ladder.alteracao = posicao_ladder_anterior.posicao - posicao_ladder.posicao
 
                 preencheu_alteracao = True
