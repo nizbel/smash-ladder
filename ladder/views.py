@@ -94,7 +94,7 @@ def add_desafio_ladder(request):
     
 def detalhar_ladder_atual(request):
     """Detalhar posição da ladder atual"""
-    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user'))
+    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user').prefetch_related('jogador__registroferias_set'))
     
     data_atual = timezone.now()
     data_mes_anterior = timezone.now().replace(day=1) - datetime.timedelta(days=1)
@@ -124,9 +124,9 @@ def detalhar_ladder_atual(request):
     # Guardar destaques da ladder
     destaques = {}
     
-    # Verificar qual jogador possui mais desafios na ladder
-    if DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False,
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year).exists():
+    if DesafioLadder.validados.exists():
+        
+        # Verificar qual jogador possui mais desafios na ladder
         # Qtd de desafios feitos
         desafios_feitos = dict(Jogador.objects.all().annotate(qtd_desafios=(Count(Case(
             When(desafiante__cancelamentodesafioladder__isnull=True, desafiante__admin_validador__isnull=False, 
@@ -145,13 +145,12 @@ def detalhar_ladder_atual(request):
         desafios = { k: desafios_feitos.get(k, 0) + desafios_recebidos.get(k, 0) for k in set(desafios_feitos) | set(desafios_recebidos) }
         
         valor_maximo = desafios[(max(desafios, key=lambda key: desafios[key]))]
-        
-        destaques['jogadores_mais_desafios'] = [key for key, value in desafios.items() if value == valor_maximo]
+        if valor_maximo > 0:
+            destaques['jogadores_mais_desafios'] = [key for key, value in desafios.items() if value == valor_maximo]
         
         # Sequencia de vitórias superior a 5
         # Buscar todos os desafios
-        desafios = DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year).order_by('data_hora').select_related('desafiante', 'desafiado')
+        desafios = DesafioLadder.validados.order_by('data_hora').select_related('desafiante', 'desafiado')
         
         # Buscar participantes da ladder
         jogadores = {posicao.jogador.nick: 0 for posicao in ladder}
