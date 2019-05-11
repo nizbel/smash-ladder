@@ -31,7 +31,10 @@ class Jogador(models.Model):
         
     def de_ferias_na_data(self, data):
         """Verifica se jogador está de férias na data apontada"""
-        return RegistroFerias.objects.filter(jogador=self, data_inicio__lte=data, data_fim__gte=data).exists()
+        for registro_ferias in list(self.registroferias_set.all()):
+            if registro_ferias.data_inicio <= data and registro_ferias.data_fim >= data:
+                return True
+        return False
     
     def pode_usar_coringa_na_data(self, data):
         return self.ultimo_uso_coringa == None or \
