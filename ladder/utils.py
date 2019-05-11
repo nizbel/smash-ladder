@@ -187,7 +187,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 return
             
             # Copiar ladder até posição atual
-            while mes_atual != timezone.localdate().month and ano_atual != timezone.localdate().year:
+            while mes_atual != timezone.localdate().month or ano_atual != timezone.localdate().year:
                 # Incrementar data
                 prox_mes = mes_atual
                 prox_ano = ano_atual

@@ -495,14 +495,14 @@ def validar_desafio_ladder(request, desafio_id):
                 with transaction.atomic():
                     # Validação
                     # Verificar posições
-                    verificar_posicoes_desafiante_desafiado(desafio_ladder)
+#                     verificar_posicoes_desafiante_desafiado(desafio_ladder)
                     
                     # Gravar validador
                     desafio_ladder.admin_validador = request.user.jogador
                     desafio_ladder.save()
                     
                     # Alterar ladder referência
-                    alterar_ladder(desafio_ladder)
+                    recalcular_ladder(desafio_ladder)
                     
                     if desafio_ladder.desafio_coringa:
                         desafiante = desafio_ladder.desafiante
