@@ -514,3 +514,35 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         # A ladder deve possuir um jogador a mais
         self.assertTrue(len(situacao_ladder_antes) + 2 == len(situacao_ladder_apos))
         
+    def test_validar_desafio_historico_alterando_ladder_atual(self):
+        """Testar se validar desafio histórico altera ladder atual"""
+        # Guardar ladder atual
+        ladder_atual_antes = list(PosicaoLadder.objects.all().order_by('posicao'))
+        
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples_historico.id}),
+                                   {'salvar': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder_simples_historico.data_hora.year,
+                                                                                           'mes': self.desafio_ladder_simples_historico.data_hora.month}))
+        
+        # Verificar ladder atual após alteração
+        ladder_atual_depois = list(PosicaoLadder.objects.all().order_by('posicao'))
+        
+        # Ver confirmação no messages
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER)
+        
+        # Desafio deve ter validador
+        self.desafio_ladder_simples_historico = DesafioLadder.objects.get(id=self.desafio_ladder_simples_historico.id)
+        self.assertEqual(self.desafio_ladder_simples_historico.admin_validador, self.teets)
+        
+        # Posição deve ter sido alterada na ladder atual
+        self.assertNotEqual(ladder_atual_antes[0].jogador, ladder_atual_depois[0].jogador)
+        
+        # Ladder atual deve ser igual a ladder histórico
+        for ladder_historico, ladder_atual in zip(HistoricoLadder.objects.all().order_by('posicao'), ladder_atual_depois):
+            self.assertEqual(ladder_historico.posicao, ladder_atual.posicao)
+            self.assertEqual(ladder_historico.jogador, ladder_atual.jogador)
+        
