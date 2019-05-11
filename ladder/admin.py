@@ -3,7 +3,7 @@
 from django.contrib import admin
 
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
-    Luta, LutaLadder
+    Luta, LutaLadder, InicioLadder
 
 
 class HistoricoLadderAdmin(admin.ModelAdmin):
@@ -23,6 +23,13 @@ class LutaLadderAdmin(admin.ModelAdmin):
     search_fields = ['luta__data']
     
 admin.site.register(LutaLadder, LutaLadderAdmin)
+
+
+class InicioLadderAdmin(admin.ModelAdmin):
+    list_display = ('posicao', 'jogador')
+    search_fields = ['jogador__nick']
+    
+admin.site.register(InicioLadder, InicioLadderAdmin)
 
 class PosicaoLadderAdmin(admin.ModelAdmin):
     list_display = ('posicao', 'jogador')

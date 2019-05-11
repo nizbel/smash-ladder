@@ -15,7 +15,6 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.views import MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER
 from smashLadder import settings
 
-
 class ViewCancelarDesafioLadderTestCase(TestCase):
     """Testes para a view de cancelar desafio para ladder"""
     @classmethod
@@ -33,7 +32,7 @@ class ViewCancelarDesafioLadderTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         data_atual = horario_atual.date()
         cls.ano = data_atual.year
         cls.mes = data_atual.month - 1
@@ -318,7 +317,7 @@ class ViewCancelarDesafioLadderTestCase(TestCase):
         
         # Garantir que último uso é nulo
         self.assertEqual(Jogador.objects.get(id=self.desafio_ladder.desafiante.id).ultimo_uso_coringa, 
-                         timezone.make_naive(self.desafio_ladder_historico.data_hora).date())
+                         self.desafio_ladder_historico.data_hora.date())
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))

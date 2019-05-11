@@ -275,18 +275,19 @@ def cancelar_desafio_ladder(request, desafio_id):
                 with transaction.atomic():
                     # Se validado, verificar alterações decorrentes da operação
                     if desafio_ladder.is_validado():
-                        # Verificar se desafio é de histórico
-                        if desafio_ladder.is_historico():
-                            mes, ano = desafio_ladder.mes_ano_ladder
-                        else:
-                            mes, ano = None, None
+#                         # Verificar se desafio é de histórico
+#                         if desafio_ladder.is_historico():
+#                             mes, ano = desafio_ladder.mes_ano_ladder
+#                         else:
+#                             mes, ano = None, None
                         
                         # Gerar cancelamento para desafio e tentar recalcular ladder
                         cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
                         cancelamento.save()
                         
                         # Recalcula ladder para verificar se cancelamento é válido
-                        recalcular_ladder(mes, ano)
+#                         recalcular_ladder(mes, ano)
+                        recalcular_ladder(desafio_ladder)
                         
                         # Se desafio tinha desafio coringa, verificar último uso do jogador
                         if desafio_ladder.desafio_coringa:
@@ -435,7 +436,7 @@ def listar_desafios_ladder(request, ano=None, mes=None):
     # Ano/mês devem estar ambos preenchidos ou ambos nulos
     # Ambos nulos significa ladder atual
     if ano == None and mes == None:
-        data_atual = timezone.now().date()
+        data_atual = timezone.localdate()
         ano = data_atual.year
         mes = data_atual.month
     elif (ano == None and mes != None) or (ano != None and mes == None):
@@ -495,16 +496,14 @@ def validar_desafio_ladder(request, desafio_id):
                 with transaction.atomic():
                     # Validação
                     # Verificar posições
-                    verificar_posicoes_desafiante_desafiado(desafio_ladder.ladder, desafio_ladder.desafiante,
-                                                             desafio_ladder.desafiado, desafio_ladder.data_hora,
-                                                             desafio_ladder.desafio_coringa)
-                    
-                    # Alterar ladder referência
-                    alterar_ladder(desafio_ladder)
+                    verificar_posicoes_desafiante_desafiado(desafio_ladder)
                     
                     # Gravar validador
                     desafio_ladder.admin_validador = request.user.jogador
                     desafio_ladder.save()
+                    
+                    # Alterar ladder referência
+                    alterar_ladder(desafio_ladder)
                     
                     if desafio_ladder.desafio_coringa:
                         desafiante = desafio_ladder.desafiante
