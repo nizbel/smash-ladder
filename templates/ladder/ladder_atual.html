@@ -41,6 +41,10 @@ Ladder atual
 					{% if posicao_ladder.jogador.nick in destaques.jogadores_5_defesas %}
 						<i title="{{ posicao_ladder.jogador.qtd_defesas }} defesas de posição com sucesso!" class="fas fa-shield-alt"></i>
 					{% endif %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.vitoria_coringa_10_posicoes %}
+						<i title="Subiu mais de 10 posições com um coringa" class="fas fa-rocket"></i>
+					{% endif %}
 					</div>
 				{% endif %}
 				

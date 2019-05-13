@@ -7,10 +7,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models.aggregates import Count, Max
-from django.db.models.expressions import Case, When, Value
+from django.db.models.aggregates import Count
+from django.db.models.expressions import Case, When, F
 from django.db.models.fields import IntegerField
-from django.db.models.query_utils import Q
 from django.forms.formsets import formset_factory
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404, render, redirect
@@ -21,8 +20,7 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder
-from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
-    recalcular_ladder, validar_e_salvar_lutas_ladder
+from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -193,8 +191,8 @@ def detalhar_ladder_atual(request):
                 posicao_ladder.jogador.streak = jogadores[posicao_ladder.jogador.nick]
                 
         # Verificar jogadores que fizeram 5 defesas com sucesso
-        defesas_sucesso_5 = dict(DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year, score_desafiado=3).values('desafiado').order_by('desafiado') \
+        defesas_sucesso_5 = dict(DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                                                score_desafiado__gt=F('score_desafiante')).values('desafiado').order_by('desafiado') \
              .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
         
         # Destacar jogadores que fizeram 5 defesas com sucesso
@@ -202,6 +200,12 @@ def detalhar_ladder_atual(request):
         for posicao_ladder in ladder:
             if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
                 posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
+                
+        # Destaque para uso de coringa com sucesso subindo mais de 10 posições
+        vitorias_coringa = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year) \
+            .filter(desafio_coringa=True, score_desafiante__gt=F('score_desafiado'), 
+                    posicao_desafiante__gte=(F('posicao_desafiado') + 10)).select_related('desafiante')
+        destaques['vitoria_coringa_10_posicoes'] = [vitoria.desafiante.nick for vitoria in vitorias_coringa]
                 
         # Marcar todos os jogadores com destaques
         for posicao_ladder in ladder:
@@ -267,7 +271,36 @@ def detalhar_ladder_historico(request, ano, mes):
             primeiro_desafio = sorted(primeiros_desafios, key=lambda x: x.data_hora)[0]
             posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
     
-    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes})
+    # Guardar destaques da ladder
+    destaques = {}
+    
+    desafios_mes = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano)
+    if desafios_mes.exists():
+        # Procurar destaques
+        
+        # Verificar jogadores que fizeram 5 defesas com sucesso
+        defesas_sucesso_5 = dict(desafios_mes.filter(score_desafiado__gt=F('score_desafiante')).values('desafiado').order_by('desafiado') \
+             .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
+        
+        # Destacar jogadores que fizeram 5 defesas com sucesso
+        destaques['jogadores_5_defesas'] = [key for key, value in defesas_sucesso_5.items()]
+        for posicao_ladder in ladder:
+            if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
+                posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
+        
+        # Destaque para uso de coringa com sucesso subindo mais de 10 posições
+        vitorias_coringa = desafios_mes.filter(desafio_coringa=True, score_desafiante__gt=F('score_desafiado'),
+                                                          posicao_desafiante__gte=(F('posicao_desafiado') + 10)).select_related('desafiante')
+        destaques['vitoria_coringa_10_posicoes'] = [vitoria.desafiante.nick for vitoria in vitorias_coringa]
+
+        # Marcar todos os jogadores com destaques
+        for posicao_ladder in ladder:
+            for destaque in destaques:
+                if posicao_ladder.jogador.nick in destaques[destaque]:
+                    posicao_ladder.jogador.tem_destaque = True
+                    break
+    
+    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes, 'destaques': destaques})
 
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
