@@ -33,8 +33,18 @@ Ladder de {{ mes }}/{{ ano }}
 						<i title="Participou de mais desafios" class="fas fa-fist-raised"></i>
 					{% endif %}
 					
+					{% comment %}
 					{% if posicao_ladder.jogador.nick in destaques.jogadores_streak_vitorias %}
 						<i title="On fire! Sequência de {{ posicao_ladder.jogador.streak }} vitórias" class="fas fa-fire-alt"></i>
+					{% endif %}
+					{% endcomment %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.jogadores_5_defesas %}
+						<i title="{{ posicao_ladder.jogador.qtd_defesas }} defesas de posição com sucesso!" class="fas fa-shield-alt"></i>
+					{% endif %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.vitoria_coringa_10_posicoes %}
+						<i title="Subiu mais de 10 posições com um coringa" class="fas fa-rocket"></i>
 					{% endif %}
 					</div>
 				{% endif %}
