@@ -104,7 +104,22 @@
 		  	<div class="card-body col-12">
 		  		<div class="row">
 		  			<div class="col-12">
-						<canvas id="myChart" width="auto"></canvas>
+						<canvas id="graf-perc-vitorias" width="auto"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Histórico de ladder
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+		  			<div class="col-12">
+						<canvas id="graf-hist-ladder" width="auto"></canvas>
 					</div>
 				</div>
 			</div>
@@ -116,39 +131,73 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js"></script>
 
 <script type="text/javascript">
-var ctx = document.getElementById('myChart').getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-    	labels: [{% for item in jogador.grafico_percentual_vitorias %}'',{% endfor %}],
-        datasets: [{
-            label: '% de vitórias',
-            data: {{ jogador.grafico_percentual_vitorias }},
-            borderWidth: 0,
-            lineTension: 0
-        }]
-    },
-    options: {
-    	legend: {
-    		display: false
-		},
-        scales: {
-            xAxes: [{
-            	scaleLabel: {
-	            	display: true,
-	                labelString: 'Desafios'
-                }
-            }],
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true,
-                    callback: function(value, index, values) {
-                        return value + '%';
-                    }
-                }
-            }]
-        }
-    }
-});
+	var ctx = document.getElementById('graf-perc-vitorias').getContext('2d');
+	var grafPercVitorias = new Chart(ctx, {
+	    type: 'line',
+	    data: {
+	    	labels: [{% for item in jogador.grafico_percentual_vitorias %}'',{% endfor %}],
+	        datasets: [{
+	            label: '% de vitórias',
+	            data: {{ jogador.grafico_percentual_vitorias }},
+	            borderWidth: 0,
+	            lineTension: 0
+	        }]
+	    },
+	    options: {
+	    	legend: {
+	    		display: false
+			},
+	        scales: {
+	            xAxes: [{
+	            	scaleLabel: {
+		            	display: true,
+		                labelString: 'Desafios'
+	                }
+	            }],
+	            yAxes: [{
+	                ticks: {
+	                    beginAtZero: true,
+	                    callback: function(value, index, values) {
+	                        return value + '%';
+	                    }
+	                }
+	            }]
+	        }
+	    }
+	});
+	
+	var ctx = document.getElementById('graf-hist-ladder').getContext('2d');
+	var grafPercVitorias = new Chart(ctx, {
+	    type: 'line',
+	    data: {
+	    	labels: [{% for item in jogador.grafico_variacao_posicao %}'',{% endfor %}],
+	        datasets: [{
+	            label: 'Posição na ladder',
+	            data: {{ jogador.grafico_variacao_posicao|safe }},
+	            lineTension: 0,
+	            fill: false,
+	            pointBorderWidth: 5
+	        }]
+	    },
+	    options: {
+	    	legend: {
+	    		display: false
+			},
+	        scales: {
+	            xAxes: [{
+	                type: 'time',
+	                time: {
+                    	parser: "YYYY/MM/DD HH:mm",
+                    	min: '{{ jogador.grafico_variacao_posicao.0.x }}'
+                	}
+	            }],
+	            yAxes: [{
+	                ticks: {
+	                    reverse: true
+	                }
+	            }]
+	        }
+	    }
+	});
 </script>
 {% endblock %}
