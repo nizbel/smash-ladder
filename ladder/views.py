@@ -101,7 +101,7 @@ def detalhar_ladder_atual(request):
     """Detalhar posição da ladder atual"""
     ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user').prefetch_related('jogador__registroferias_set'))
     
-    data_atual = timezone.now()
+    data_atual = timezone.localtime()
     data_mes_anterior = timezone.now().replace(day=1) - datetime.timedelta(days=1)
     
     # Comparar com ladder anterior
@@ -123,7 +123,24 @@ def detalhar_ladder_atual(request):
                 break
             
         if not preencheu_alteracao:
-            posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
+            # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
+            primeiros_desafios = list()
+            if DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                              desafiante=posicao_ladder.jogador).exists():
+                primeiro_desafiante = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                                                         desafiante=posicao_ladder.jogador).order_by('data_hora')[0]
+                primeiro_desafiante.posicao = primeiro_desafiante.posicao_desafiante
+                primeiros_desafios.append(primeiro_desafiante)
+            
+            if DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                              desafiado=posicao_ladder.jogador).exists():
+                primeiro_desafiado = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                                                         desafiado=posicao_ladder.jogador).order_by('data_hora')[0]
+                primeiro_desafiado.posicao = primeiro_desafiado.posicao_desafiado
+                primeiros_desafios.append(primeiro_desafiado)
+                
+            primeiro_desafio = sorted(primeiros_desafios, key=lambda x: x.data_hora)[0]
+            posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
             
     
     # Guardar destaques da ladder
@@ -231,7 +248,24 @@ def detalhar_ladder_historico(request, ano, mes):
                 break
             
         if not preencheu_alteracao:
-            posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
+            # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
+            primeiros_desafios = list()
+            if DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
+                                              desafiante=posicao_ladder.jogador).exists():
+                primeiro_desafiante = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
+                                                                         desafiante=posicao_ladder.jogador).order_by('data_hora')[0]
+                primeiro_desafiante.posicao = primeiro_desafiante.posicao_desafiante
+                primeiros_desafios.append(primeiro_desafiante)
+            
+            if DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
+                                              desafiado=posicao_ladder.jogador).exists():
+                primeiro_desafiado = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
+                                                                         desafiado=posicao_ladder.jogador).order_by('data_hora')[0]
+                primeiro_desafiado.posicao = primeiro_desafiado.posicao_desafiado
+                primeiros_desafios.append(primeiro_desafiado)
+                
+            primeiro_desafio = sorted(primeiros_desafios, key=lambda x: x.data_hora)[0]
+            posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
     
     return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes})
 
