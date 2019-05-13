@@ -4,11 +4,9 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models.aggregates import Count, Max
-from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
-from django.utils import timezone
 
 from jogadores.forms import JogadorForm, StagesValidasForm
 from jogadores.models import Jogador, Stage, StageValidaLadder
@@ -37,7 +35,7 @@ def detalhar_jogador(request, username):
     jogador.grafico_percentual_vitorias = list()
     qtd_vitorias = 0
     qtd_desafios = 0
-    for desafio in DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador), cancelamentodesafioladder__isnull=True) \
+    for desafio in DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
             .order_by('data_hora'):
         if desafio.desafiante_id == jogador.id and desafio.score_desafiante > desafio.score_desafiado:
             qtd_vitorias += 1
