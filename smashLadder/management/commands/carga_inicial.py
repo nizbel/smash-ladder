@@ -111,9 +111,7 @@ class Command(BaseCommand):
                                                        adicionado_por=admin)
                         desafio_ladder.save()
                         
-                        verificar_posicoes_desafiante_desafiado(desafio_ladder.ladder, desafio_ladder.desafiante,
-                                                             desafio_ladder.desafiado, desafio_ladder.data_hora,
-                                                             desafio_ladder.desafio_coringa)
+                        verificar_posicoes_desafiante_desafiado(desafio_ladder)
                     
                         # Alterar ladder referência
                         alterar_ladder(desafio_ladder)

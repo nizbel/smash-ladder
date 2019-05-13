@@ -4,6 +4,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from smashLadder.utils import DateTimeFieldTz
+
 
 class Luta(models.Model):
     """Registro de uma luta"""
@@ -49,14 +51,16 @@ class DesafioLadder(models.Model):
     desafiante = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='desafiante')
     desafiado = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='desafiado')
     desafio_coringa = models.BooleanField(u'É desafio coringa?')
-    score_desafiante = models.SmallIntegerField(u'Vitórias do desafiante', validators=[MinValueValidator(0), MaxValueValidator(3)])
-    score_desafiado = models.SmallIntegerField(u'Vitórias do desafiado', validators=[MinValueValidator(0), MaxValueValidator(3)])
+    score_desafiante = models.SmallIntegerField(u'Vitórias do desafiante', validators=[MinValueValidator(0), MaxValueValidator(SCORE_VITORIA)])
+    score_desafiado = models.SmallIntegerField(u'Vitórias do desafiado', validators=[MinValueValidator(0), MaxValueValidator(SCORE_VITORIA)])
     admin_validador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, blank=True, null=True, related_name='admin_validador')
-    data_hora = models.DateTimeField(u'Data e hora do resultado')
+    data_hora = DateTimeFieldTz(u'Data e hora do resultado')
     adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='criador_desafio')
+    posicao_desafiante = models.SmallIntegerField(u'Posição do desafiante', default=0)
+    posicao_desafiado = models.SmallIntegerField(u'Posição do desafiado', default=0)
     
     class Meta():
-        unique_together = ('desafiante', 'desafiado', 'data_hora')
+        unique_together = (('desafiante', 'data_hora'), ('desafiado', 'data_hora'))
     
     @property
     def lutas(self):
@@ -80,7 +84,7 @@ class DesafioLadder(models.Model):
         """Retorna mes e ano de ladder da qual desafio faz parte"""
         if self.is_historico():
             return (self.data_hora.month, self.data_hora.year)
-        return None
+        return (None, None)
     
     @property
     def ladder(self):
@@ -107,6 +111,15 @@ class DesafioLadder(models.Model):
     def desafiante_venceu(self):
         """Retorna se desafiante foi o ganhador"""
         return self.score_desafiante > self.score_desafiado
+    
+    # Managers
+    class DesafiosValidadosManager(models.Manager):
+        """Queryset para trazer desafios validados e não cancelados"""
+        def get_queryset(self):
+            return super().get_queryset().filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False)
+        
+    objects = models.Manager()
+    validados = DesafiosValidadosManager()
     
 class LutaLadder(models.Model):
     """Lutas para um desafio de ladder"""
@@ -151,10 +164,22 @@ class HistoricoLadder(models.Model):
     
     class Meta():
         unique_together = (('jogador', 'mes', 'ano'), ('posicao', 'mes', 'ano'))
+        
+    def __str__(self):
+        return f'{self.posicao}: {self.jogador}'
     
 class CancelamentoDesafioLadder(models.Model):
     """Cancelamento (exclusão lógica) de desafios de ladder"""
     desafio_ladder = models.OneToOneField('DesafioLadder', on_delete=models.CASCADE)
     data_hora = models.DateTimeField(u'Data/hora da exclusão', auto_now_add=True)
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    
+class ResultadoDesafioLadder(models.Model):
+    """Resultado de um desafio de ladder"""
+    desafio_ladder = models.ForeignKey('DesafioLadder', on_delete=models.CASCADE)
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    alteracao_posicao = models.SmallIntegerField(u'Alteração na posição após desafio')
+    
+    class Meta():
+        unique_together = ('desafio_ladder', 'jogador')
     

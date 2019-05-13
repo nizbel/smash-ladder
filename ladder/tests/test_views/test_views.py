@@ -20,6 +20,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
     MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
+from django.test.utils import freeze_time
 
 
 class ViewEditarDesafioLadderTestCase(TestCase):
@@ -860,7 +861,7 @@ class ViewDetalharDesafioLadderTestCase(TestCase):
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.sena)
         
         cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, 
-                                                                            timezone.now().replace(minute=0), False, cls.sena)
+                                                                            timezone.now() - datetime.timedelta(minutes=1), False, cls.sena)
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
@@ -1018,8 +1019,6 @@ class ViewDetalharLadderAtualTestCase(TestCase):
                 self.assertTrue(jogador_posicao.jogador.is_de_ferias())
             else:
                 self.assertFalse(jogador_posicao.jogador.is_de_ferias())
-        
-        
         
 class ViewListarHistoricoLadderTestCase(TestCase):
     """Testes para a view de listar históricos de ladder"""
@@ -1192,7 +1191,7 @@ class ViewListarDesafiosLadderPendentesValidacaoTestCase(TestCase):
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
         
-        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
+        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual + datetime.timedelta(minutes=1), False, cls.saraiva)
         validar_desafio_ladder_teste(cls.desafio_ladder_validado, cls.teets)
         
     def test_acesso_deslogado(self):
@@ -1275,12 +1274,12 @@ class ViewListarDesafiosLadderEspecificaTestCase(TestCase):
         
         # Desafios de ladder
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.mad, cls.saraiva, 2, 3, horario_atual, False, cls.sena)
-        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual, False, cls.saraiva)
+        cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, horario_atual + datetime.timedelta(minutes=1), False, cls.saraiva)
         
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 0, 3, horario_historico, False, cls.teets)
         
-        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual, False, cls.saraiva)
+        cls.desafio_ladder_validado = criar_desafio_ladder_simples_teste(cls.saraiva, cls.teets, 0, 3, horario_atual + datetime.timedelta(minutes=2), False, cls.saraiva)
         validar_desafio_ladder_teste(cls.desafio_ladder_validado, cls.teets)
         
     def test_acesso_deslogado_ladder_atual(self):
