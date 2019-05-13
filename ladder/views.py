@@ -63,6 +63,11 @@ def add_desafio_ladder(request):
                 try:
                     with transaction.atomic():
                         desafio_ladder = form_desafio_ladder.save(commit=False)
+                        
+                        # Adicionar posições
+                        desafio_ladder.posicao_desafiante = desafio_ladder.desafiante.posicao_em(desafio_ladder.data_hora)
+                        desafio_ladder.posicao_desafiado = desafio_ladder.desafiado.posicao_em(desafio_ladder.data_hora)
+                        
                         desafio_ladder.save()
                         
                         # Validar lutas
