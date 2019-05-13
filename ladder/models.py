@@ -56,8 +56,8 @@ class DesafioLadder(models.Model):
     admin_validador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, blank=True, null=True, related_name='admin_validador')
     data_hora = DateTimeFieldTz(u'Data e hora do resultado')
     adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='criador_desafio')
-    posicao_desafiante = models.SmallIntegerField(u'Posição do desafiante', validators=[MinValueValidator(1)], default=2)
-    posicao_desafiado = models.SmallIntegerField(u'Posição do desafiado', validators=[MinValueValidator(1)], default=1)
+    posicao_desafiante = models.SmallIntegerField(u'Posição do desafiante', default=0)
+    posicao_desafiado = models.SmallIntegerField(u'Posição do desafiado', default=0)
     
     class Meta():
         unique_together = (('desafiante', 'data_hora'), ('desafiado', 'data_hora'))
