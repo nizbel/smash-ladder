@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models.aggregates import Count
 from django.db.models.expressions import Case, When, F
 from django.db.models.fields import IntegerField
+from django.db.models.query_utils import Q
 from django.forms.formsets import formset_factory
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404, render, redirect
@@ -122,25 +123,14 @@ def detalhar_ladder_atual(request):
             
         if not preencheu_alteracao:
             # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
-            primeiros_desafios = list()
-            if DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
-                                              desafiante=posicao_ladder.jogador).exists():
-                primeiro_desafiante = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
-                                                                         desafiante=posicao_ladder.jogador).order_by('data_hora')[0]
-                primeiro_desafiante.posicao = primeiro_desafiante.posicao_desafiante
-                primeiros_desafios.append(primeiro_desafiante)
-            
-            if DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
-                                              desafiado=posicao_ladder.jogador).exists():
-                primeiro_desafiado = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
-                                                                         desafiado=posicao_ladder.jogador).order_by('data_hora')[0]
-                primeiro_desafiado.posicao = primeiro_desafiado.posicao_desafiado
-                primeiros_desafios.append(primeiro_desafiado)
+            primeiro_desafio = DesafioLadder.validados.filter((Q(desafiante=posicao_ladder.jogador) | Q(desafiado=posicao_ladder.jogador)), 
+                                                              data_hora__month=data_atual.month, data_hora__year=data_atual.year).annotate(
+                                                                  posicao=Case(When(desafiante=posicao_ladder.jogador, then=F('posicao_desafiante')),
+                                                                               When(desafiado=posicao_ladder.jogador, then=F('posicao_desafiado')))) \
+                                                                               .order_by('data_hora')[0]
                 
-            primeiro_desafio = sorted(primeiros_desafios, key=lambda x: x.data_hora)[0]
             posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
-            
-    
+
     # Guardar destaques da ladder
     destaques = {}
     
@@ -253,24 +243,14 @@ def detalhar_ladder_historico(request, ano, mes):
             
         if not preencheu_alteracao:
             # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
-            primeiros_desafios = list()
-            if DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
-                                              desafiante=posicao_ladder.jogador).exists():
-                primeiro_desafiante = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
-                                                                         desafiante=posicao_ladder.jogador).order_by('data_hora')[0]
-                primeiro_desafiante.posicao = primeiro_desafiante.posicao_desafiante
-                primeiros_desafios.append(primeiro_desafiante)
-            
-            if DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
-                                              desafiado=posicao_ladder.jogador).exists():
-                primeiro_desafiado = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano, 
-                                                                         desafiado=posicao_ladder.jogador).order_by('data_hora')[0]
-                primeiro_desafiado.posicao = primeiro_desafiado.posicao_desafiado
-                primeiros_desafios.append(primeiro_desafiado)
-                
-            primeiro_desafio = sorted(primeiros_desafios, key=lambda x: x.data_hora)[0]
+            primeiro_desafio = DesafioLadder.validados.filter((Q(desafiante=posicao_ladder.jogador) | Q(desafiado=posicao_ladder.jogador)), 
+                                                              data_hora__month=mes, data_hora__year=ano).annotate(
+                                                                  posicao=Case(When(desafiante=posicao_ladder.jogador, then=F('posicao_desafiante')),
+                                                                               When(desafiado=posicao_ladder.jogador, then=F('posicao_desafiado')))) \
+                                                                               .order_by('data_hora')[0]
+                 
             posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
-    
+            
     # Guardar destaques da ladder
     destaques = {}
     
