@@ -35,8 +35,23 @@ Adicionar desafio
 <script type="text/javascript">
 $(document).ready(function(){
 	$('select').select2();
-	$('.data-hora').mask('00/00/0000 00:00');
-	$('.data-hora').attr("placeholder", "DD/MM/AAAA hh:mm");
+	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
+	
+	// Verificar se data está preenchida
+	if ($('.data-hora').cleanVal().length < 12) {
+		$('input[type=submit]').attr('disabled', true);
+	}
+	
+	$('.data-hora').on('input', function() {
+		if ($(this).cleanVal().length < 12) {
+			$('input[type=submit]').attr('disabled', true);
+			$(this).parent().find('.text-danger').remove();
+			$(this).parent().append('<div class="text-danger">Preencha até o final no formato DD/MM/AAAA hh:mm</div>')
+		} else {
+			$('input[type=submit]').attr('disabled', false);
+			$(this).parent().find('.text-danger').remove();
+		}
+	});
 });
 </script>
 {% endblock %}
