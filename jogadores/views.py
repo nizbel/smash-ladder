@@ -34,6 +34,9 @@ def detalhar_jogador(request, username):
     
     jogador.percentual_vitorias = desafios['vitorias'] * 100 / ((desafios['vitorias'] + desafios['derrotas']) or 1)
     
+    # Posição atual na ladder
+    jogador.posicao_atual = jogador.posicao_em(timezone.localtime())
+    
     # Preencher gráfico com percentual de vitórias
     jogador.grafico_percentual_vitorias = list()
     qtd_vitorias = 0
