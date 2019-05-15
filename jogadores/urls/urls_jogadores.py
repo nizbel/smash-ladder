@@ -19,7 +19,8 @@ from jogadores import views
 
 app_name='jogadores'
 urlpatterns = [
-    path(r'listar/', views.listar_jogadores, name='listar_jogadores'),
     path(r'detalhar/<slug:username>/', views.detalhar_jogador, name='detalhar_jogador'),
     path(r'editar/<slug:username>/', views.editar_jogador, name='editar_jogador'),
+    path(r'listar/', views.listar_jogadores, name='listar_jogadores'),
+    path(r'listar-desafios/<slug:username>/', views.listar_desafios_jogador, name='listar_desafios_jogador'),
 ]

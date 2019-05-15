@@ -51,6 +51,7 @@ def detalhar_jogador(request, username):
     # Preencher gráfico de variação de posição utilizando resultados
     jogador.grafico_variacao_posicao = list()
     
+    # Verificar se jogador possui desafios
     if len(desafios_feitos) + len(desafios_recebidos) > 0:
         # Buscar primeiro desafio
         todos_desafios = desafios_feitos
@@ -61,12 +62,12 @@ def detalhar_jogador(request, username):
         
         data_inicial = primeiro_desafio.data_hora
         
-        if primeiro_desafio.desafiante == jogador:
+        if primeiro_desafio.desafiante_id == jogador.id:
             posicao_inicial = primeiro_desafio.posicao_desafiante
         else:
             posicao_inicial = primeiro_desafio.posicao_desafiado
         
-        jogador.grafico_variacao_posicao.append({'x': data_inicial.strftime('%Y/%m/%d %H:%M'), 'y': posicao_inicial})
+        jogador.grafico_variacao_posicao.append({'x': data_inicial.strftime('%d/%m/%Y %H:%M'), 'y': posicao_inicial})
         
         # Preencher gráfico com variações a partir dessa data
         posicao_atual = posicao_inicial
@@ -75,8 +76,11 @@ def detalhar_jogador(request, username):
                 .values('alteracao_total', 'data_hora').order_by('data_hora', 'desafio_ladder__posicao_desafiado'):
             posicao_atual += resultado['alteracao_total']
             
-            jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%Y/%m/%d %H:%M'), 'y': posicao_atual})
+            jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%d/%m/%Y %H:%M'), 'y': posicao_atual})
             
+        # Adicionar últimos desafios
+        jogador.ultimos_desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
+            .order_by('-data_hora').select_related('desafiante', 'desafiado')[:3]
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
 def detalhar_stage_id(request, stage_id):
@@ -192,3 +196,12 @@ def editar_stages_validas(request):
             'stages_validas': [stage_id for stage_id in Stage.objects.filter(stagevalidaladder__isnull=False).values_list('id', flat=True)]})
     
     return render(request, 'stages/editar_stages_validas.html', {'form_stages_validas': form_stages_validas})
+
+def listar_desafios_jogador(request, username):
+    """Listar desafios de um jogador pelo nick"""
+    jogador = get_object_or_404(Jogador, user__username=username)
+    
+    # Buscar desafios participados
+    desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('data_hora').select_related('desafiante', 'desafiado')
+    
+    return render(request, 'jogadores/listar_desafios_jogador.html', {'jogador': jogador, 'desafios': desafios})

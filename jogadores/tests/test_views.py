@@ -12,7 +12,8 @@ from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, JOGADORES_TESTE, criar_stages_teste,\
     criar_stage_teste
 from ladder.models import DesafioLadder
-from ladder.tests.utils_teste import LADDER_FORMATO_TESTE
+from ladder.tests.utils_teste import LADDER_FORMATO_TESTE,\
+    criar_desafio_ladder_simples_teste
 from smashLadder import settings
 
 
@@ -180,7 +181,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         
         # Deve permitir detalhar cada desafio
         for desafio in ultimos_desafios:
-            self.assertContains(response, reverse('ladder:detalhar_desafio', kwargs={'desafio_id': desafio.id}), 1)
+            self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio.id}), 1)
         
         # Deve mostrar últimos desafios
         self.assertContains(response, 'Últimos desafios')
@@ -366,12 +367,18 @@ class ViewListarDesafiosJogadorTestCase(TestCase):
     """Testes para a view de listar desafios de um jogador"""
     @classmethod
     def setUpTestData(cls):
-        super(ViewListarJogadoresTestCase, cls).setUpTestData()
+        super(ViewListarDesafiosJogadorTestCase, cls).setUpTestData()
         cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
         
-        criar_jogadores_teste(['sena', 'teets'])
+        criar_jogadores_teste(['sena', 'teets', 'mad'])
         cls.jogador_sem_desafios = Jogador.objects.get(nick='sena')
         cls.jogador_com_desafios = Jogador.objects.get(nick='teets')
+        terceiro = Jogador.objects.get(nick='mad')
+        
+        # Gerar desafios
+        for indice in range(7):
+            criar_desafio_ladder_simples_teste(terceiro, cls.jogador_com_desafios, 1, 3, 
+                                               timezone.now() - datetime.timedelta(days=5*indice), False, cls.jogador_com_desafios)
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de listar desafios de um jogador sem logar"""
@@ -402,7 +409,7 @@ class ViewListarDesafiosJogadorTestCase(TestCase):
         
         # Deve permitir detalhar cada desafio
         for desafio in response.context['desafios']:
-            self.assertContains(response, reverse('ladder:detalhar_desafio', kwargs={'desafio_id': desafio.id}), 1)
+            self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio.id}), 1)
         
         # Deve conter link para voltar para tela de detalhamento
-        self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_sem_desafios.user.username}), 1)
+        self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_com_desafios.user.username}), 1)
