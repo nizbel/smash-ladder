@@ -41,6 +41,10 @@ def criar_ladder_teste():
         posicao_ladder = PosicaoLadder.objects.create(posicao=posicao_ladder['posicao'], jogador=jogador_atual)
         ladder.append(posicao_ladder)
         
+    # Criar ladder inicial caso não exista
+    if not InicioLadder.objects.all().exists():
+        criar_ladder_inicial_teste()
+        
     return ladder
 
 
@@ -54,6 +58,10 @@ def criar_ladder_historico_teste(ano, mes):
                 jogador_atual = jogador
                 break
         HistoricoLadder.objects.create(posicao=posicao_ladder['posicao'], jogador=jogador_atual, ano=ano, mes=mes)
+        
+    # Criar ladder inicial caso não exista
+    if not InicioLadder.objects.all().exists():
+        criar_ladder_inicial_teste()
 
 def criar_luta_teste(jogadores, ganhador, data, criador_luta):
     """Cria um desafio de luta básico para teste"""
@@ -119,10 +127,10 @@ def criar_desafio_ladder_completo_teste(desafiante, desafiado, score_desafiante,
 
 def validar_desafio_ladder_teste(desafio_ladder, admin_validador):
     """Valida um desafio de ladder e altera posições para teste"""
-    alterar_ladder(desafio_ladder)
-    
     desafio_ladder.admin_validador = admin_validador
     desafio_ladder.save()
+    
+    alterar_ladder(desafio_ladder)
     
 def gerar_campos_formset(dados, prefixo_form):
     """Instancia um formset diretamente para teste"""

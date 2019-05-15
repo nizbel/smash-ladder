@@ -28,11 +28,26 @@
 					    	</a>
 					    </h6>
 				    </div>
+				    
+				    <div class="col-6">
+					    <h6 class="card-title">Posição desafiante</h6>
+					    <h6 class="card-title"><strong>{{ desafio_ladder.posicao_desafiante }}</strong></h6>
+				    </div>
+				    <div class="col-6">
+					    <h6 class="card-title">Posição desafiado</h6>
+					    <h6 class="card-title"><strong>{{ desafio_ladder.posicao_desafiado }}</strong></h6>
+				    </div>
 			    
 			  		<div class="col-6">
 					    <h6 class="card-title">Data/hora</h6>
 					    <h6 class="card-title"><strong>{{ desafio_ladder.data_hora|date:"d/m/Y H:i" }}</strong></h6>
 				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Criador</h6>
+					    <h6 class="card-title"><strong>{{ desafio_ladder.adicionado_por.nick }}</strong>
+						</h6>
+				    </div>
+				    
 			  		<div class="col-6">
 					    <h6 class="card-title">Validador</h6>
 					    <h6 class="card-title"><strong>
@@ -44,7 +59,6 @@
 							</strong>
 						</h6>
 				    </div>
-				    
 				    <div class="col-6">
 					    <h6 class="card-title">Coringa</h6>
 					    <h6 class="card-title"><strong>{{ desafio_ladder.desafio_coringa|yesno:"Sim,Não,Não" }}</strong></h6>
