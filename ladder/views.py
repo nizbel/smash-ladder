@@ -7,8 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models.aggregates import Count, Max
-from django.db.models.expressions import Case, When, Value
+from django.db.models.aggregates import Count
+from django.db.models.expressions import Case, When, F
 from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
 from django.forms.formsets import formset_factory
@@ -21,8 +21,7 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder
-from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
-    recalcular_ladder, validar_e_salvar_lutas_ladder
+from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -63,6 +62,11 @@ def add_desafio_ladder(request):
                 try:
                     with transaction.atomic():
                         desafio_ladder = form_desafio_ladder.save(commit=False)
+                        
+                        # Adicionar posições
+                        desafio_ladder.posicao_desafiante = desafio_ladder.desafiante.posicao_em(desafio_ladder.data_hora)
+                        desafio_ladder.posicao_desafiado = desafio_ladder.desafiado.posicao_em(desafio_ladder.data_hora)
+                        
                         desafio_ladder.save()
                         
                         # Validar lutas
@@ -94,9 +98,9 @@ def add_desafio_ladder(request):
     
 def detalhar_ladder_atual(request):
     """Detalhar posição da ladder atual"""
-    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user'))
+    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user').prefetch_related('jogador__registroferias_set'))
     
-    data_atual = timezone.now()
+    data_atual = timezone.localtime()
     data_mes_anterior = timezone.now().replace(day=1) - datetime.timedelta(days=1)
     
     # Comparar com ladder anterior
@@ -118,15 +122,21 @@ def detalhar_ladder_atual(request):
                 break
             
         if not preencheu_alteracao:
-            posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
-            
-    
+            # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
+            primeiro_desafio = DesafioLadder.validados.filter((Q(desafiante=posicao_ladder.jogador) | Q(desafiado=posicao_ladder.jogador)), 
+                                                              data_hora__month=data_atual.month, data_hora__year=data_atual.year).annotate(
+                                                                  posicao=Case(When(desafiante=posicao_ladder.jogador, then=F('posicao_desafiante')),
+                                                                               When(desafiado=posicao_ladder.jogador, then=F('posicao_desafiado')))) \
+                                                                               .order_by('data_hora')[0]
+                
+            posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
+
     # Guardar destaques da ladder
     destaques = {}
     
-    # Verificar qual jogador possui mais desafios na ladder
-    if DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False,
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year).exists():
+    if DesafioLadder.validados.exists():
+        
+        # Verificar qual jogador possui mais desafios na ladder
         # Qtd de desafios feitos
         desafios_feitos = dict(Jogador.objects.all().annotate(qtd_desafios=(Count(Case(
             When(desafiante__cancelamentodesafioladder__isnull=True, desafiante__admin_validador__isnull=False, 
@@ -145,13 +155,12 @@ def detalhar_ladder_atual(request):
         desafios = { k: desafios_feitos.get(k, 0) + desafios_recebidos.get(k, 0) for k in set(desafios_feitos) | set(desafios_recebidos) }
         
         valor_maximo = desafios[(max(desafios, key=lambda key: desafios[key]))]
-        
-        destaques['jogadores_mais_desafios'] = [key for key, value in desafios.items() if value == valor_maximo]
+        if valor_maximo > 0:
+            destaques['jogadores_mais_desafios'] = [key for key, value in desafios.items() if value == valor_maximo]
         
         # Sequencia de vitórias superior a 5
         # Buscar todos os desafios
-        desafios = DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year).order_by('data_hora').select_related('desafiante', 'desafiado')
+        desafios = DesafioLadder.validados.order_by('data_hora').select_related('desafiante', 'desafiado')
         
         # Buscar participantes da ladder
         jogadores = {posicao.jogador.nick: 0 for posicao in ladder}
@@ -172,8 +181,8 @@ def detalhar_ladder_atual(request):
                 posicao_ladder.jogador.streak = jogadores[posicao_ladder.jogador.nick]
                 
         # Verificar jogadores que fizeram 5 defesas com sucesso
-        defesas_sucesso_5 = dict(DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False, 
-             data_hora__month=data_atual.month, data_hora__year=data_atual.year, score_desafiado=3).values('desafiado').order_by('desafiado') \
+        defesas_sucesso_5 = dict(DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year, 
+                                                                score_desafiado__gt=F('score_desafiante')).values('desafiado').order_by('desafiado') \
              .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
         
         # Destacar jogadores que fizeram 5 defesas com sucesso
@@ -181,6 +190,12 @@ def detalhar_ladder_atual(request):
         for posicao_ladder in ladder:
             if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
                 posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
+                
+        # Destaque para uso de coringa com sucesso subindo mais de 10 posições
+        vitorias_coringa = DesafioLadder.validados.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year) \
+            .filter(desafio_coringa=True, score_desafiante__gt=F('score_desafiado'), 
+                    posicao_desafiante__gte=(F('posicao_desafiado') + 10)).select_related('desafiante')
+        destaques['vitoria_coringa_10_posicoes'] = [vitoria.desafiante.nick for vitoria in vitorias_coringa]
                 
         # Marcar todos os jogadores com destaques
         for posicao_ladder in ladder:
@@ -220,16 +235,52 @@ def detalhar_ladder_historico(request, ano, mes):
         preencheu_alteracao = False
         # Procurar jogador na ladder anterior
         for posicao_ladder_anterior in ladder_anterior:
-            if posicao_ladder_anterior.jogador == posicao_ladder.jogador:
+            if posicao_ladder_anterior.jogador_id == posicao_ladder.jogador_id:
                 posicao_ladder.alteracao = posicao_ladder_anterior.posicao - posicao_ladder.posicao
 
                 preencheu_alteracao = True
                 break
             
         if not preencheu_alteracao:
-            posicao_ladder.alteracao = len(ladder) - posicao_ladder.posicao
+            # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
+            primeiro_desafio = DesafioLadder.validados.filter((Q(desafiante=posicao_ladder.jogador) | Q(desafiado=posicao_ladder.jogador)), 
+                                                              data_hora__month=mes, data_hora__year=ano).annotate(
+                                                                  posicao=Case(When(desafiante=posicao_ladder.jogador, then=F('posicao_desafiante')),
+                                                                               When(desafiado=posicao_ladder.jogador, then=F('posicao_desafiado')))) \
+                                                                               .order_by('data_hora')[0]
+                 
+            posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
+            
+    # Guardar destaques da ladder
+    destaques = {}
     
-    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes})
+    desafios_mes = DesafioLadder.validados.filter(data_hora__month=mes, data_hora__year=ano)
+    if desafios_mes.exists():
+        # Procurar destaques
+        
+        # Verificar jogadores que fizeram 5 defesas com sucesso
+        defesas_sucesso_5 = dict(desafios_mes.filter(score_desafiado__gt=F('score_desafiante')).values('desafiado').order_by('desafiado') \
+             .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
+        
+        # Destacar jogadores que fizeram 5 defesas com sucesso
+        destaques['jogadores_5_defesas'] = [key for key, value in defesas_sucesso_5.items()]
+        for posicao_ladder in ladder:
+            if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
+                posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
+        
+        # Destaque para uso de coringa com sucesso subindo mais de 10 posições
+        vitorias_coringa = desafios_mes.filter(desafio_coringa=True, score_desafiante__gt=F('score_desafiado'),
+                                                          posicao_desafiante__gte=(F('posicao_desafiado') + 10)).select_related('desafiante')
+        destaques['vitoria_coringa_10_posicoes'] = [vitoria.desafiante.nick for vitoria in vitorias_coringa]
+
+        # Marcar todos os jogadores com destaques
+        for posicao_ladder in ladder:
+            for destaque in destaques:
+                if posicao_ladder.jogador.nick in destaques[destaque]:
+                    posicao_ladder.jogador.tem_destaque = True
+                    break
+    
+    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes, 'destaques': destaques})
 
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
@@ -275,18 +326,19 @@ def cancelar_desafio_ladder(request, desafio_id):
                 with transaction.atomic():
                     # Se validado, verificar alterações decorrentes da operação
                     if desafio_ladder.is_validado():
-                        # Verificar se desafio é de histórico
-                        if desafio_ladder.is_historico():
-                            mes, ano = desafio_ladder.mes_ano_ladder
-                        else:
-                            mes, ano = None, None
+#                         # Verificar se desafio é de histórico
+#                         if desafio_ladder.is_historico():
+#                             mes, ano = desafio_ladder.mes_ano_ladder
+#                         else:
+#                             mes, ano = None, None
                         
                         # Gerar cancelamento para desafio e tentar recalcular ladder
                         cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
                         cancelamento.save()
                         
                         # Recalcula ladder para verificar se cancelamento é válido
-                        recalcular_ladder(mes, ano)
+#                         recalcular_ladder(mes, ano)
+                        recalcular_ladder(desafio_ladder)
                         
                         # Se desafio tinha desafio coringa, verificar último uso do jogador
                         if desafio_ladder.desafio_coringa:
@@ -394,6 +446,11 @@ def editar_desafio_ladder(request, desafio_id):
                 try:
                     with transaction.atomic():
                         desafio_ladder = form_desafio_ladder.save(commit=False)
+                        
+                        # Adicionar posições
+                        desafio_ladder.posicao_desafiante = desafio_ladder.desafiante.posicao_em(desafio_ladder.data_hora)
+                        desafio_ladder.posicao_desafiado = desafio_ladder.desafiado.posicao_em(desafio_ladder.data_hora)
+                        
                         desafio_ladder.save()
                         
                         # Validar lutas
@@ -435,7 +492,7 @@ def listar_desafios_ladder(request, ano=None, mes=None):
     # Ano/mês devem estar ambos preenchidos ou ambos nulos
     # Ambos nulos significa ladder atual
     if ano == None and mes == None:
-        data_atual = timezone.now().date()
+        data_atual = timezone.localdate()
         ano = data_atual.year
         mes = data_atual.month
     elif (ano == None and mes != None) or (ano != None and mes == None):
@@ -495,16 +552,14 @@ def validar_desafio_ladder(request, desafio_id):
                 with transaction.atomic():
                     # Validação
                     # Verificar posições
-                    verificar_posicoes_desafiante_desafiado(desafio_ladder.ladder, desafio_ladder.desafiante,
-                                                             desafio_ladder.desafiado, desafio_ladder.data_hora,
-                                                             desafio_ladder.desafio_coringa)
-                    
-                    # Alterar ladder referência
-                    alterar_ladder(desafio_ladder)
+#                     verificar_posicoes_desafiante_desafiado(desafio_ladder)
                     
                     # Gravar validador
                     desafio_ladder.admin_validador = request.user.jogador
                     desafio_ladder.save()
+                    
+                    # Alterar ladder referência
+                    recalcular_ladder(desafio_ladder)
                     
                     if desafio_ladder.desafio_coringa:
                         desafiante = desafio_ladder.desafiante
