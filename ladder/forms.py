@@ -2,6 +2,7 @@
 """Formulários para classes de ladder"""
 import datetime
 
+from django.db.models.query_utils import Q
 from django.forms import ValidationError
 from django.forms.fields import BooleanField
 from django.forms.models import ModelForm, ModelChoiceField
@@ -52,8 +53,11 @@ class DesafioLadderForm(ModelForm):
         if not data_hora:
             return cleaned_data
         
+        # Converter data/hora para fuso local
+        data_hora = timezone.localtime(data_hora)
+        
         # Testar se desafio se refere a histórico ou a ladder atual
-        hora_atual = timezone.now()
+        hora_atual = timezone.localtime()
         if data_hora.month == hora_atual.month and data_hora.year == hora_atual.year:
             ladder = PosicaoLadder.objects
         else:
@@ -64,14 +68,17 @@ class DesafioLadderForm(ModelForm):
         
         # Verificar se desafiante pode realizar desafio
         try:
-            verificar_posicoes_desafiante_desafiado(ladder, desafiante, desafiado, data_hora, desafio_coringa)
+#             verificar_posicoes_desafiante_desafiado(ladder, desafiante, desafiado, data_hora, desafio_coringa)
+            novo_desafio = DesafioLadder(desafiante=desafiante, desafiado=desafiado, data_hora=data_hora, 
+                                         desafio_coringa=desafio_coringa)
+            verificar_posicoes_desafiante_desafiado(novo_desafio)
         except ValueError as e:
             raise ValidationError(e)
         
         # Se desafio coringa
         if desafio_coringa:
             # Verificar se desafiante pode utilizar desafio coringa
-            if not desafiante.pode_usar_coringa_na_data(timezone.make_naive(data_hora).date()):
+            if not desafiante.pode_usar_coringa_na_data(data_hora.date()):
                 raise ValidationError(DesafioLadder.MENSAGEM_ERRO_PERIODO_ESPERA_CORINGA)
         
         # Verificar se criador do desafio pode criá-lo
@@ -94,6 +101,11 @@ class DesafioLadderForm(ModelForm):
            
         if (lutas_mesmos_jogadores_em_data_proxima.exists()):
             raise ValidationError(DesafioLadder.MENSAGEM_ERRO_PERIODO_ESPERA_MESMOS_JOGADORES)
+        
+        # Verificar se jogadores envolvidos não estão presentes em outros desafios exatamente no mesmo horário
+        if DesafioLadder.objects.filter(Q(data_hora=data_hora, desafiante__in=[desafiante, desafiado]) |
+                                        Q(data_hora=data_hora, desafiado__in=[desafiante, desafiado])).exists():
+            raise ValidationError('Jogadores participantes do desafio já estão em outro desafio exatamente na mesma data/hora')
         
         # Modelo anterior
 #         if (DesafioLadder.objects.filter(desafiante=desafiante, desafiado=desafiado, 
