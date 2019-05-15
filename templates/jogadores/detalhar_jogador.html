@@ -125,6 +125,52 @@
 			</div>
 		</div>
 	</div>
+	
+	{% if jogador.ultimos_desafios %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Últimos desafios
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+					{% for desafio_ladder in jogador.ultimos_desafios %}
+					<div class="card col-12">
+					  	<div class="card-body">
+					  		<div class="row d-flex">
+						  		<div class="col-6 text-left d-flex flex-column">
+							    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiante.nick }}</h6>
+							    	<h6 class="card-title {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{desafio_ladder.score_desafiante}}</h6>
+						    	</div>
+						  		<div class="col-6 text-right">
+							    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiado.nick }}</h6>
+							    	<h6 class="card-title
+						  			{% if desafio_ladder.score_desafiado > desafio_ladder.score_desafiante %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{desafio_ladder.score_desafiado}}</h6>
+						    	</div>
+					    	</div>
+					    	
+						    <h6 class="card-subtitle mb-2 text-muted">{{ desafio_ladder.data_hora|date:'d/m/Y H:i' }}</h6>
+						    
+						    <a class="card-link" href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
+					  	</div>
+					</div>
+					{% endfor %}
+					<div class="col-12 text-center mt-3 mb-0">
+						<a href="{% url 'jogadores:listar_desafios_jogador' jogador.user.username %}">Ver todos</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -147,6 +193,9 @@
 	    	legend: {
 	    		display: false
 			},
+			tooltips: {
+  				intersect: false
+			},
 	        scales: {
 	            xAxes: [{
 	            	scaleLabel: {
@@ -167,7 +216,7 @@
 	});
 	
 	var ctx = document.getElementById('graf-hist-ladder').getContext('2d');
-	var grafPercVitorias = new Chart(ctx, {
+	var grafHistLadder = new Chart(ctx, {
 	    type: 'line',
 	    data: {
 	    	labels: [{% for item in jogador.grafico_variacao_posicao %}'',{% endfor %}],
@@ -183,17 +232,25 @@
 	    	legend: {
 	    		display: false
 			},
+			tooltips: {
+  				intersect: false
+			},
 	        scales: {
 	            xAxes: [{
 	                type: 'time',
 	                time: {
-                    	parser: "YYYY/MM/DD HH:mm",
+                    	parser: "DD/MM/YYYY HH:mm",
                     	min: '{{ jogador.grafico_variacao_posicao.0.x }}'
                 	}
 	            }],
 	            yAxes: [{
 	                ticks: {
-	                    reverse: true
+	                    reverse: true,
+	                    callback: function(value, index, values) {
+					        if (Math.floor(value) === value) {
+					            return value;
+					        }
+					    }
 	                }
 	            }]
 	        }
