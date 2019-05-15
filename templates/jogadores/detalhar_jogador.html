@@ -37,6 +37,11 @@
 					    <h6 class="card-title">Último coringa</h6>
 					    <h6 class="card-title"><strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></h6>
 				    </div>
+					<div class="col-6">
+					    <h6 class="card-title">Posição atual</h6>
+					    <h6 class="card-title"><strong>{{ jogador.posicao_atual }}</strong></h6>
+				    </div>
+					
 			  		<div class="col-6">
 					    <h6 class="card-title">Admin</h6>
 					    <h6 class="card-title"><strong>{{ jogador.admin|yesno:"Sim,Não,Não" }}</strong>
