@@ -6,6 +6,10 @@
 Ladder atual
 {% endblock %}
 
+{% block extra_header %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+{% endblock %}
+
 {% block content %}
 	<div class="col-12 text-center mb-3">
 		<a href="{% url 'ladder:listar_desafios_ladder_atual' %}">Todos os desafios</a>
