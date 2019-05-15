@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """Views para jogadores"""
 
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models.aggregates import Count, Max
+from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
-from django.utils import timezone
 
 from jogadores.forms import JogadorForm, StagesValidasForm
 from jogadores.models import Jogador, Stage, StageValidaLadder
-from ladder.models import DesafioLadder, Luta
+from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder
 
 
 def detalhar_jogador(request, username):
@@ -21,8 +22,8 @@ def detalhar_jogador(request, username):
     
     # Detalhar resultados de desafios do jogador
     desafios = {}
-    desafios_feitos = list(DesafioLadder.objects.filter(desafiante=jogador, admin_validador__isnull=False))
-    desafios_recebidos = list(DesafioLadder.objects.filter(desafiado=jogador, admin_validador__isnull=False))
+    desafios_feitos = list(DesafioLadder.validados.filter(desafiante=jogador))
+    desafios_recebidos = list(DesafioLadder.validados.filter(desafiado=jogador))
     
     desafios['feitos'] = len(desafios_feitos)
     desafios['recebidos'] = len(desafios_recebidos)
@@ -37,17 +38,45 @@ def detalhar_jogador(request, username):
     jogador.grafico_percentual_vitorias = list()
     qtd_vitorias = 0
     qtd_desafios = 0
-    for desafio in DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador), cancelamentodesafioladder__isnull=True) \
+    for desafio in DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
             .order_by('data_hora'):
-        if desafio.desafiante == jogador and desafio.score_desafiante > desafio.score_desafiado:
+        if desafio.desafiante_id == jogador.id and desafio.score_desafiante > desafio.score_desafiado:
             qtd_vitorias += 1
-        elif desafio.desafiado == jogador and desafio.score_desafiante < desafio.score_desafiado:
+        elif desafio.desafiado_id == jogador.id and desafio.score_desafiante < desafio.score_desafiado:
             qtd_vitorias += 1
         qtd_desafios += 1
         percentual_vitorias = qtd_vitorias * 100 / qtd_desafios 
         jogador.grafico_percentual_vitorias.append(round(percentual_vitorias, 2))
         
+    # Preencher gráfico de variação de posição utilizando resultados
+    jogador.grafico_variacao_posicao = list()
     
+    if len(desafios_feitos) + len(desafios_recebidos) > 0:
+        # Buscar primeiro desafio
+        todos_desafios = desafios_feitos
+        todos_desafios.extend(desafios_recebidos)
+        # Ordenar por data
+        todos_desafios.sort(key = lambda x: x.data_hora)
+        primeiro_desafio = todos_desafios[0]
+        
+        data_inicial = primeiro_desafio.data_hora
+        
+        if primeiro_desafio.desafiante == jogador:
+            posicao_inicial = primeiro_desafio.posicao_desafiante
+        else:
+            posicao_inicial = primeiro_desafio.posicao_desafiado
+        
+        jogador.grafico_variacao_posicao.append({'x': data_inicial.strftime('%Y/%m/%d %H:%M'), 'y': posicao_inicial})
+        
+        # Preencher gráfico com variações a partir dessa data
+        posicao_atual = posicao_inicial
+        for resultado in ResultadoDesafioLadder.objects.filter(jogador=jogador).annotate(data_hora=F('desafio_ladder__data_hora')) \
+                .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')) \
+                .values('alteracao_total', 'data_hora').order_by('data_hora', 'desafio_ladder__posicao_desafiado'):
+            posicao_atual += resultado['alteracao_total']
+            
+            jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%Y/%m/%d %H:%M'), 'y': posicao_atual})
+            
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
 def detalhar_stage_id(request, stage_id):
