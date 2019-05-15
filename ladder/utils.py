@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from jogadores.models import Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
-    InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder
+    InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder,\
+    RemocaoJogador
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -744,4 +745,22 @@ def copiar_ladder(ladder_destino, ladder_origem, mes_destino=None, ano_destino=N
     for posicao_dest in ladder_destino:
         if posicao_dest.posicao < 0:
             posicao_dest.delete()
+    
+def remover_jogador(jogador, data):
+    """Remove um jogador da ladder"""
+    # Verificar se jogador está na ladder da data
+    data_atual = timezone.localdate()
+    if data.month == data_atual.month and data.year == data_atual.year:
+        ladder = PosicaoLadder.objects.all()
+    else:
+        ladder = HistoricoLadder.objects.filter(mes=data.month, ano=data.year)
+    
+    if jogador not in ladder.values_list('jogador', flat=True):
+        raise ValueError('Jogador não estava presente na ladder na data especificada')
+    
+#     # Gerar registro de remoção
+#     RemocaoJogador(jogador=jogador, data=data, admin_removedor)
+    
+    # Recalcular ladders a partir da ladder da data
+    recalcular_ladder(mes=data.month, ano=data.year)
     

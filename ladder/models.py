@@ -182,4 +182,10 @@ class ResultadoDesafioLadder(models.Model):
     
     class Meta():
         unique_together = ('desafio_ladder', 'jogador')
+        
+class RemocaoJogador(models.Model):
+    """Registro de remoção de jogador da ladder"""
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    data = models.DateField('Data da remoção')
+    admin_removedor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='admin_removedor')
     
