@@ -5,11 +5,12 @@ import datetime
 
 from django.db import transaction
 from django.db.models.aggregates import Sum, Max
+from django.db.models.expressions import F
 from django.utils import timezone
 
 from jogadores.models import Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
-    InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder,\
+    InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador
 
 
@@ -33,19 +34,24 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
         raise ValueError('Informe apenas um desafio ou um mês/ano')
     
     # Preparar iterador de desafio
-    desafio = None
+    evento = None
     try:
         with transaction.atomic():
             
             # Definir desafios a serem recalculados
             if informou_desafio:
-                desafios = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).exclude(id=desafio_ladder.id) \
+                eventos = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).exclude(id=desafio_ladder.id) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
                 
                 # Adiciona desafio atual se não tiver sido cancelado
                 if not desafio_ladder.is_cancelado():
-                    desafios.append(desafio_ladder)
-                desafios.sort(key=lambda x: (x.data_hora, x.posicao_desafiado, x.id))
+                    eventos.append(desafio_ladder)
+                    
+                # Adicionar remoções
+                eventos.extend(list(RemocaoJogador.objects.filter(data__gte=desafio_ladder.data_hora) \
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')))
+                
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
@@ -76,9 +82,14 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 mes_atual = data_atual.month
                 ano_atual = data_atual.year
                 
-                desafios = list(DesafioLadder.validados.filter(data_hora__month=mes_atual, data_hora__year=ano_atual) \
+                eventos = list(DesafioLadder.validados.filter(data_hora__month=mes_atual, data_hora__year=ano_atual) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
                 
+                # Adicionar remoções
+                eventos.extend(list(RemocaoJogador.objects.filter(data__month=mes_atual, data__year=ano_atual) \
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')))
+                
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 if HistoricoLadder.objects.all().exists():
@@ -89,14 +100,20 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 else:
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), 
                                   InicioLadder.objects.all().order_by('posicao'))
-                
+                    
                 mes = None
                 ano = None
                 
             elif informou_ladder_historico:
                 data = timezone.make_aware(timezone.datetime(ano, mes, 1))
-                desafios = list(DesafioLadder.validados.filter(data_hora__gte=data) \
+                eventos = list(DesafioLadder.validados.filter(data_hora__gte=data) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
+                
+                # Adicionar remoções
+                eventos.extend(list(RemocaoJogador.objects.filter(data__gte=data) \
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')))
+                
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 mes_anterior = mes - 1
@@ -119,11 +136,15 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             mes_atual = mes
             ano_atual = ano
             
-            
             # Reescrever
-            for desafio in desafios:
+            for evento in eventos:
+                
                 # Verificar se alterou mês/ano para próximo desafio
-                mes, ano = desafio.mes_ano_ladder
+                if isinstance(evento, DesafioLadder):
+                    mes, ano = evento.mes_ano_ladder
+                elif isinstance(evento, RemocaoJogador):
+                    mes, ano = evento.mes_ano_ladder
+                    
                 if mes != mes_atual or ano != ano_atual:
                     # Alterou mês/ano na última iteração
                     
@@ -183,9 +204,13 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 else:
                     ladder = HistoricoLadder.objects.filter(mes=mes, ano=ano)
                 
-                verificar_posicoes_desafiante_desafiado(desafio, list(ladder))
-                
-                alterar_ladder(desafio, False)
+                if isinstance(evento, DesafioLadder):
+                    verificar_posicoes_desafiante_desafiado(evento, list(ladder))
+                    
+                    alterar_ladder(evento, False)
+                    
+                elif isinstance(evento, RemocaoJogador):
+                    processar_remocao(evento)
                 
             # Se tiver chegado a data atual, retornar
             if mes_atual == None and ano_atual == None:
@@ -215,8 +240,8 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 ano_atual = prox_ano
             
     except Exception as e:
-        if desafio:
-            raise ValueError(f'Desafio Ladder {desafio.id}: {e}')
+        if evento:
+            raise ValueError(f'Desafio Ladder {evento.id}: {e}')
         raise
 
 def alterar_ladder(desafio_ladder, verificar_posteriores=True):
@@ -472,7 +497,6 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
     # Verificar posição do desafiante
     posicao_desafiante = desafiante.posicao_em(desafio_ladder.data_hora)
     if posicao_desafiante == 0:
-        desafiado_esta_na_ladder = False
         posicao_desafiante = gerar_posicao_novo_entrante(desafio_ladder, desafiante)
     
     if posicao_desafiante < posicao_desafiado:
@@ -624,30 +648,58 @@ def desfazer_desafio(desafio_ladder, ladder):
     
     return ladder
 
-def desfazer_lote_desafios(desafios, ladder):
+def desfazer_lote_desafios(desafios, ladder, remocoes=None):
     """Retorna posições da ladder anteriores ao resultado de um desafio"""
     # Se desafios está vazio, retornar ladder
     if not desafios:
         return ladder
+    
+    if not remocoes:
+        remocoes = list()
     
     resultados = dict(ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios).order_by('jogador').values('jogador') \
                                       .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
     
     jogadores_ladder = [posicao_ladder.jogador_id for posicao_ladder in ladder]
     
+    jogadores_remocoes = [remocao.jogador_id for remocao in remocoes]
+    
+    # Se remoções está preenchido, verificar se ladder é atual ou histórico para posterior operação
+    if remocoes:
+        data_atual = timezone.localdate()
+        mes, ano = desafios[0].mes_ano_ladder
+        ladder_atual = bool(mes == data_atual.month and ano == data_atual.year)
+    
     # Verificar se todos os jogadores presentes no resultado estão indicados na ladder
     for jogador in resultados:
-        if jogador not in jogadores_ladder:
+        if jogador not in jogadores_ladder and jogador not in jogadores_remocoes:
             raise ValueError(f'Resultados do desafio não condizem com a ladder especificada')
     
     # Alterar ladder
     for jogador, alteracao in resultados.items():
         # Procurar jogador
-        for posicao_ladder in ladder:
-            if posicao_ladder.jogador_id == jogador:
-                # Alterar posição
-                posicao_ladder.posicao -= alteracao
-                break
+        if jogador in jogadores_remocoes:
+            # Pegar remoção mais antiga do jogador e desfazer desafios anteriores
+            remocoes_jogador = [remocao for remocao in remocoes if remocao.jogador_id == jogador]
+            primeira_remocao = sorted(remocoes_jogador, key=lambda x: x.data)[0]
+            
+            alteracao_jogador = ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios, jogador__id=jogador,
+                                                                            desafio_ladder__data_hora__lt=primeira_remocao.data) \
+                                      .values('jogador').aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0
+            
+            if ladder_atual:
+                ladder.append(PosicaoLadder(jogador=primeira_remocao.jogador, 
+                                            posicao=(primeira_remocao.posicao_jogador - alteracao_jogador)))
+            else:
+                ladder.append(HistoricoLadder(mes=mes, ano=ano, jogador=primeira_remocao.jogador, 
+                                              posicao=(primeira_remocao.posicao_jogador - alteracao_jogador)))
+                                      
+        else:
+            for posicao_ladder in ladder:
+                if posicao_ladder.jogador_id == jogador:
+                    # Alterar posição
+                    posicao_ladder.posicao -= alteracao
+                    break
                 
     # Ordenar ladder após alterações
     ladder.sort(key=lambda x: x.posicao)
@@ -661,7 +713,6 @@ def desfazer_lote_desafios(desafios, ladder):
     
     for posicao in novos_entrantes:
         ladder.remove(posicao)
-    
     
     return ladder
 
@@ -746,21 +797,58 @@ def copiar_ladder(ladder_destino, ladder_origem, mes_destino=None, ano_destino=N
         if posicao_dest.posicao < 0:
             posicao_dest.delete()
     
-def remover_jogador(jogador, data):
+def remover_jogador(remocao):
     """Remove um jogador da ladder"""
     # Verificar se jogador está na ladder da data
     data_atual = timezone.localdate()
-    if data.month == data_atual.month and data.year == data_atual.year:
-        ladder = PosicaoLadder.objects.all()
+#     if data.month == data_atual.month and data.year == data_atual.year:
+#         ladder = PosicaoLadder.objects.all()
+#     else:
+#         ladder = HistoricoLadder.objects.filter(mes=data.month, ano=data.year)
+#     
+#     if not ladder.filter(jogador=jogador).exists():
+#         raise ValueError('Jogador não estava presente na ladder na data especificada')
+    
+    try:
+        with transaction.atomic():
+#             # Verificar se jogador está na ladder
+#             posicao_jogador = jogador.posicao_em(data)
+#             if posicao_jogador == 0:
+#                 raise ValueError('Jogador não estava presente na ladder na data especificada')
+#             
+#             # Gerar registro de remoção
+#             remocao = RemocaoJogador(jogador=jogador, data=data, admin_removedor=admin_removedor, 
+#                                      posicao_jogador=posicao_jogador)
+#             remocao.save()
+            
+            # Recalcular ladders a partir da ladder da data
+            if remocao.data.month == data_atual.month and remocao.data.year == data_atual.year:
+                recalcular_ladder()
+            else:
+                recalcular_ladder(mes=remocao.data.month, ano=remocao.data.year)
+    except:
+        raise
+        
+def processar_remocao(remocao):
+    """Processa uma remoção de jogador da ladder"""
+    # Verifica se é ladder atual ou histórico
+    data_atual = timezone.localdate()
+    if remocao.data.month == data_atual.month and remocao.data.year == data_atual.year:
+#         mes, ano = desafio_ladder.mes_ano_ladder
+        ladder_para_alterar = PosicaoLadder.objects
     else:
-        ladder = HistoricoLadder.objects.filter(mes=data.month, ano=data.year)
-    
-    if jogador not in ladder.values_list('jogador', flat=True):
-        raise ValueError('Jogador não estava presente na ladder na data especificada')
-    
-#     # Gerar registro de remoção
-#     RemocaoJogador(jogador=jogador, data=data, admin_removedor)
-    
-    # Recalcular ladders a partir da ladder da data
-    recalcular_ladder(mes=data.month, ano=data.year)
+        ladder_para_alterar = HistoricoLadder.objects.filter(ano=remocao.data.year, mes=remocao.data.month)
+        
+    try:
+        with transaction.atomic():
+            # Remove jogador da ladder
+            ladder_para_alterar.get(jogador=remocao.jogador).delete()
+            
+            # Sobe uma posição todos os estiverem abaixo dele
+            for posicao_ladder in ladder_para_alterar.filter(posicao__gt=remocao.posicao_jogador).order_by('posicao'):
+                posicao_ladder.posicao -= 1
+                posicao_ladder.save()
+                
+    except:
+        raise
     

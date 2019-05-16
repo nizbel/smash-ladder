@@ -20,7 +20,6 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
     MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
-from django.test.utils import freeze_time
 
 
 class ViewEditarDesafioLadderTestCase(TestCase):
