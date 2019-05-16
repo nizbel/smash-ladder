@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Views para jogadores"""
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F
 from django.db.models.query_utils import Q
@@ -148,8 +150,8 @@ def editar_jogador(request, username):
             
             return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': jogador.user.username}))
         
-        else:
-            print(form_jogador.errors)
+#         else:
+#             print(form_jogador.errors)
     else:
         # Preparar form
         form_jogador = JogadorForm(instance=jogador)
@@ -170,34 +172,46 @@ def editar_stages_validas(request):
     if not request.user.jogador.admin:
         raise PermissionDenied
     
+    # Carregar stages válidas
+    stages_validas = [stage_id for stage_id in Stage.objects.filter(stagevalidaladder__isnull=False, 
+                                                                             stagevalidaladder__retorno=False).values_list('id', flat=True)]
+    stages_validas_retorno = [stage_id for stage_id in Stage.objects.filter(stagevalidaladder__isnull=False, 
+                                                                             stagevalidaladder__retorno=True).values_list('id', flat=True)]
+    
     if request.POST:
         form_stages_validas = StagesValidasForm(request.POST)
         
         if form_stages_validas.is_valid():
-            print(form_stages_validas.cleaned_data)
-            
-            stages_validas_atualmente = list(Stage.objects.filter(stagevalidaladder__isnull=False).values_list('id', flat=True))
-            print(stages_validas_atualmente)
-            
-            novas_stages_validas = Stage.objects.filter(id__in=form_stages_validas.cleaned_data['stages_validas'])
-            for stage in novas_stages_validas:
-                if stage.id not in stages_validas_atualmente:
-                    nova_stage_valida = StageValidaLadder(stage=stage)
-                    nova_stage_valida.save()
+            try:
+                with transaction.atomic():
+#                     print(form_stages_validas.cleaned_data)
+                    retorno = form_stages_validas.cleaned_data['retorno']
                     
-                else:
-                    stages_validas_atualmente.remove(stage.id)
+                    stages_validas_atualmente = list(Stage.objects.filter(stagevalidaladder__isnull=False, 
+                                                                          stagevalidaladder__retorno=retorno).values_list('id', flat=True))
+#                     print(stages_validas_atualmente)
                     
-            # Invalidar stages que não tenham sido seleciondas (não foram removidas na etapa anterior)
-            StageValidaLadder.objects.filter(stage__id__in=stages_validas_atualmente).delete()
+                    novas_stages_validas = Stage.objects.filter(id__in=form_stages_validas.cleaned_data['stages_validas'])
+                    for stage in novas_stages_validas:
+                        if stage.id not in stages_validas_atualmente:
+                            nova_stage_valida = StageValidaLadder(stage=stage, retorno=retorno)
+                            nova_stage_valida.save()
+                            
+                        else:
+                            stages_validas_atualmente.remove(stage.id)
+                            
+                    # Invalidar stages que não tenham sido seleciondas (não foram removidas na etapa anterior)
+                    StageValidaLadder.objects.filter(stage__id__in=stages_validas_atualmente).delete()
                 
-            return redirect(reverse('stages:listar_stages_validas'))
+                    return redirect(reverse('stages:listar_stages_validas'))
+            except Exception as e:
+                messages.error(request, str(e))
     else:
         # Preparar form
-        form_stages_validas = StagesValidasForm(initial={
-            'stages_validas': [stage_id for stage_id in Stage.objects.filter(stagevalidaladder__isnull=False).values_list('id', flat=True)]})
+        form_stages_validas = StagesValidasForm()
     
-    return render(request, 'stages/editar_stages_validas.html', {'form_stages_validas': form_stages_validas})
+    return render(request, 'stages/editar_stages_validas.html', {'form_stages_validas': form_stages_validas, 'stages_validas': stages_validas,
+                                                                 'stages_validas_retorno': stages_validas_retorno})
 
 def listar_desafios_jogador(request, username):
     """Listar desafios de um jogador pelo nick"""

@@ -17,16 +17,56 @@ Stages
 {% endblock %}
 
 {% block content %}
-	{% for stage in stages %}
-	<div class="card col-12 col-md-2">
-	  	<div class="card-body">
-	  		<h5 class="card-title">{{ stage.nome }}</h5>
-		    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
-		    {% if stage.valida_para_ladder %}
-		    	<p class="card-text">Válida para Ladder.</p>
-		    {% endif %}
-		    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
-	  	</div>
-	</div>
-	{% endfor %}
+	{% comment %}
+	Verificar se deve mostrar apenas ladder ou todas stages
+	{% endcomment %}
+	{% if apenas_validas_ladder %}
+		<div class="mt-4 col-12 d-flex justify-content-center">
+			<h5>Stages válidas iniciais</h5>
+		</div>
+		{% for stage in stages %}
+		{% if not stage.stagevalidaladder.retorno %}
+		<div class="card col-12 col-md-2">
+		  	<div class="card-body">
+		  		<h5 class="card-title">{{ stage.nome }}</h5>
+			    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
+			    {% if stage.valida_para_ladder %}
+			    	<p class="card-text">Válida para Ladder.</p>
+			    {% endif %}
+			    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
+		  	</div>
+		</div>
+		{% endif %}
+		{% endfor %}
+		<div class="mt-4 col-12 d-flex justify-content-center">
+			<h5>Stages válidas retorno</h5>
+		</div>
+		{% for stage in stages %}
+		{% if stage.stagevalidaladder.retorno %}
+		<div class="card col-12 col-md-2">
+		  	<div class="card-body">
+		  		<h5 class="card-title">{{ stage.nome }}</h5>
+			    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
+			    {% if stage.valida_para_ladder %}
+			    	<p class="card-text">Válida para Ladder.</p>
+			    {% endif %}
+			    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
+		  	</div>
+		</div>
+		{% endif %}
+		{% endfor %}
+	{% else %}
+		{% for stage in stages %}
+		<div class="card col-12 col-md-2">
+		  	<div class="card-body">
+		  		<h5 class="card-title">{{ stage.nome }}</h5>
+			    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
+			    {% if stage.valida_para_ladder %}
+			    	<p class="card-text">Válida para Ladder.</p>
+			    {% endif %}
+			    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
+		  	</div>
+		</div>
+		{% endfor %}
+	{% endif %}
 {% endblock %}

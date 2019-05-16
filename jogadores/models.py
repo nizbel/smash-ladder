@@ -187,6 +187,8 @@ class Stage(models.Model):
 class StageValidaLadder(models.Model):
     """Estágios válidos para desafios de ladder"""
     stage = models.OneToOneField('Stage', on_delete=models.CASCADE)
+    # Indica se pode ser escolhida apenas depois da primeira luta
+    retorno = models.BooleanField('Stage para retorno', default=False)
 
 class RegistroFerias(models.Model):
     """Registro de férias de jogador"""
