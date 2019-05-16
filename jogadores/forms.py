@@ -30,7 +30,7 @@ class StagesValidasForm(Form):
     
     def __init__(self,*args,**kwargs):
         super(StagesValidasForm,self).__init__(*args,**kwargs)
-        print('Inicial', self.fields['stages_validas'].initial, self.initial)
+#         print('Inicial', self.fields['stages_validas'].initial, self.initial)
         self.fields['stages_validas'].label = 'Stages válidas para Ladder'
         self.fields['stages_validas'].choices = [(stage.id, f'{stage.nome} ({stage.descricao_modelo})') for stage in Stage.objects.all()]
         

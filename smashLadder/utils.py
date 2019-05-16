@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Funções para uso geral"""
+"""FunÃ§Ãµes para uso geral"""
 from django.db import models
 from django.forms.fields import BooleanField, DateTimeField
 from django.utils import timezone
@@ -30,7 +30,7 @@ class DateTimeFieldTz(models.DateTimeField):
             return timezone.localtime(value)
             
 def mes_ano_ant(mes, ano):
-    """Retorna mês e ano anteriores"""
+    """Retorna mÃªs e ano anteriores"""
     mes = mes - 1
     if mes == 0:
         mes = 12
@@ -38,7 +38,7 @@ def mes_ano_ant(mes, ano):
     return (mes, ano)
     
 def mes_ano_prox(mes, ano):
-    """Retorna mês e ano próximos"""
+    """Retorna mÃªs e ano prÃ³ximos"""
     mes = mes + 1
     if mes == 13:
         mes = 1

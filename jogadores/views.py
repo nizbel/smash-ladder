@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Views para jogadores"""
 
-import datetime
-
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models.aggregates import Count, Max, Sum
@@ -10,6 +8,7 @@ from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
+from django.utils import timezone
 
 from jogadores.forms import JogadorForm, StagesValidasForm
 from jogadores.models import Jogador, Stage, StageValidaLadder

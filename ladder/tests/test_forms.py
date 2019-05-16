@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
 from jogadores.models import Jogador, Personagem
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste, criar_stage_teste, criar_personagens_teste
-from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm
-from ladder.models import DesafioLadder, HistoricoLadder, Luta
+from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
+    RemocaoJogadorForm
+from ladder.models import DesafioLadder, HistoricoLadder, Luta, RemocaoJogador
 from ladder.tests.utils_teste import criar_ladder_teste, \
-    criar_ladder_historico_teste, criar_desafio_ladder_simples_teste
-from django.db.utils import IntegrityError
+    criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
+    validar_desafio_ladder_teste
+from ladder.utils import remover_jogador
+from smashLadder.utils import mes_ano_ant
 
 
 class DesafioLadderFormTestCase(TestCase):
@@ -291,6 +295,21 @@ class DesafioLadderFormTestCase(TestCase):
                                       'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         self.assertTrue(form.is_valid())
         
+    def test_form_erro_remocao_participante_mesma_data(self):
+        """Testa erro ao cadastrar desafio em data que um dos participantes esteja sendo removido"""
+        hora_atual = timezone.localtime()
+        # Gerar remoção
+        remover_jogador(RemocaoJogador.objects.create(jogador=self.sena, data=hora_atual, 
+                                      admin_removedor=self.teets, 
+                                      posicao_jogador=self.sena.posicao_em(hora_atual)))
+        
+        # Tentar gerar desafio
+        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
+        self.assertFalse(form.is_valid())
+        
+        self.assertIn(f'{self.sena} é removido da ladder na data especificada', form.errors['__all__'])
+        
 class DesafioLadderLutaFormTestCase(TestCase):
     """Testar form de adicionar desafio da ladder"""
     @classmethod
@@ -358,3 +377,122 @@ class DesafioLadderLutaFormTestCase(TestCase):
         # Buscar campo personagem
         self.assertEqual(form.cleaned_data['personagem_desafiante'], None)
         self.assertEqual(form.cleaned_data['personagem_desafiado'], None)
+        
+class RemocaoJogadorFormTestCase(TestCase):
+    """Testar form de adicionar desafio da ladder"""
+    @classmethod
+    def setUpTestData(cls):
+        super(RemocaoJogadorFormTestCase, cls).setUpTestData()
+         
+        # Configurar jogador
+        criar_jogadores_teste()
+        
+        criar_ladder_teste()
+        
+         
+        cls.mad = Jogador.objects.get(user__username='mad') # 4 na ladder
+        cls.sena = Jogador.objects.get(user__username='sena') # 3 na ladder
+        cls.teets = Jogador.objects.get(user__username='teets') # 1 na ladder
+        cls.tiovsky = Jogador.objects.get(user__username='tiovsky') # 10 na ladder
+        cls.new = criar_jogador_teste('new') # Novo entrande na ladder
+        
+        # Preparar mês anterior para histórico
+        cls.horario_atual = timezone.localtime()
+        cls.mes, cls.ano = mes_ano_ant(cls.horario_atual.month, cls.horario_atual.year)
+            
+        criar_ladder_historico_teste(cls.ano, cls.mes)
+         
+         
+    def test_form_remover_jogador_meio_ladder_com_sucesso(self):
+        """Testa remover um jogador no meio da ladder com sucesso"""
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.mad).exists())
+        
+        form = RemocaoJogadorForm({'jogador': self.mad.id, 'data': self.horario_atual, 'admin_removedor': self.teets.id})
+        self.assertTrue(form.is_valid())
+        # Usar commit=False como nas views
+        remocao_jogador = form.save(commit=False)
+        remocao_jogador.save()
+         
+        # Buscar desafio
+        remocao_jogador = RemocaoJogador.objects.get(jogador=self.mad)
+        self.assertEqual(remocao_jogador.jogador, self.mad)
+        self.assertEqual(remocao_jogador.data, self.horario_atual)
+        self.assertEqual(remocao_jogador.admin_removedor, self.teets)
+        self.assertEqual(remocao_jogador.posicao_jogador, 4)
+        
+    def test_form_remover_jogador_fim_ladder_com_sucesso(self):
+        """Testa remover um jogador no final da ladder com sucesso"""
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.teets).exists())
+        
+        form = RemocaoJogadorForm({'jogador': self.teets.id, 'data': self.horario_atual, 'admin_removedor': self.teets.id})
+        self.assertTrue(form.is_valid())
+        # Usar commit=False como nas views
+        remocao_jogador = form.save(commit=False)
+        remocao_jogador.save()
+         
+        # Buscar desafio
+        remocao_jogador = RemocaoJogador.objects.get(jogador=self.teets)
+        self.assertEqual(remocao_jogador.jogador, self.teets)
+        self.assertEqual(remocao_jogador.data, self.horario_atual)
+        self.assertEqual(remocao_jogador.admin_removedor, self.teets)
+        self.assertEqual(remocao_jogador.posicao_jogador, 1)
+        
+    def test_form_remover_jogador_topo_ladder_com_sucesso(self):
+        """Testa remover um jogador do topo da ladder com sucesso"""
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.tiovsky).exists())
+        
+        form = RemocaoJogadorForm({'jogador': self.tiovsky.id, 'data': self.horario_atual, 'admin_removedor': self.teets.id})
+        self.assertTrue(form.is_valid())
+        # Usar commit=False como nas views
+        remocao_jogador = form.save(commit=False)
+        remocao_jogador.save()
+         
+        # Buscar desafio
+        remocao_jogador = RemocaoJogador.objects.get(jogador=self.tiovsky)
+        self.assertEqual(remocao_jogador.jogador, self.tiovsky)
+        self.assertEqual(remocao_jogador.data, self.horario_atual)
+        self.assertEqual(remocao_jogador.admin_removedor, self.teets)
+        self.assertEqual(remocao_jogador.posicao_jogador, 10)
+        
+    def test_erro_remover_jogador_com_desafio_no_mesmo_dia(self):
+        """Testa erro ao remover jogador que tenha um desafio no mesmo dia"""
+        # Gerar desafio e validar
+        desafio_ladder = criar_desafio_ladder_simples_teste(self.sena, self.teets, 3, 1, self.horario_atual, False, self.teets)
+        validar_desafio_ladder_teste(desafio_ladder, self.teets)
+        
+        form = RemocaoJogadorForm({'jogador': self.tiovsky.id, 'data': self.horario_atual, 'admin_removedor': self.teets.id})
+        self.assertFalse(form.is_valid())
+        
+        self.assertIn('Jogador possui desafio na data apontada para remoção', form.errors['__all__'])
+        
+    def test_erro_remover_jogador_fora_da_ladder(self):
+        """Testa erro ao tentar remover novo entrante"""
+        form = RemocaoJogadorForm({'jogador': self.new.id, 'data': self.horario_atual, 'admin_removedor': self.teets.id})
+        self.assertFalse(form.is_valid())
+        
+        self.assertIn('Jogador não estava presente na ladder na data especificada', form.errors['__all__'])
+        
+    def test_erro__remover_jogador_sem_ser_admin(self):
+        """Testa erro ao tentar remover jogador sem ser admin"""
+        form = RemocaoJogadorForm({'jogador': self.tiovsky.id, 'data': self.horario_atual, 'admin_removedor': self.sena.id})
+        self.assertFalse(form.is_valid())
+        
+        self.assertIn('Responsável pela remoção deve ser admin', form.errors['__all__'])
+        
+    def test_remover_jogador_ladder_historica(self):
+        """Testa remover jogador de ladde histórico com sucesso"""
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.mad).exists())
+        
+        form = RemocaoJogadorForm({'jogador': self.mad.id, 'data': self.horario_atual.replace(month=self.mes, year=self.ano), 
+                                   'admin_removedor': self.teets.id})
+        self.assertTrue(form.is_valid())
+        # Usar commit=False como nas views
+        remocao_jogador = form.save(commit=False)
+        remocao_jogador.save()
+         
+        # Buscar desafio
+        remocao_jogador = RemocaoJogador.objects.get(jogador=self.mad)
+        self.assertEqual(remocao_jogador.jogador, self.mad)
+        self.assertEqual(remocao_jogador.data, self.horario_atual.replace(month=self.mes, year=self.ano))
+        self.assertEqual(remocao_jogador.admin_removedor, self.teets)
+        self.assertEqual(remocao_jogador.posicao_jogador, 4)

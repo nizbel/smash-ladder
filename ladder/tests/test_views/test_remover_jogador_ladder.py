@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+import datetime
+
+from django.contrib.messages.api import get_messages
+from django.test.testcases import TestCase
+from django.urls.base import reverse
+from django.utils import timezone
+
+from jogadores.models import Jogador, Personagem
+from jogadores.tests.utils_teste import criar_jogadores_teste, \
+    criar_personagens_teste, criar_stage_teste, SENHA_TESTE
+from ladder.models import PosicaoLadder, HistoricoLadder, RemocaoJogador, \
+    CancelamentoDesafioLadder
+from ladder.tests.utils_teste import criar_ladder_teste, \
+    criar_ladder_historico_teste, criar_desafio_ladder_simples_teste,\
+    validar_desafio_ladder_teste
+from smashLadder import settings
+from smashLadder.utils import mes_ano_ant
+from ladder.utils import recalcular_ladder
+
 
 class ViewRemoverJogadorLadderTestCase(TestCase):
     """Testes para a view de remover jogador da ladder"""
@@ -29,12 +48,7 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         cls.horario_atual = timezone.localtime()
-        data_atual = cls.horario_atual.date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(cls.horario_atual.month, cls.horario_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -42,6 +56,7 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         cls.horario_historico = cls.horario_atual.replace(year=cls.ano, month=cls.mes)
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                           cls.horario_atual.replace(day=15), False, cls.teets)
+        
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                                     cls.horario_historico.replace(day=15), False, cls.sena)
         
@@ -62,7 +77,7 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
     def test_acesso_logado_admin(self):
         """Testa acesso a tela de editar desafio de ladder não validado, logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.get(reverse('ladder:remover_jogador_ladder'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('form_remover_jogador', response.context)
         
@@ -72,20 +87,21 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao'))
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.post(reverse('ladder:remover_jogador_ladder'), 
+                                    {'jogador': self.sena.id, 'data': datetime.datetime.now().replace(day=16)})
         self.assertEqual(response.status_code, 302)
         
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual')
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         ladder_depois = list(PosicaoLadder.objects.all().order_by('posicao'))
         
         # Verifica se registro de remoção foi criado
-        self.assertTrue(RemocaoJogadorLadder.objects.filter(jogador=self.sena).exists()
+        self.assertTrue(RemocaoJogador.objects.filter(jogador=self.sena).exists())
         
         # Compara ladder
         self.assertEqual(len(ladder_antes) - 1, len(ladder_depois))
         # Jogadores acima na ladder não são afetados
-        for posicao_antes, posicao_depois in zip(ladder_antes[:2], ladder_depois[:2]):
+        for posicao_antes, posicao_depois in zip(ladder_antes[0:2], ladder_depois[:2]):
             self.assertEqual(posicao_antes.posicao, posicao_depois.posicao)
             self.assertEqual(posicao_antes.jogador, posicao_depois.jogador)
             
@@ -97,14 +113,19 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         
     def test_remover_jogador_ladder_atual_pre_desafios(self):
         """Testa erro ao remover um jogador da ladder, na data atual antes de um desafio"""
+        # Validar desafio
+        validar_desafio_ladder_teste(self.desafio_ladder, self.teets)
+        
         ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao'))
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.post(reverse('ladder:remover_jogador_ladder'), 
+                                    {'jogador': self.sena.id, 'data': datetime.datetime.now().replace(day=10)})
         self.assertEqual(response.status_code, 200)
         
-        mensagens = response.context['messages']
-        self.assertEqual(str(messages[0]), 'Jogador não pode ser removido pois possui desafios posteriores a data informada')
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
         
         # Verificar que ladder se mantém e não foi criada remoção
         ladder_depois = list(PosicaoLadder.objects.all().order_by('posicao'))
@@ -112,7 +133,7 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
             self.assertEqual(posicao_antes.posicao, posicao_depois.posicao)
             self.assertEqual(posicao_antes.jogador, posicao_depois.jogador)
             
-        self.assertFalse(RemocaoJogadorLadder.objects.filter(jogador=self.sena).exists())
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.sena).exists())
         
     def test_remover_jogador_ladder_hist_pos_desafios(self):
         """Testa remover um jogador de ladder histórico, sem nenhum desafio posterior"""
@@ -120,15 +141,16 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         ladder_antes = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao'))
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.post(reverse('ladder:remover_jogador_ladder'), 
+                                    {'jogador': self.sena.id, 'data': datetime.datetime.now().replace(month=self.mes, year=self.ano, day=16)})
         self.assertEqual(response.status_code, 302)
         
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual')
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         ladder_depois = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao'))
         
         # Verifica se registro de remoção foi criado
-        self.assertTrue(RemocaoJogadorLadder.objects.filter(jogador=self.sena).exists()
+        self.assertTrue(RemocaoJogador.objects.filter(jogador=self.sena).exists())
         
         # Compara ladder
         self.assertEqual(len(ladder_antes) - 1, len(ladder_depois))
@@ -144,20 +166,25 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
         
         # Verificar que jogador também foi removido da ladder atual
         for posicao_hist, posicao_atual in zip(ladder_depois, PosicaoLadder.objects.all().order_by('posicao')):
-            self.assertEqual(posicao_antes.posicao, posicao_depois.posicao)
-            self.assertEqual(posicao_antes.jogador, posicao_depois.jogador)
+            self.assertEqual(posicao_hist.posicao, posicao_atual.posicao)
+            self.assertEqual(posicao_hist.jogador, posicao_atual.jogador)
         
     def test_remover_jogador_ladder_hist_pre_desafios(self):
         """Testa erro ao remover um jogador de ladder histórico, antes de um desafio"""
+        # Validar desafio
+        validar_desafio_ladder_teste(self.desafio_ladder_historico, self.teets)
+        
         # Guardar ladder antes da operação
         ladder_antes = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao'))
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.post(reverse('ladder:remover_jogador_ladder'), 
+                                    {'jogador': self.sena.id, 'data': datetime.datetime.now().replace(month=self.mes, year=self.ano, day=10)})
         self.assertEqual(response.status_code, 200)
         
-        mensagens = response.context['messages']
-        self.assertEqual(str(messages[0]), 'Jogador não pode ser removido pois possui desafios posteriores a data informada')
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
         
         # Verificar que ladder se mantém e não foi criada remoção
         ladder_depois = list(HistoricoLadder.objects.filter(mes=self.mes, ano=self.ano).order_by('posicao'))
@@ -165,28 +192,35 @@ class ViewRemoverJogadorLadderTestCase(TestCase):
             self.assertEqual(posicao_antes.posicao, posicao_depois.posicao)
             self.assertEqual(posicao_antes.jogador, posicao_depois.jogador)
             
-        self.assertFalse(RemocaoJogadorLadder.objects.filter(jogador=self.sena).exists())
+        self.assertFalse(RemocaoJogador.objects.filter(jogador=self.sena).exists())
         
     def test_remover_jogador_ladder_antes_desafio_cancelado(self):
         """Testa remover jogador de ladder em data anterior a um desafio cancelado"""
+        # Validar desafio
+        validar_desafio_ladder_teste(self.desafio_ladder, self.teets)
+        
         # Tornar desafio cancelado
-        cancelar_desafio_ladder(self.desafio_ladder)
+        CancelamentoDesafioLadder.objects.create(desafio_ladder=self.desafio_ladder, data_hora=self.horario_atual, jogador=self.teets)
+        recalcular_ladder(self.desafio_ladder)
         
         # Guardar ladder antes da operação
         ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao'))
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-        response = self.client.post(reverse('ladder:editar_desafio_ladder'))
+        response = self.client.post(reverse('ladder:remover_jogador_ladder'), 
+                                    {'jogador': self.sena.id, 'data': datetime.datetime.now().replace(day=10)})
         self.assertEqual(response.status_code, 302)
         
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual')
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
-        # TODO testar mensagens
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
         
         ladder_depois = list(PosicaoLadder.objects.all().order_by('posicao'))
         
         # Verifica se registro de remoção foi criado
-        self.assertTrue(RemocaoJogadorLadder.objects.filter(jogador=self.sena).exists())
+        self.assertTrue(RemocaoJogador.objects.filter(jogador=self.sena).exists())
         
         # Compara ladder
         self.assertEqual(len(ladder_antes) - 1, len(ladder_depois))
