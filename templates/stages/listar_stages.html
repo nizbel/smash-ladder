@@ -30,9 +30,6 @@ Stages
 		  	<div class="card-body">
 		  		<h5 class="card-title">{{ stage.nome }}</h5>
 			    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
-			    {% if stage.valida_para_ladder %}
-			    	<p class="card-text">Válida para Ladder.</p>
-			    {% endif %}
 			    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
 		  	</div>
 		</div>
@@ -47,9 +44,6 @@ Stages
 		  	<div class="card-body">
 		  		<h5 class="card-title">{{ stage.nome }}</h5>
 			    <h6 class="card-subtitle mb-2 text-muted">{{ stage.descricao_modelo }}</h6>
-			    {% if stage.valida_para_ladder %}
-			    	<p class="card-text">Válida para Ladder.</p>
-			    {% endif %}
 			    <a href="{% url 'stages:detalhar_stage_por_id' stage.id %}" class="card-link">Ver detalhes</a>
 		  	</div>
 		</div>
