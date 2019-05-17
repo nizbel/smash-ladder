@@ -66,12 +66,22 @@
 			        		<a class="nav-link dropdown-toggle" href="#" id="ladderDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Ladder
 			        		</a>
-			        		<div class="dropdown-menu" aria-labelledby="ladderDropdown">
-					  			<a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a>
-					  			<a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a>
-		        			</div>
+			        		<ul class="dropdown-menu" aria-labelledby="ladderDropdown">
+					  			<li><a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a></li>
+					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a></li>
+					  			<li><a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a></li>
+	  							{% if request.user.jogador.admin %}
+					  			<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Remoções da ladder</a>
+						            <ul class="dropdown-menu">
+						            	{% comment %}
+				              			<li><a class="dropdown-item" href="{% url 'ladder:listar_remocoes_ladder' %}">Listar remoções</a></li>
+				              			{% endcomment %}
+				              			<li><a class="dropdown-item" href="{% url 'ladder:remover_jogador_ladder' %}">Remover jogador</a></li>
+			              			</ul>
+		              			</li>
+		              			{% endif %}
+					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a></li>
+		        			</ul>
 		        		</li>
 			      		<li class="nav-item {% if request.resolver_match.url_name == 'detalhar_regras_ladder' %}active{% endif %}">
 			        		<a class="nav-link" href="{% url 'ladder:detalhar_regras_ladder' %}">Regras</a>
@@ -136,6 +146,23 @@
     	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    	<script type="text/javascript">
+    		$('.dropdown-menu a.dropdown-toggle').on('click', function(e) {
+			  if (!$(this).next().hasClass('show')) {
+			    $(this).parents('.dropdown-menu').first().find('.show').removeClass("show");
+			  }
+			  var $subMenu = $(this).next(".dropdown-menu");
+			  $subMenu.toggleClass('show');
+			
+			
+			  $(this).parents('li.nav-item.dropdown.show').on('hidden.bs.dropdown', function(e) {
+			    $('.dropdown-submenu .show').removeClass("show");
+			  });
+			
+			
+			  return false;
+			});
+    	</script>
     	{% block extra_scripts %}
     	
     	{% endblock %}
