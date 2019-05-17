@@ -73,21 +73,6 @@
 /*
  Ladder
 */
-ul.ladder li:nth-child(1) .posicao-ladder {
-	font-size: 40px;
-	margin: -10% 0 -10% 0;
-}
-
-ul.ladder li:nth-child(2) .posicao-ladder {
-	font-size: 32px;
-	margin: -10% 0 -10% 0;
-}
-
-ul.ladder li:nth-child(3) .posicao-ladder {
-	font-size: 24px;
-	margin: -10% 0 -10% 0;
-}
-
 ul.ladder li {
 	background-image: linear-gradient(to right, #cecccc, #fff)
 }
@@ -95,6 +80,107 @@ ul.ladder li {
 ul.ladder li.ladder-ferias {
 	#background-color: #cecccc;
 	background-image: linear-gradient(to right, #9d6381, #fff)
+}
+
+ul.ladder li:nth-child(1) .posicao-ladder {
+	font-size: 40px;
+	margin: -10% 0 -10% 0;
+}
+
+ul.ladder li:nth-child(1) .posicao-ladder::before {
+    color: yellow;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 600;
+    content: "\f559";
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    position: absolute;
+    z-index: 1;
+    left: -5%;
+	opacity: 0.75;
+  	filter: alpha(opacity=75);
+}
+
+ul.ladder li:nth-child(2) .posicao-ladder {
+	font-size: 32px;
+	margin: -10% 0 -10% 0;
+}
+
+ul.ladder li:nth-child(2) .posicao-ladder::before {
+    color: gray;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 600;
+    content: "\f559";
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    position: absolute;
+    z-index: 1;
+    left: -5%;
+	opacity: 0.75;
+  	filter: alpha(opacity=75);
+}
+
+ul.ladder li:nth-child(3) .posicao-ladder {
+	font-size: 24px;
+	margin: -10% 0 -10% 0;
+}
+
+ul.ladder li:nth-child(3) .posicao-ladder::before {
+    color: green;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 600;
+    content: "\f559";
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    position: absolute;
+    z-index: 1;
+    left: -5%;
+	opacity: 0.75;
+  	filter: alpha(opacity=75);
+}
+
+ul.ladder li:nth-child(-n+3) .posicao-ladder strong {
+	position: relative;
+	z-index: 1;
+}
+
+
+.award-bg::before {
+	font-size: 40px;
+	font-family: "Font Awesome 5 Free";
+    font-weight: 600;
+    content: "\f559";
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    position: absolute;
+    z-index: 1;
+    left: 10%;
+	opacity: 0.2;
+  	filter: alpha(opacity=20);
+}
+
+.crown-bg::before {
+	font-size: 40px;
+	font-family: "Font Awesome 5 Free";
+    font-weight: 600;
+    content: "\f521";
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    position: absolute;
+    z-index: 1;
+    left: 10%;
+	opacity: 0.2;
+  	filter: alpha(opacity=20);
 }
 
 
@@ -129,6 +215,7 @@ ul.ladder li.ladder-ferias {
 	  margin: -.55rem 0 0 0;
 	}
 }
+
 
 .progress-bar-2 {
     -webkit-transition: width 2s ease !important;
