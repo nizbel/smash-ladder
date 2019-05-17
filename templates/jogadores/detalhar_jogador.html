@@ -6,6 +6,7 @@
 {% block page_header %}{{ jogador.nick }}{% endblock %}
 
 {% block extra_header %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 <link href="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.css" rel="stylesheet" />
 {% endblock %}
 
@@ -37,7 +38,7 @@
 					    <h6 class="card-title">Último coringa</h6>
 					    <h6 class="card-title"><strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></h6>
 				    </div>
-					<div class="col-6">
+					<div class="col-6 {% if jogador.posicao_atual < 4 %}award-bg{% endif %}">
 					    <h6 class="card-title">Posição atual</h6>
 					    <h6 class="card-title"><strong>{{ jogador.posicao_atual }}</strong></h6>
 				    </div>
@@ -92,7 +93,7 @@
 						</h6>
 				    </div>
 				    
-				    <div class="col-6">
+				    <div class="col-6 {% if jogador.percentual_vitorias > 66 %}crown-bg{% endif %}">
 					    <h6 class="card-title">% de vitórias</h6>
 					    <h6 class="card-title"><strong>{{ jogador.percentual_vitorias|floatformat:"2" }}%</strong></h6>
 				    </div>
