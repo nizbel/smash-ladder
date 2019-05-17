@@ -96,16 +96,31 @@ def detalhar_stage_id(request, stage_id):
     
     if stage.qtd_lutas > 0:
         # Guarda maior quantidade de vitórias para garantir que apenas um possua essa quantidade
-        maior_qtd_vitorias = Luta.objects.filter(lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
+        stage.maior_qtd_vitorias = Luta.objects.filter(lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
                                                    stage=stage, ganhador__isnull=False).order_by('ganhador').values('ganhador') \
             .annotate(qtd_vitorias=Count('ganhador')).aggregate(maior_qtd_vitorias=Max('qtd_vitorias'))['maior_qtd_vitorias'] or 0
         
-        if maior_qtd_vitorias > 0:
+        if stage.maior_qtd_vitorias > 0:
             jogadores_com_mais_vitorias = Luta.objects.filter(lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
                                                        stage=stage, ganhador__isnull=False).order_by('ganhador').values('ganhador') \
-                .annotate(qtd_vitorias=Count('ganhador')).filter(qtd_vitorias=maior_qtd_vitorias)
+                .annotate(qtd_vitorias=Count('ganhador')).filter(qtd_vitorias=stage.maior_qtd_vitorias)
             if len(jogadores_com_mais_vitorias) == 1:
                 stage.maior_ganhador = Jogador.objects.get(id=jogadores_com_mais_vitorias[0]['ganhador'])
+            
+        # Preparar o top 5 de mais vitórias
+        stage.top_5_ganhadores = Luta.objects.filter(lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
+                                                   stage=stage, ganhador__isnull=False).order_by('ganhador').values('ganhador') \
+            .annotate(qtd_vitorias=Count('ganhador')).order_by('-qtd_vitorias').values('ganhador', 'qtd_vitorias')[:5]
+            
+        print(stage.top_5_ganhadores)
+        
+        # Buscar jogadores para preencher nome
+        jogadores_top_5 = Jogador.objects.filter(id__in=[registro['ganhador'] for registro in stage.top_5_ganhadores])
+        for registro in stage.top_5_ganhadores:
+            for jogador in jogadores_top_5:
+                if registro['ganhador'] == jogador.id:
+                    registro['ganhador'] = jogador
+                    break
     
     return render(request, 'stages/detalhar_stage.html', {'stage': stage})
 
