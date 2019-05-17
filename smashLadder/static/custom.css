@@ -70,6 +70,9 @@
 	height: auto;
 }
 
+/*
+ Ladder
+*/
 ul.ladder li:nth-child(1) .posicao-ladder {
 	font-size: 40px;
 	margin: -10% 0 -10% 0;
@@ -92,4 +95,42 @@ ul.ladder li {
 ul.ladder li.ladder-ferias {
 	#background-color: #cecccc;
 	background-image: linear-gradient(to right, #9d6381, #fff)
+}
+
+
+
+/*
+	Submenu
+*/
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu a::after {
+  transform: rotate(-90deg);
+  position: absolute;
+  right: 6px;
+  top: .8em;
+}
+
+@media (max-width: 767.98px) {
+	.dropdown-submenu .dropdown-menu {
+	  top: 0;
+	  left: 100%;
+	  margin: 0 0 0 1.3rem;
+	  border: 0 !important;
+	}
+}
+ 
+@media (min-width: 768px) {
+	.dropdown-submenu .dropdown-menu {
+	  top: 0;
+	  left: 100%;
+	  margin: -.55rem 0 0 0;
+	}
+}
+
+.progress-bar-2 {
+    -webkit-transition: width 2s ease !important;
+    transition: width 2s ease !important;
 }
