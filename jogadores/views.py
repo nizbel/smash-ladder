@@ -13,8 +13,9 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from jogadores.forms import JogadorForm, StagesValidasForm
-from jogadores.models import Jogador, Stage, StageValidaLadder
-from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder
+from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem
+from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
+    JogadorLuta
 
 
 def detalhar_jogador(request, username):
@@ -85,6 +86,23 @@ def detalhar_jogador(request, username):
         # Adicionar últimos desafios
         jogador.ultimos_desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
             .order_by('-data_hora').select_related('desafiante', 'desafiado')[:3]
+            
+#         jogador.qtd_lutas = JogadorLuta.objects.filter(jogador=jogador).count()
+        jogador.qtd_lutas = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
+            .aggregate(qtd_lutas=Sum(F('score_desafiante') + F('score_desafiado')))['qtd_lutas']
+        
+        # Adicionar top 5 personagens mais usados
+        jogador.top_5_personagens = JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False).values('personagem') \
+            .annotate(qtd_lutas=Count('personagem')).order_by('-qtd_lutas')[:5]
+
+        # Buscar personagens para preencher nome
+        personagens_top_5 = Personagem.objects.filter(id__in=[registro['personagem'] for registro in jogador.top_5_personagens])
+        for registro in jogador.top_5_personagens:
+            for personagem in personagens_top_5:
+                if registro['personagem'] == personagem.id:
+                    registro['personagem'] = personagem
+                    break
+                
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
 def detalhar_stage_id(request, stage_id):
@@ -110,10 +128,8 @@ def detalhar_stage_id(request, stage_id):
         # Preparar o top 5 de mais vitórias
         stage.top_5_ganhadores = Luta.objects.filter(lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
                                                    stage=stage, ganhador__isnull=False).order_by('ganhador').values('ganhador') \
-            .annotate(qtd_vitorias=Count('ganhador')).order_by('-qtd_vitorias').values('ganhador', 'qtd_vitorias')[:5]
+            .annotate(qtd_vitorias=Count('ganhador')).order_by('-qtd_vitorias')[:5]
             
-        print(stage.top_5_ganhadores)
-        
         # Buscar jogadores para preencher nome
         jogadores_top_5 = Jogador.objects.filter(id__in=[registro['ganhador'] for registro in stage.top_5_ganhadores])
         for registro in stage.top_5_ganhadores:
