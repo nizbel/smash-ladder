@@ -2,15 +2,15 @@
 """Formulários para classes de ladder"""
 import datetime
 
+from django import forms
 from django.db.models.query_utils import Q
 from django.forms import ValidationError
-from django.forms.fields import BooleanField
 from django.forms.models import ModelForm, ModelChoiceField
-from django.forms.widgets import HiddenInput
 from django.utils import timezone
 
 from jogadores.models import Personagem
-from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta
+from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
+    RemocaoJogador
 from ladder.utils import verificar_posicoes_desafiante_desafiado
 from smashLadder.utils import preparar_classes_form
 
@@ -112,6 +112,11 @@ class DesafioLadderForm(ModelForm):
 #                                           data_hora__range=[data_hora - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES),
 #                                                             data_hora])):
 #             raise ValidationError(DesafioLadder.MENSAGEM_ERRO_PERIODO_ESPERA_MESMOS_JOGADORES)
+
+        # Verificar que não há remoção de jogador participante na mesma data
+        if RemocaoJogador.objects.filter(data__date=data_hora.date(), jogador__in=[desafiante, desafiado]).exists():
+            remocao = RemocaoJogador.objects.filter(data__date=data_hora.date(), jogador__in=[desafiante, desafiado])[0]
+            raise ValidationError(f'{remocao.jogador} é removido da ladder na data especificada')
         
         return cleaned_data
     
@@ -131,3 +136,38 @@ class DesafioLadderLutaForm(ModelForm):
         
         if 'id' in self.initial and self.instance.id == None:
             self.instance = Luta.objects.get(id=self.initial['id'])
+            
+class RemocaoJogadorForm(ModelForm):
+    """Formulário para remoção de jogador da ladder"""
+    
+    class Meta:
+        model = RemocaoJogador
+        fields = ('jogador', 'data', 'admin_removedor', 'posicao_jogador')
+        widgets = {'posicao_jogador': forms.HiddenInput()}
+        
+    def __init__(self,*args,**kwargs):
+        super(RemocaoJogadorForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+        # Campo de posição não é obrigatório, pois será preenchido automaticamente
+        self.fields['posicao_jogador'].required = False
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        admin_removedor = cleaned_data.get('admin_removedor')
+        data = cleaned_data.get('data')
+        jogador = cleaned_data.get('jogador')
+        
+        if DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, data_hora__date=data.date()).exists():
+            raise ValidationError('Jogador possui desafio na data apontada para remoção')
+            
+        if not admin_removedor.admin:
+            raise ValidationError('Responsável pela remoção deve ser admin')
+        
+        posicao_jogador = jogador.posicao_em(data)
+        if posicao_jogador == 0:
+            raise ValidationError('Jogador não estava presente na ladder na data especificada')
+        
+        cleaned_data['posicao_jogador'] = posicao_jogador
+        
+        return cleaned_data

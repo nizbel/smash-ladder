@@ -21,7 +21,7 @@ Hackzinho para evitar mostrar opção já selecionada
 {% endblock %}
 
 {% block content %}
-	<form class="col-12" action="{% url 'stages:editar_stages_validas' %}" method="post">
+	<form id="app" class="col-12" action="{% url 'stages:editar_stages_validas' %}" method="post">
 	    {% csrf_token %}
     	<div class="row">
 		{% for field in form_stages_validas %}
@@ -49,12 +49,33 @@ Hackzinho para evitar mostrar opção já selecionada
 
 <script type="text/javascript">
 $(document).ready(function(){
+	// Carregar stages válidas
+	var stages_validas = {{ stages_validas }};
+	var stages_validas_retorno = {{ stages_validas_retorno }};
+	console.log(stages_validas, stages_validas_retorno);
+
 	$('select').select2({
 		width: 'resolve',
 		closeOnSelect: false
     });
-    $('select').val({{ form_stages_validas.initial.stages_validas }});
-	$('select').trigger('change');
+    
+    if ($('#id_retorno').is(':checked')) {
+	    $('select').val({{ stages_validas_retorno }});
+		$('select').trigger('change');
+	} else {
+	    $('select').val({{ stages_validas }});
+		$('select').trigger('change');
+	}
+	
+	$('#id_retorno').change(function() {
+		if ($(this).is(':checked')) {
+		    $('select').val({{ stages_validas_retorno }});
+			$('select').trigger('change');
+		} else {
+		    $('select').val({{ stages_validas }});
+			$('select').trigger('change');
+		}
+	});
 });
 </script>
 {% endblock %}

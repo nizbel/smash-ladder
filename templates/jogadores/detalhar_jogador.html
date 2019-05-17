@@ -27,7 +27,7 @@
 					    <h6 class="card-title">Main</h6>
 					    <h6 class="card-title">
 					    	{% if jogador.main %}
-					    		<img class="icone-personagem mt-n1" src="{% static jogador.main.icone %}" />
+					    		<img title="{{ jogador.main.nome }}" class="icone-personagem mt-n1" src="{% static jogador.main.icone %}" />
 					    	{% endif %}
 						    <strong>{{ jogador.main|default:"Indefinido" }}</strong>
 					    </h6>
@@ -37,6 +37,11 @@
 					    <h6 class="card-title">Último coringa</h6>
 					    <h6 class="card-title"><strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></h6>
 				    </div>
+					<div class="col-6">
+					    <h6 class="card-title">Posição atual</h6>
+					    <h6 class="card-title"><strong>{{ jogador.posicao_atual }}</strong></h6>
+				    </div>
+					
 			  		<div class="col-6">
 					    <h6 class="card-title">Admin</h6>
 					    <h6 class="card-title"><strong>{{ jogador.admin|yesno:"Sim,Não,Não" }}</strong>
@@ -125,12 +130,96 @@
 			</div>
 		</div>
 	</div>
+	
+	{% if jogador.top_5_personagens %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Top 5 personagens
+		  	</div>
+		  	<div class="card-body col-12">
+		  		{% for registro in jogador.top_5_personagens %}
+		  		<div class="row">
+			  		<div class="col-2 col-md-1">
+				  		<h6 class="card-title my-1">
+						    <img title="{{ registro.personagem.nome }}" class="icone-personagem mt-n1" src="{% static registro.personagem.icone %}" />
+					    </h6>
+				    </div>
+				    <div class="col-10 col-md-11">
+						<div class="progress my-1">
+						  	<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-2
+						  	{% if forloop.counter > 1 %} bg-cinza-3 {% endif %}" role="progressbar" 
+						  	aria-valuenow="{% widthratio registro.qtd_lutas jogador.qtd_lutas 100 %}" 
+						  	aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+						  		{{ registro.qtd_lutas }}
+						  	</div>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	{% endif %}
+	
+	{% if jogador.ultimos_desafios %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Últimos desafios
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+					{% for desafio_ladder in jogador.ultimos_desafios %}
+					<div class="card col-12">
+					  	<div class="card-body">
+					  		<div class="row d-flex">
+						  		<div class="col-6 text-left d-flex flex-column">
+							    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiante.nick }}</h6>
+							    	<h6 class="card-title {% if desafio_ladder.score_desafiante > desafio_ladder.score_desafiado %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{desafio_ladder.score_desafiante}}</h6>
+						    	</div>
+						  		<div class="col-6 text-right">
+							    	<h6 class="card-title mb-0">{{ desafio_ladder.desafiado.nick }}</h6>
+							    	<h6 class="card-title
+						  			{% if desafio_ladder.score_desafiado > desafio_ladder.score_desafiante %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{desafio_ladder.score_desafiado}}</h6>
+						    	</div>
+					    	</div>
+					    	
+						    <h6 class="card-subtitle mb-2 text-muted">{{ desafio_ladder.data_hora|date:'d/m/Y H:i' }}</h6>
+						    
+						    <a class="card-link" href="{% url 'ladder:detalhar_desafio_ladder' desafio_ladder.id %}">Ver detalhes</a>
+					  	</div>
+					</div>
+					{% endfor %}
+					<div class="col-12 text-center mt-3 mb-0">
+						<a href="{% url 'jogadores:listar_desafios_jogador' jogador.user.username %}">Ver todos</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js"></script>
 
 <script type="text/javascript">
+$(document).ready(function(){
+	// Progress bar
+	$(".progress-bar").each(function() {
+		$(this).css('width', $(this).attr('aria-valuenow') + '%');
+	});
+
+	// Gráficos
 	var ctx = document.getElementById('graf-perc-vitorias').getContext('2d');
 	var grafPercVitorias = new Chart(ctx, {
 	    type: 'line',
@@ -146,6 +235,9 @@
 	    options: {
 	    	legend: {
 	    		display: false
+			},
+			tooltips: {
+  				intersect: false
 			},
 	        scales: {
 	            xAxes: [{
@@ -167,7 +259,7 @@
 	});
 	
 	var ctx = document.getElementById('graf-hist-ladder').getContext('2d');
-	var grafPercVitorias = new Chart(ctx, {
+	var grafHistLadder = new Chart(ctx, {
 	    type: 'line',
 	    data: {
 	    	labels: [{% for item in jogador.grafico_variacao_posicao %}'',{% endfor %}],
@@ -183,21 +275,30 @@
 	    	legend: {
 	    		display: false
 			},
+			tooltips: {
+  				intersect: false
+			},
 	        scales: {
 	            xAxes: [{
 	                type: 'time',
 	                time: {
-                    	parser: "YYYY/MM/DD HH:mm",
+                    	parser: "DD/MM/YYYY HH:mm",
                     	min: '{{ jogador.grafico_variacao_posicao.0.x }}'
                 	}
 	            }],
 	            yAxes: [{
 	                ticks: {
-	                    reverse: true
+	                    reverse: true,
+	                    callback: function(value, index, values) {
+					        if (Math.floor(value) === value) {
+					            return value;
+					        }
+					    }
 	                }
 	            }]
 	        }
 	    }
 	});
+});
 </script>
 {% endblock %}

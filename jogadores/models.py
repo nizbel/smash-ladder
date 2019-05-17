@@ -2,11 +2,11 @@
 """Modelos usados para guardar jogadores"""
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.aggregates import Sum, Max
+from django.db.models.aggregates import Sum, Count
 from django.utils import timezone
 
-from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder,\
-    HistoricoLadder
+from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
+    HistoricoLadder, RemocaoJogador
 
 
 class Jogador(models.Model):
@@ -27,7 +27,7 @@ class Jogador(models.Model):
         
     def is_de_ferias(self):
         """Verifica se jogador está de férias"""
-        return self.de_ferias_na_data(timezone.now().date())
+        return self.de_ferias_na_data(timezone.localdate())
         
     def de_ferias_na_data(self, data):
         """Verifica se jogador está de férias na data apontada"""
@@ -42,11 +42,20 @@ class Jogador(models.Model):
             
     def posicao_em(self, data_hora):
         """Retora a posição do jogador na ladder na data/hora especificada"""
+        # Buscar última remoção da ladder, posição será definida a partir de sua data
+        if RemocaoJogador.objects.filter(jogador=self, data__lt=data_hora).exists():
+            data_inicial = RemocaoJogador.objects.filter(jogador=self).order_by('-data')[0].data
+            desafios_validados_considerando_remocao = DesafioLadder.validados.filter(data_hora__gt=data_inicial)
+        else:
+            data_inicial = None
+            desafios_validados_considerando_remocao = DesafioLadder.validados
+        
         # Buscar último desafio participado
         desafio_mais_recente = None
         
-        if DesafioLadder.validados.filter(desafiante=self, data_hora__lt=data_hora).exists():
-            ultimo_desafiante = DesafioLadder.validados.filter(desafiante=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
+#         if DesafioLadder.validados.filter(desafiante=self, data_hora__lt=data_hora).exists():
+        if desafios_validados_considerando_remocao.filter(desafiante=self, data_hora__lt=data_hora).exists():
+            ultimo_desafiante = desafios_validados_considerando_remocao.filter(desafiante=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
             desafio_mais_recente = ultimo_desafiante
             # Se ganhou, pega posição do desafiado
             if desafio_mais_recente.score_desafiante > desafio_mais_recente.score_desafiado:
@@ -54,8 +63,8 @@ class Jogador(models.Model):
             else:
                 desafio_mais_recente.posicao = desafio_mais_recente.posicao_desafiante
                 
-        if DesafioLadder.validados.filter(desafiado=self, data_hora__lt=data_hora).exists():
-            ultimo_desafiado = DesafioLadder.validados.filter(desafiado=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
+        if desafios_validados_considerando_remocao.filter(desafiado=self, data_hora__lt=data_hora).exists():
+            ultimo_desafiado = desafios_validados_considerando_remocao.filter(desafiado=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
             if desafio_mais_recente == None or desafio_mais_recente.data_hora < ultimo_desafiado.data_hora:
                 desafio_mais_recente = ultimo_desafiado
                 
@@ -78,6 +87,10 @@ class Jogador(models.Model):
                 .exclude(desafio_ladder=desafio_mais_recente).exclude(desafio_ladder__data_hora=data_hora) \
                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
+            # Buscar alterações feitas por remoções de outros jogadores
+            posicao -= RemocaoJogador.objects.filter(data__range=[desafio_mais_recente.data_hora, data_hora], posicao_jogador__lt=posicao) \
+                .exclude(data=data_hora).count()
+            
             return posicao
         
         # Se não houver desafios cadastrados, verificar última ladder
@@ -88,15 +101,20 @@ class Jogador(models.Model):
         if mes == 0:
             mes = 12
             ano -= 1
-            
+        
         if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
+            # Se houver remoção e ela ocorrer no mês atual, ignorar busca e retornar como novo entrante
+            if data_inicial and data_inicial.month == data_hora.month and data_inicial.year == data_hora.year:
+                return 0
             ultima_ladder = HistoricoLadder.objects.filter(ano=ano, mes=mes)
         else:
+            # Se houver remoção, ignorar busca por ladder inicial
+            if data_inicial:
+                return 0
             ultima_ladder = InicioLadder.objects.all()  
             
         if ultima_ladder.filter(jogador=self).exists():
             posicao = ultima_ladder.get(jogador=self).posicao
-#             print('ULTIMA LADDER:', posicao)
             
 #             print(self, ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
 #                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
@@ -104,35 +122,18 @@ class Jogador(models.Model):
             # Buscar alterações feitas por desafios de outros jogadores
             if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
-                    .filter(desafio_ladder__data_hora__month=data_hora.month, desafio_ladder__data_hora__year=data_hora.year) \
+                    .filter(desafio_ladder__data_hora__month=data_hora.month, desafio_ladder__data_hora__year=data_hora.year,
+                            desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             else:
-                posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
+                posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora,
+                            desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
             return posicao
         
-        # TODO Decidir qual posição retornar caso seja novo entrante
-#         # Definir ultima ladder
-#         mes = data_hora.month
-#         ano = data_hora.year
-#         mes -= 1
-#         if mes == 0:
-#             mes = 12
-#             ano -= 1
-#         if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
-#             ultima_ladder = HistoricoLadder.objects.filter(ano=ano, mes=mes)
-#         else:
-#             ultima_ladder = InicioLadder.objects.all()    
-        
+        # Novos entrantes começam na posição 0
         return 0
-        
-#         print('ULTIMA POSICAO', DesafioLadder.validados.filter(data_hora__lt=data_hora).exclude(desafiante=self) \
-#             .aggregate(ultima_posicao=Max('posicao_desafiante'))['ultima_posicao'], 
-#             ultima_ladder.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'])
-#         return max(DesafioLadder.validados.filter(data_hora__lt=data_hora).exclude(desafiante=self) \
-#             .aggregate(ultima_posicao=Max('posicao_desafiante'))['ultima_posicao'], 
-#             ultima_ladder.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao']) + 1
 
 class Personagem(models.Model):
     """Personagens disponíveis no jogo"""
@@ -186,6 +187,8 @@ class Stage(models.Model):
 class StageValidaLadder(models.Model):
     """Estágios válidos para desafios de ladder"""
     stage = models.OneToOneField('Stage', on_delete=models.CASCADE)
+    # Indica se pode ser escolhida apenas depois da primeira luta
+    retorno = models.BooleanField('Stage para retorno', default=False)
 
 class RegistroFerias(models.Model):
     """Registro de férias de jogador"""

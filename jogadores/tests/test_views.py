@@ -12,7 +12,8 @@ from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, JOGADORES_TESTE, criar_stages_teste,\
     criar_stage_teste
 from ladder.models import DesafioLadder
-from ladder.tests.utils_teste import LADDER_FORMATO_TESTE
+from ladder.tests.utils_teste import LADDER_FORMATO_TESTE,\
+    criar_desafio_ladder_simples_teste
 from smashLadder import settings
 
 
@@ -143,6 +144,9 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.context['desafios']['derrotas'], 0)
         self.assertEqual(response.context['jogador'].percentual_vitorias, 0)
         
+        # Evitar mostrar últimos desafios
+        self.assertNotContains(response, 'Últimos desafios')
+        
     def test_dados_desafio_jogador_com_desafios(self):
         """Testa dados de desafios de jogador com desafios"""
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
@@ -163,6 +167,25 @@ class ViewDetalharJogadorTestCase(TestCase):
         response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Jogador está de férias')
+        
+    def test_jogador_ultimos_desafios(self):
+        """Testa mostrar últimos desafios de jogador"""
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['jogador'].ultimos_desafios), 3)
+        
+        ultimos_desafios = response.context['jogador'].ultimos_desafios
+        # Ordem decrescente de horários
+        self.assertTrue(ultimos_desafios[0].data_hora > ultimos_desafios[1].data_hora)
+        self.assertTrue(ultimos_desafios[1].data_hora > ultimos_desafios[2].data_hora)
+        
+        # Deve permitir detalhar cada desafio
+        for desafio in ultimos_desafios:
+            self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio.id}), 1)
+        
+        # Deve mostrar últimos desafios
+        self.assertContains(response, 'Últimos desafios')
+        self.assertContains(response, reverse('jogadores:listar_desafios_jogador', kwargs={'username': self.jogador_2.user.username}))
         
 
 class ViewEditarJogadorTestCase(TestCase):
@@ -340,3 +363,53 @@ class ViewDetalharStageTestCase(TestCase):
         self.assertTrue(response.context['stage'].valida_para_ladder)
         
         
+class ViewListarDesafiosJogadorTestCase(TestCase):
+    """Testes para a view de listar desafios de um jogador"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewListarDesafiosJogadorTestCase, cls).setUpTestData()
+        cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
+        
+        criar_jogadores_teste(['sena', 'teets', 'mad'])
+        cls.jogador_sem_desafios = Jogador.objects.get(nick='sena')
+        cls.jogador_com_desafios = Jogador.objects.get(nick='teets')
+        terceiro = Jogador.objects.get(nick='mad')
+        
+        # Gerar desafios
+        for indice in range(7):
+            criar_desafio_ladder_simples_teste(terceiro, cls.jogador_com_desafios, 1, 3, 
+                                               timezone.now() - datetime.timedelta(days=5*indice), False, cls.jogador_com_desafios)
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de listar desafios de um jogador sem logar"""
+        response = self.client.get(reverse('jogadores:listar_desafios_jogador', kwargs={'username': self.jogador_sem_desafios.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['desafios']), 0)
+        self.assertContains(response, 'Jogador sem desafios cadastrados')
+        
+        # Deve conter link para voltar para tela de detalhamento
+        self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_sem_desafios.user.username}), 1)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de listar desafios de um jogador logado"""
+        response = self.client.get(reverse('jogadores:listar_desafios_jogador', kwargs={'username': self.jogador_sem_desafios.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['desafios']), 0)
+        self.assertContains(response, 'Jogador sem desafios cadastrados')
+        
+        # Deve conter link para voltar para tela de detalhamento
+        self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_sem_desafios.user.username}), 1)
+        
+    def test_visualizar_jogador_com_desafios(self):
+        """Testa visualização de desafios de um jogador com desafios cadastrados"""
+        response = self.client.get(reverse('jogadores:listar_desafios_jogador', kwargs={'username': self.jogador_com_desafios.user.username}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['desafios']), 7)
+        self.assertNotContains(response, 'Jogador sem desafios cadastrados')
+        
+        # Deve permitir detalhar cada desafio
+        for desafio in response.context['desafios']:
+            self.assertContains(response, reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio.id}), 1)
+        
+        # Deve conter link para voltar para tela de detalhamento
+        self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_com_desafios.user.username}), 1)
