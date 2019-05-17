@@ -326,7 +326,8 @@ class ViewListarStagesTestCase(TestCase):
         response = self.client.get(reverse('stages:listar_stages_validas'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['stages']), 2)
-        self.assertContains(response, 'Válida para Ladder', 2)
+        for stage in response.context['stages']:
+            self.assertTrue(hasattr(stage, 'stagevalidaladder'))
         
 class ViewDetalharStageTestCase(TestCase):
     """Testes para a view de detalhar stage"""
