@@ -73,7 +73,7 @@ class DesafioLadder(models.Model):
     
     def is_historico(self):
         """Define se é histórico"""
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         return self.data_hora.month != horario_atual.month or self.data_hora.year != horario_atual.year
         
     def is_validado(self):
@@ -182,4 +182,27 @@ class ResultadoDesafioLadder(models.Model):
     
     class Meta():
         unique_together = ('desafio_ladder', 'jogador')
+        
+class RemocaoJogador(models.Model):
+    """Registro de remoção de jogador da ladder"""
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    # Adicionado como datetime para facilitar comparações na hora de calcular ladder
+    data = DateTimeFieldTz('Data/hora da remoção')
+    admin_removedor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='admin_removedor')
+    posicao_jogador = models.SmallIntegerField('Posição durante remoção')
+    
+    class Meta():
+        unique_together = ('jogador', 'data')
+        
+    def is_historico(self):
+        """Define se é histórico"""
+        horario_atual = timezone.localtime()
+        return self.data.month != horario_atual.month or self.data.year != horario_atual.year
+    
+    @property
+    def mes_ano_ladder(self):
+        """Retorna mes e ano de ladder da qual remoção faz parte"""
+        if self.is_historico():
+            return (self.data.month, self.data.year)
+        return (None, None)
     

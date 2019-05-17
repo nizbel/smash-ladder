@@ -1,29 +1,20 @@
 {% extends 'base.html' %}
 
-{% block title %}- Home{% endblock %}
 
-{% block page_header %}Bem-vindo à Smashscada!{% endblock %}
+{% block title %}
+- Desafios de {{ jogador.nick }}
+{% endblock %}
+
+{% block page_header %}
+Desafios de {{ jogador.nick }}
+{% endblock %}
 
 {% block content %}
-	<div class="col-12 d-flex justify-content-center">
-		<h5>Top 10 da Ladder</h5>
-	</div>
-	<div class="col-12 d-md-flex justify-content-md-center">
-		<ul class="list-group col-md-3 ladder">
-		{% for posicao_ladder in top_10_ladder %}
-			<li class="list-group-item d-flex align-items-center {% if posicao_ladder.jogador.is_de_ferias %} ladder-ferias{% endif %}"
-			{% if posicao_ladder.jogador.is_de_ferias %}title="Jogador está de férias"{% endif %}>
-				<div class="col-2 pl-0 posicao-ladder"><strong>{{ posicao_ladder.posicao }}</strong></div>
-				<a class="ml-auto text-right" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
-			</li>
-		{% endfor %}
-		</ul>
+	<div class="col-12 text-center">
+		<a href="{% url 'jogadores:detalhar_jogador' jogador.user.username %}">Ver dados de {{ jogador.nick }}</a>
 	</div>
 	
-	<div class="mt-4 col-12 d-flex justify-content-center">
-		<h5>Últimos desafios adicionados</h5>
-	</div>
-	{% for desafio_ladder in ultimos_desafios_ladder %}
+	{% for desafio_ladder in desafios %}
 	<div class="card col-12 col-md-3">
 	  	<div class="card-body">
 	  		<div class="row d-flex">
@@ -68,5 +59,7 @@
 	    	{% endif %}
 	  	</div>
 	</div>
+	{% empty %}
+	<h5>Jogador sem desafios cadastrados</h5>
 	{% endfor %}
 {% endblock %}

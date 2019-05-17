@@ -65,5 +65,45 @@
 		  	</div>
 		</div>
 	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Top 5 ganhadores
+		  	</div>
+		  	<div class="card-body col-12">
+		  		{% for registro in stage.top_5_ganhadores %}
+		  		<div class="row">
+			  		<div class="col-12 col-md-3">
+				  		<h6 class="card-title my-1">
+						    <strong>{{ registro.ganhador.nick }}</strong>
+					    </h6>
+				    </div>
+				    <div class="col-12 col-md-9">
+						<div class="progress my-1">
+						  	<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-2
+						  	{% if registro.qtd_vitorias < stage.maior_qtd_vitorias %} bg-cinza-3 {% endif %}" role="progressbar" 
+						  	aria-valuenow="{% widthratio registro.qtd_vitorias stage.maior_qtd_vitorias 100 %}" 
+						  	aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+						  		{{ registro.qtd_vitorias }}
+						  	</div>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+		  	</div>
+		</div>
+	</div>
+	
 	{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+$(document).ready(function(){
+	$(".progress-bar").each(function() {
+		$(this).css('width', $(this).attr('aria-valuenow') + '%');
+	});
+});
+</script>
 {% endblock %}

@@ -18,10 +18,12 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from jogadores.models import RegistroFerias, Jogador
-from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm
+from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm,\
+    RemocaoJogadorForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder
-from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder
+from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
+    remover_jogador
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -168,11 +170,15 @@ def detalhar_ladder_atual(request):
         # Iterar por desafios, cada ganhador adiciona 1 na streak, cada perdedor reseta
         for desafio in desafios:
             if desafio.score_desafiante > desafio.score_desafiado:
-                jogadores[desafio.desafiante.nick] += 1
-                jogadores[desafio.desafiado.nick] = 0
+                if desafio.desafiante.nick in jogadores:
+                    jogadores[desafio.desafiante.nick] += 1
+                if desafio.desafiado.nick in jogadores:
+                    jogadores[desafio.desafiado.nick] = 0
             else:
-                jogadores[desafio.desafiado.nick] += 1
-                jogadores[desafio.desafiante.nick] = 0
+                if desafio.desafiado.nick in jogadores:
+                    jogadores[desafio.desafiado.nick] += 1
+                if desafio.desafiante.nick in jogadores:
+                    jogadores[desafio.desafiante.nick] = 0
         
         # Destacar quem tiver mais de 5 vitórias consecutivas
         destaques['jogadores_streak_vitorias'] = [key for key, value in jogadores.items() if value >= 5]
@@ -263,7 +269,7 @@ def detalhar_ladder_historico(request, ano, mes):
              .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
         
         # Destacar jogadores que fizeram 5 defesas com sucesso
-        destaques['jogadores_5_defesas'] = [key for key, value in defesas_sucesso_5.items()]
+        destaques['jogadores_5_defesas'] = [key for key, _ in defesas_sucesso_5.items()]
         for posicao_ladder in ladder:
             if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
                 posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
@@ -530,6 +536,35 @@ def listar_desafios_ladder_pendentes_validacao(request):
             desafio_ladder.is_cancelavel = False
     
     return render(request, 'ladder/listar_desafios_pendente_validacao.html', {'desafios_pendentes': desafios_pendentes})
+
+@login_required
+def remover_jogador_ladder(request):
+    """Remove um jogador da ladder em data especificada"""
+    # Usuário deve ser admin
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+    
+    if request.POST:
+        form_remover_jogador = RemocaoJogadorForm(request.POST, initial={'admin_removedor': request.user.jogador.id})
+        form_remover_jogador.fields['admin_removedor'].disabled = True
+        if form_remover_jogador.is_valid():
+            try:
+                with transaction.atomic():
+                    remocao = form_remover_jogador.save(commit=False)
+                    remocao.save()
+                    remover_jogador(remocao)
+            
+                    messages.success(request, f'{remocao.jogador} removido da ladder com sucesso')
+                    return redirect(reverse('ladder:detalhar_ladder_atual')) 
+            
+            except Exception as e:
+                messages.error(request, str(e))
+                
+    else:
+        form_remover_jogador = RemocaoJogadorForm(initial={'admin_removedor': request.user.jogador.id})
+        form_remover_jogador.fields['admin_removedor'].disabled = True
+        
+    return render(request, 'ladder/remover_jogador_ladder.html', {'form_remover_jogador': form_remover_jogador})
 
 @login_required
 def validar_desafio_ladder(request, desafio_id):

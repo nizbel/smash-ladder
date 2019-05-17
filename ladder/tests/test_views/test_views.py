@@ -20,7 +20,6 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
     MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
-from django.test.utils import freeze_time
 
 
 class ViewEditarDesafioLadderTestCase(TestCase):
@@ -129,7 +128,6 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.desafio_ladder.admin_validador = self.teets
         self.desafio_ladder.save()
         
-        """Testa acesso a tela de adicionar desafio de ladder logado como admin"""
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}))
         self.assertEqual(response.status_code, 403)

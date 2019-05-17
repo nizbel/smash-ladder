@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Remover jogador da ladder{% endblock %}
+
+{% block page_header %}
+Remover jogador da ladder
+{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'ladder:remover_jogador_ladder' %}" method="post">
+	    {% csrf_token %}
+	    
+        {% include "form.html" with form=form_remover_jogador %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
+	</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('.data-hora').mask('00/00/0000', {placeholder: 'DD/MM/AAAA'});
+});
+</script>
+{% endblock %}
