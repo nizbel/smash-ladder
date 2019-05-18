@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}- Home{% endblock %}
 
@@ -10,15 +11,18 @@
 
 {% block content %}
 	<div class="col-12 d-flex justify-content-center">
-		<h5>Top 10 da Ladder</h5>
+		<h5>Top 10</h5>
 	</div>
 	<div class="col-12 d-md-flex justify-content-md-center">
-		<ul class="list-group col-md-3 ladder">
+		<ul class="list-group col-md-3 ladder-top-10">
 		{% for posicao_ladder in top_10_ladder %}
 			<li class="list-group-item d-flex align-items-center {% if posicao_ladder.jogador.is_de_ferias %} ladder-ferias{% endif %}"
 			{% if posicao_ladder.jogador.is_de_ferias %}title="Jogador está de férias"{% endif %}>
 				<div class="col-2 pl-0 posicao-ladder"><strong>{{ posicao_ladder.posicao }}</strong></div>
-				<a class="ml-auto text-right" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
+				<a class="col-6 text-center" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
+				{% if posicao_ladder.posicao == 1 and posicao_ladder.jogador.main%}
+					<img title="{{ posicao_ladder.jogador.main.nome }}" class="ml-auto ladder-personagem" src="{% static posicao_ladder.jogador.main.imagem %}" />
+				{% endif %}
 			</li>
 		{% endfor %}
 		</ul>
