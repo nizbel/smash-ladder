@@ -3,13 +3,11 @@ import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models.aggregates import Sum
 
 from jogadores.models import Jogador, RegistroFerias
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, ResultadoDesafioLadder
-from ladder.utils import alterar_ladder, desfazer_desafio, \
-    desfazer_lote_desafios, recalcular_ladder
+from ladder.utils import recalcular_ladder
 
 
 # ALTERAÇÕES MIZZ - MONKEY 21:50
@@ -95,3 +93,4 @@ class Command(BaseCommand):
                 
         except:
             raise
+        
