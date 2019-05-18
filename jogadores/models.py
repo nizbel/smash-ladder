@@ -139,6 +139,7 @@ class Personagem(models.Model):
     """Personagens disponíveis no jogo"""
     nome = models.CharField(u'Nome', max_length=30)
     icone = models.CharField(u'Ícone', max_length=50)
+    imagem = models.CharField(u'Imagem', max_length=50)
     
     def __str__(self):
         return self.nome
