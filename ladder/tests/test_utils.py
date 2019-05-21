@@ -444,6 +444,49 @@ class AlterarLadderTestCase(TestCase):
         self.assertEqual(desafio_anterior.posicao_desafiado, 10)
         self.assertEqual(desafio_posterior.posicao_desafiante, 12)
         self.assertEqual(desafio_posterior.posicao_desafiado, 11)
+        
+    def test_alterar_ladder_adicionando_entrantes_apos_remocao(self):
+        """Testa alteração de ladder adicionando novos entrantes após uma remoção"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio = self.desafio_ladder_novo_entrante_derrota
+        desafio.desafiado = self.new_2
+        desafio.save()
+        
+        # Remover jogador na posição 5
+        remocao = RemocaoJogador.objects.create(admin_removedor=self.jogador_pos_1, data=desafio.data_hora - datetime.timedelta(days=1), 
+                                      jogador=self.jogador_pos_5, posicao_jogador=5)
+        remover_jogador(remocao)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Validar e alterar
+        desafio.admin_validador = self.jogador_pos_1
+        desafio.save()
+        alterar_ladder(desafio)
+        
+        # Atualizar
+        desafio.refresh_from_db()
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve aumentar 2 posições
+        self.assertEqual(len(ladder_antes) + 2, len(ladder_apos))
+            
+        # Outras posições permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[:9], ladder_apos[:9]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante 1 deve estar na 11
+        self.assertIn((self.new.id, 11), ladder_apos)
+        # Novo entrante 2 deve estar na 10
+        self.assertIn((self.new_2.id, 10), ladder_apos)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio.posicao_desafiante, 11)
+        self.assertEqual(desafio.posicao_desafiado, 10)
 
 class RecalcularLadderTestCase(TestCase):
     """Testes para a função de recalcular ladder"""
