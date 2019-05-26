@@ -38,7 +38,7 @@
 					    <h6 class="card-title">Último coringa</h6>
 					    <h6 class="card-title"><strong>{{ jogador.ultimo_uso_coringa|date:"d/m/Y"|default:"Não utilizado" }}</strong></h6>
 				    </div>
-					<div class="col-6 {% if jogador.posicao_atual < 4 %}award-bg{% endif %}">
+					<div class="col-6 {% if jogador.posicao_atual > 0 and jogador.posicao_atual < 4 %}award-bg{% endif %}">
 					    <h6 class="card-title">Posição atual</h6>
 					    <h6 class="card-title"><strong>{{ jogador.posicao_atual }}</strong></h6>
 				    </div>
