@@ -85,7 +85,7 @@ def detalhar_jogador(request, username):
             jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%d/%m/%Y %H:%M'), 'y': posicao_atual})
             
         # Adicionar últimos desafios
-        jogador.ultimos_desafios = reversed(todos_desafios[-3:])
+        jogador.ultimos_desafios = list(reversed(todos_desafios[-3:]))
             
 #         jogador.qtd_lutas = JogadorLuta.objects.filter(jogador=jogador).count()
         jogador.qtd_lutas = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
