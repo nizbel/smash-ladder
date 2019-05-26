@@ -740,10 +740,26 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
         ultima_ladder = InicioLadder.objects.all()    
     
     # Buscar última posição disponível na data
-    ultima_posicao_disponivel = max(DesafioLadder.validados.filter(data_hora__lt=desafio_ladder.data_hora) \
+    ultima_posicao_disponivel = max(DesafioLadder.validados.filter(data_hora__lt=desafio_ladder.data_hora, 
+                                                                   data_hora__month=desafio_ladder.data_hora.month,
+                                                                   data_hora__year=desafio_ladder.data_hora.year) \
         .aggregate(ultima_posicao=Max('posicao_desafiante'))['ultima_posicao'] or 0, 
         ultima_ladder.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'] or 0) + 1
-    
+        
+    # Considerar jogadores que saíram da ladder
+    if DesafioLadder.validados.filter(posicao_desafiante=ultima_posicao_disponivel-1, data_hora__month=desafio_ladder.data_hora.month,
+                                      data_hora__year=desafio_ladder.data_hora.year,
+                                      data_hora__lt=desafio_ladder.data_hora).exists():
+        ultima_data_hora = DesafioLadder.validados.filter(posicao_desafiante=ultima_posicao_disponivel-1, 
+                                                          data_hora__month=desafio_ladder.data_hora.month, 
+                                                          data_hora__year=desafio_ladder.data_hora.year, 
+                                                          data_hora__lt=desafio_ladder.data_hora) \
+            .order_by('-data_hora')[0].data_hora
+        ultima_posicao_disponivel -= RemocaoJogador.objects.filter(data__gt=ultima_data_hora, data__lt=desafio_ladder.data_hora).count()
+    else:
+        ultima_posicao_disponivel -= RemocaoJogador.objects.filter(data__month=desafio_ladder.data_hora.month,
+                                      data__year=desafio_ladder.data_hora.year, data__lt=desafio_ladder.data_hora).count()
+        
     # Percorrer todos os desafios na data/hora, ordenados por inserção, incrementando posições para novos entrantes
     for desafio in desafios_validos:
         if desafio.desafiado == jogador:

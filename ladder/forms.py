@@ -104,7 +104,8 @@ class DesafioLadderForm(ModelForm):
         
         # Verificar se jogadores envolvidos não estão presentes em outros desafios exatamente no mesmo horário
         if DesafioLadder.objects.filter(Q(data_hora=data_hora, desafiante__in=[desafiante, desafiado]) |
-                                        Q(data_hora=data_hora, desafiado__in=[desafiante, desafiado])).exists():
+                                        Q(data_hora=data_hora, desafiado__in=[desafiante, desafiado])) \
+                                        .exclude(id=self.instance.id).exists():
             raise ValidationError('Jogadores participantes do desafio já estão em outro desafio exatamente na mesma data/hora')
         
         # Modelo anterior
@@ -119,7 +120,7 @@ class DesafioLadderForm(ModelForm):
             raise ValidationError(f'{remocao.jogador} é removido da ladder na data especificada')
         
         return cleaned_data
-    
+
 class DesafioLadderLutaForm(ModelForm):
     """Formulário para uma luta de desafio de ladder"""
     personagem_desafiante = ModelChoiceField(queryset=Personagem.objects.all(), required=False)

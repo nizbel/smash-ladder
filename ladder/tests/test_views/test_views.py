@@ -292,6 +292,36 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder.data_hora, timezone.make_aware(horario_atual))
         self.assertEqual(self.desafio_ladder.adicionado_por, self.teets)
         
+    def test_editar_desafio_nao_validado_atual_sucesso_mesmo_horario(self):
+        """Testa editar desafio de ladder atual não validado com sucesso, sem alterar horário"""
+        # Preparar informações do form
+        form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': timezone.make_naive(self.desafio_ladder.data_hora)}
+        
+        # Preparar informações para validação do formset
+        formset = gerar_campos_formset([], 'desafio_ladder_luta')
+        
+        # Preparar dados POST
+        dados_post = {**form, **formset}
+        
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}),
+                                   dados_post)
+        self.assertEqual(response.status_code, 302)
+        
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id})
+        self.assertRedirects(response, url_esperada)
+                             
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER)
+        
+        # Verificar alterações em desafio
+        self.desafio_ladder = DesafioLadder.objects.get(id=self.desafio_ladder.id)
+        self.assertEqual(self.desafio_ladder.score_desafiante, 3)
+        self.assertEqual(self.desafio_ladder.score_desafiado, 2)
+        
     def test_editar_desafio_nao_validado_historico_sucesso(self):
         """Testa editar desafio de ladder histórico não validado com sucesso"""
         horario_historico = datetime.datetime.now().replace(month=self.horario_historico.month, 
