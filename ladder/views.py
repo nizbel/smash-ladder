@@ -380,7 +380,7 @@ def cancelar_desafio_ladder(request, desafio_id):
 
 def detalhar_desafio_ladder(request, desafio_id):
     """Detalhar um desafio de ladder"""
-    desafio_ladder = get_object_or_404(DesafioLadder, id=desafio_id)
+    desafio_ladder = get_object_or_404(DesafioLadder.objects.select_related('desafiante', 'desafiado'), id=desafio_id)
     
     # Verificar se usuário pode alterar desafio
     if request.user.is_authenticated:
