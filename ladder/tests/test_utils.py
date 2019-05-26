@@ -9,12 +9,12 @@ from jogadores.models import Jogador, RegistroFerias
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
-    CancelamentoDesafioLadder
+    CancelamentoDesafioLadder, RemocaoJogador
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
-    recalcular_ladder, copiar_ladder
+    recalcular_ladder, copiar_ladder, remover_jogador
 
 
 class AlterarLadderTestCase(TestCase):
@@ -85,6 +85,8 @@ class AlterarLadderTestCase(TestCase):
                                                                           horario_atual.replace(day=15), False, cls.jogador_pos_1)
         cls.desafio_ladder_novo_entrante_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 0, 3, 
                                                                           horario_atual.replace(day=5), False, cls.jogador_pos_1)
+        cls.desafio_ladder_novos_entrantes_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.new_2, 0, 3, 
+                                                                          horario_atual.replace(day=3), False, cls.jogador_pos_1)
                                                                           
     def test_alterar_ladder_atual_vitoria(self):
         """Testa alterar ladder atual por um desafio de vitória"""
@@ -449,9 +451,7 @@ class AlterarLadderTestCase(TestCase):
         """Testa alteração de ladder adicionando novos entrantes após uma remoção"""
         # Preparar desafios
         # Garantir que novo entrante desafie antes
-        desafio = self.desafio_ladder_novo_entrante_derrota
-        desafio.desafiado = self.new_2
-        desafio.save()
+        desafio = self.desafio_ladder_novos_entrantes_derrota
         
         # Remover jogador na posição 5
         remocao = RemocaoJogador.objects.create(admin_removedor=self.jogador_pos_1, data=desafio.data_hora - datetime.timedelta(days=1), 
@@ -478,6 +478,52 @@ class AlterarLadderTestCase(TestCase):
         # Outras posições permanecem
         for situacao_antes, situacao_apos in zip(ladder_antes[:9], ladder_apos[:9]):
             self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Novo entrante 1 deve estar na 11
+        self.assertIn((self.new.id, 11), ladder_apos)
+        # Novo entrante 2 deve estar na 10
+        self.assertIn((self.new_2.id, 10), ladder_apos)
+        
+        # Verificar posições para desafios
+        self.assertEqual(desafio.posicao_desafiante, 11)
+        self.assertEqual(desafio.posicao_desafiado, 10)
+        
+    def test_alterar_ladder_removendo_data_anterior_entrada_novos_entrantes(self):
+        """Testa alteração de ladder removendo um jogador antes de desafios que trouxeram novos entrantes"""
+        # Preparar desafios
+        # Garantir que novo entrante desafie antes
+        desafio = self.desafio_ladder_novos_entrantes_derrota
+        
+        # Validar e alterar
+        desafio.admin_validador = self.jogador_pos_1
+        desafio.save()
+        alterar_ladder(desafio)
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Remover jogador na posição 5
+        remocao = RemocaoJogador.objects.create(admin_removedor=self.jogador_pos_1, data=desafio.data_hora - datetime.timedelta(days=1), 
+                                      jogador=self.jogador_pos_5, posicao_jogador=5)
+        remover_jogador(remocao)
+        
+        # Atualizar
+        desafio.refresh_from_db()
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve diminuir 1 posição
+        self.assertEqual(len(ladder_antes) - 1, len(ladder_apos))
+            
+        # Posições acima de 5 mantém
+        for situacao_antes, situacao_apos in zip(ladder_antes[:4], ladder_apos[:4]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # 5 para baixo deslocam 1 posição
+        for situacao_antes, situacao_apos in zip(ladder_antes[5:10], ladder_apos[4:9]):
+            self.assertEqual(situacao_antes[0], situacao_apos[0])
+            self.assertEqual(situacao_antes[1]-1, situacao_apos[1])
             
         # Novo entrante 1 deve estar na 11
         self.assertIn((self.new.id, 11), ladder_apos)
