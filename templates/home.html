@@ -22,6 +22,10 @@
 				<a class="col-6 text-center" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
 				{% if posicao_ladder.posicao == 1 and posicao_ladder.jogador.main %}
 					<img title="{{ posicao_ladder.jogador.main.nome }}" class="ml-auto ladder-personagem" src="{% static posicao_ladder.jogador.main.imagem %}" />
+				{% elif posicao_ladder.jogador.main %}
+					<div class="col-4 text-center">
+						<img title="{{posicao_ladder.jogador.main.nome }}" class="icone-personagem text-center" src="{% static posicao_ladder.jogador.main.icone %}" />
+					</div>
 				{% endif %}
 			</li>
 		{% endfor %}
