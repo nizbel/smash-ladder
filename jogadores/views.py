@@ -20,12 +20,12 @@ from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
 
 def detalhar_jogador(request, username):
     """Detalhar um jogador específico pelo nick"""
-    jogador = get_object_or_404(Jogador, user__username=username)
+    jogador = get_object_or_404(Jogador.objects.select_related('main'), user__username=username)
     
     # Detalhar resultados de desafios do jogador
     desafios = {}
-    desafios_feitos = list(DesafioLadder.validados.filter(desafiante=jogador))
-    desafios_recebidos = list(DesafioLadder.validados.filter(desafiado=jogador))
+    desafios_feitos = list(DesafioLadder.validados.filter(desafiante=jogador).select_related('desafiante', 'desafiado'))
+    desafios_recebidos = list(DesafioLadder.validados.filter(desafiado=jogador).select_related('desafiante', 'desafiado'))
     
     desafios['feitos'] = len(desafios_feitos)
     desafios['recebidos'] = len(desafios_recebidos)
@@ -39,12 +39,18 @@ def detalhar_jogador(request, username):
     # Posição atual na ladder
     jogador.posicao_atual = jogador.posicao_em(timezone.localtime())
     
+    # Buscar primeiro desafio
+    todos_desafios = desafios_feitos
+    todos_desafios.extend(desafios_recebidos)
+    # Ordenar por data
+    todos_desafios.sort(key = lambda x: x.data_hora)
+    
     # Preencher gráfico com percentual de vitórias
     jogador.grafico_percentual_vitorias = list()
     qtd_vitorias = 0
     qtd_desafios = 0
-    for desafio in DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
-            .order_by('data_hora'):
+    
+    for desafio in todos_desafios:
         if desafio.desafiante_id == jogador.id and desafio.score_desafiante > desafio.score_desafiado:
             qtd_vitorias += 1
         elif desafio.desafiado_id == jogador.id and desafio.score_desafiante < desafio.score_desafiado:
@@ -57,12 +63,7 @@ def detalhar_jogador(request, username):
     jogador.grafico_variacao_posicao = list()
     
     # Verificar se jogador possui desafios
-    if len(desafios_feitos) + len(desafios_recebidos) > 0:
-        # Buscar primeiro desafio
-        todos_desafios = desafios_feitos
-        todos_desafios.extend(desafios_recebidos)
-        # Ordenar por data
-        todos_desafios.sort(key = lambda x: x.data_hora)
+    if todos_desafios:
         primeiro_desafio = todos_desafios[0]
         
         data_inicial = primeiro_desafio.data_hora
@@ -84,8 +85,7 @@ def detalhar_jogador(request, username):
             jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%d/%m/%Y %H:%M'), 'y': posicao_atual})
             
         # Adicionar últimos desafios
-        jogador.ultimos_desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
-            .order_by('-data_hora').select_related('desafiante', 'desafiado')[:3]
+        jogador.ultimos_desafios = reversed(todos_desafios[-3:])
             
 #         jogador.qtd_lutas = JogadorLuta.objects.filter(jogador=jogador).count()
         jogador.qtd_lutas = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
