@@ -65,7 +65,7 @@ class DesafioLadder(models.Model):
     @property
     def lutas(self):
         """Lista de lutas que compõe o desafio"""
-        return [luta_ladder.luta for luta_ladder in self.lutaladder_set.all()]
+        return [luta_ladder.luta for luta_ladder in self.lutaladder_set.all().select_related('luta__ganhador')]
     
     def is_cancelado(self):
         """Define se é um desafio cancelado"""
