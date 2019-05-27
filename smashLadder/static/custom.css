@@ -193,6 +193,80 @@ ul.ladder-top-10 li.ladder-ferias {
 }
 
 
+/* 
+	Imagens personagens
+*/
+@media (min-width: 768px) {
+	div.personagens-1::after {
+		content: "";
+		background-repeat: no-repeat;
+		background-size: auto 150%;
+		background-position: 50% 15%;
+		opacity: 0.25;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		position: absolute;
+		z-index: 50;
+	}
+	
+	div.personagens-2::after {
+		content: "";
+		background-repeat: no-repeat;
+		background-size: auto 120%, auto 120%;
+		background-position: 0% -20%, 100% -20%;
+		opacity: 0.25;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		position: absolute;
+		z-index: 50;
+	}
+	
+	div.personagens-3::after {
+		content: "";
+		background-repeat: no-repeat;
+		background-size: auto 100%, auto 70%, auto 70%;
+		background-position: 50%, 0%, 100%;
+		opacity: 0.25;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		position: absolute;
+		z-index: 50;
+	}
+	
+	div.personagens-4::after {
+		content: "";
+		background-repeat: no-repeat;
+		background-size: auto 90%, auto 90%, auto 90%, auto 90%;
+		background-position: 0%, 33%, 66%, 100%;
+		opacity: 0.25;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		position: absolute;
+		z-index: 50;
+	}
+	
+	div.personagens-5::after {
+		content: "";
+		background-repeat: no-repeat;
+		background-size: auto 90%, auto 70%, auto 70%, auto 50%, auto 50%;
+		background-position: 50%, 75%, 25%, 90%, 10%;
+		opacity: 0.25;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		position: absolute;
+		z-index: 50;
+	}
+}
 
 /*
 	Submenu
