@@ -31,7 +31,7 @@ class JogadorLuta(models.Model):
     
 class DesafioLadder(models.Model):
     """Desafio para ladder"""
-    LIMITE_POSICOES_DESAFIO = 2 # Diferença máxima de posições para haver desafio
+    LIMITE_POSICOES_DESAFIO = 3 # Diferença máxima de posições para haver desafio
     PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
