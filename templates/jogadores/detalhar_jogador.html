@@ -68,7 +68,7 @@
 		  	<div class="card-header bg-cinza-2">
 		    	Desafios
 		  	</div>
-		  	<div class="card-body col-12">
+		  	<div id="desafiosDiv" class="card-body col-12 personagens-{{ jogador.top_5_personagens|length }}">
 		  		<div class="row">
 			  		<div class="col-6">
 					    <h6 class="card-title">Feitos</h6>
@@ -220,6 +220,12 @@ $(document).ready(function(){
 		$(this).css('width', $(this).attr('aria-valuenow') + '%');
 	});
 
+	// Imagens personagens
+	{% if jogador.top_5_personagens %}
+	var div = document.getElementById("desafiosDiv");
+	div.pseudoStyle("after", "background-image", "{% for elemento in jogador.top_5_personagens %}url({% static elemento.personagem.imagem %}){% if not forloop.last %}, {% endif %}{% endfor %}");
+	{% endif %}
+
 	// Gráficos
 	var ctx = document.getElementById('graf-perc-vitorias').getContext('2d');
 	var grafPercVitorias = new Chart(ctx, {
@@ -301,5 +307,8 @@ $(document).ready(function(){
 	    }
 	});
 });
+
+
+(function(){a={_b:0,c:function(){this._b++;return this.b;}};HTMLElement.prototype.pseudoStyle=function(d,e,f){var g="pseudoStyles";var h=document.head||document.getElementsByTagName('head')[0];var i=document.getElementById(g)||document.createElement('style');i.id=g;var j="pseudoStyle"+a.c();this.className+=" "+j;i.innerHTML+=" ."+j+":"+d+"{"+e+":"+f+"}";h.appendChild(i);return this;};})();
 </script>
 {% endblock %}
