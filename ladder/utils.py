@@ -12,7 +12,7 @@ from django.utils import timezone
 from jogadores.models import Jogador, RegistroFerias
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
-    RemocaoJogador, DecaimentoJogador
+    RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -914,10 +914,10 @@ def avaliar_decaimento(jogador):
                                                     tzinfo=timezone.get_current_timezone())
                 
                 posicao_inicial = jogador.posicao_em(data_decaimento)
-                posicao_final = min(posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO, 
-                                    PosicaoLadder.objects.all().order_by('-posicao').values_list('posicao', flat=True)[0])
+#                 posicao_final = min(posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO, 
+#                                     PosicaoLadder.objects.all().order_by('-posicao').values_list('posicao', flat=True)[0])
                 decaimento = DecaimentoJogador(jogador=jogador, data=data_decaimento, posicao_inicial=posicao_inicial, 
-                                               posicao_final=posicao_final, qtd_periodos_inatividade=decaimento_atual)
+                                               qtd_periodos_inatividade=decaimento_atual)
                 decaimento.save()
                 
                 return decaimento
@@ -929,25 +929,35 @@ def avaliar_decaimento(jogador):
 def decair_jogador(decaimento):
     """Decai um jogador por inatividade"""
     # Se decaimento for de jogador no fim da ladder (não tem para onde cair), terminar função
-    if decaimento.posicao_inicial == decaimento.posicao_final:
+    if decaimento.posicao_inicial == PosicaoLadder.objects.all().aggregate(ultima_posicao=Max('posicao'))['ultima_posicao']:
         return
     
     try:
         with transaction.atomic():
             posicoes_entre_jogadores = list(PosicaoLadder.objects.filter(posicao__gte=decaimento.posicao_inicial, 
-                                                                       posicao__lte=decaimento.posicao_final).order_by('posicao'))
+                                                                         posicao__lte=decaimento.posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO) \
+                                                                         .order_by('posicao'))
             # Retira jogador decaído da ladder momentaneamente
             posicoes_entre_jogadores[0].posicao = 0
             posicoes_entre_jogadores[0].save()
             
-            # Retira uma posição de cada jogador à frente 
+            # Adiciona uma posição a cada jogador à frente 
             for posicao_jogador in posicoes_entre_jogadores[1:]:
                 posicao_jogador.posicao -= 1
                 posicao_jogador.save()
                 
-            # Coloca desafiante uma posição à frente do desafiado (final da lista)
-            posicoes_entre_jogadores[0].posicao = decaimento.posicao_final
+                # Adiciona aos resultados do decaimento
+                resultado_jogador = ResultadoDecaimentoJogador(decaimento=decaimento, jogador=posicao_jogador.jogador, alteracao_posicao=-1)
+                resultado_jogador.save()
+        
+            # Coloca desafiante uma posição atrás do final da lista
+            posicoes_entre_jogadores[0].posicao = posicoes_entre_jogadores[-1].posicao + 1
             posicoes_entre_jogadores[0].save()
+            
+            # Adiciona resultado para jogador que caiu
+            resultado = ResultadoDecaimentoJogador(decaimento=decaimento, jogador=decaimento.jogador, 
+                                   alteracao_posicao=posicoes_entre_jogadores[0].posicao - decaimento.posicao_inicial)
+            resultado.save()
             
     except:
         raise

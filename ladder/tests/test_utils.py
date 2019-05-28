@@ -1215,11 +1215,11 @@ class DecairJogadorTestCase(TestCase):
         criar_ladder_teste()
         
         # Gerar decaimentos
-        cls.decaimento_jogador_3 = DecaimentoJogador(jogador=cls.jogador_pos_3, posicao_inicial=3, posicao_final=6, 
+        cls.decaimento_jogador_3 = DecaimentoJogador.objects.create(jogador=cls.jogador_pos_3, posicao_inicial=3, 
                                                      data=timezone.localtime(), qtd_periodos_inatividade=1)
-        cls.decaimento_jogador_9 = DecaimentoJogador(jogador=cls.jogador_pos_9, posicao_inicial=9, posicao_final=10, 
+        cls.decaimento_jogador_9 = DecaimentoJogador.objects.create(jogador=cls.jogador_pos_9, posicao_inicial=9, 
                                                      data=timezone.localtime(), qtd_periodos_inatividade=1)
-        cls.decaimento_jogador_10 = DecaimentoJogador(jogador=cls.jogador_pos_10, posicao_inicial=10, posicao_final=10, 
+        cls.decaimento_jogador_10 = DecaimentoJogador.objects.create(jogador=cls.jogador_pos_10, posicao_inicial=10, 
                                                       data=timezone.localtime(), qtd_periodos_inatividade=2)
         
     def test_decair_jogador_sucesso(self):
@@ -1325,7 +1325,7 @@ class AvaliarDecaimentoTestCase(TestCase):
                                                        False, cls.jogador_pos_1, 2, 1)
         validar_desafio_ladder_teste(desafio_2, cls.jogador_pos_1, False)
         DecaimentoJogador.objects.create(jogador=cls.jogador_pos_2, data=timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE), 
-                                         posicao_inicial=1, posicao_final=2, qtd_periodos_inatividade=1)
+                                         posicao_inicial=1, qtd_periodos_inatividade=1)
         
         # Jogador posição 3
         desafio_3 = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 0, 3, 
@@ -1369,7 +1369,7 @@ class AvaliarDecaimentoTestCase(TestCase):
                                                        True, cls.jogador_pos_1, 8, 1)
         validar_desafio_ladder_teste(desafio_8, cls.jogador_pos_1, False)
         DecaimentoJogador.objects.create(jogador=cls.jogador_pos_8, data=timezone.localtime() - datetime.timedelta(days=1), 
-                                         posicao_inicial=5, posicao_final=8, qtd_periodos_inatividade=1)
+                                         posicao_inicial=5, qtd_periodos_inatividade=1)
         
         # Jogador posição 9
         desafio_9 = criar_desafio_ladder_simples_teste(cls.jogador_pos_9, cls.jogador_pos_1, 0, 3, 
@@ -1396,7 +1396,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_6)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 6)
-        self.assertEqual(decaimento.posicao_final, 6 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+#         self.assertEqual(decaimento.posicao_final, 6 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_apos_periodo_inatividade_sem_registro(self):
@@ -1407,7 +1407,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_7)
         self.assertEqual(decaimento.data.date(), timezone.localdate() - datetime.timedelta(days=1))
         self.assertEqual(decaimento.posicao_inicial, 7)
-        self.assertEqual(decaimento.posicao_final, 7 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+#         self.assertEqual(decaimento.posicao_final, 7 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_apos_periodo_inatividade_com_registro(self):
@@ -1423,7 +1423,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_9)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 9)
-        self.assertEqual(decaimento.posicao_final, 10)
+#         self.assertEqual(decaimento.posicao_final, 10)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_decaimento_fim_ladder(self):
@@ -1434,7 +1434,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_10)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 10)
-        self.assertEqual(decaimento.posicao_final, 10)
+#         self.assertEqual(decaimento.posicao_final, 10)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_decaimento_2_periodos_inatividade(self):
@@ -1445,7 +1445,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_2)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 2)
-        self.assertEqual(decaimento.posicao_final, 2 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+#         self.assertEqual(decaimento.posicao_final, 2 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 2)
         
     def test_avaliar_jogador_ferias_sem_cair_no_periodo_inatividade(self):
@@ -1461,7 +1461,7 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_3)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 3)
-        self.assertEqual(decaimento.posicao_final, 3 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+#         self.assertEqual(decaimento.posicao_final, 3 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_fora_ladder(self):
