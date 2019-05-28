@@ -2,7 +2,9 @@
 """Modelos usados para guardar jogadores"""
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.aggregates import Sum, Count
+from django.db.models.aggregates import Sum
+from django.db.models.expressions import Case, When, F
+from django.db.models.query_utils import Q
 from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
@@ -53,27 +55,15 @@ class Jogador(models.Model):
         # Buscar último desafio participado
         desafio_mais_recente = None
         
-#         if DesafioLadder.validados.filter(desafiante=self, data_hora__lt=data_hora).exists():
-        if desafios_validados_considerando_remocao.filter(desafiante=self, data_hora__lt=data_hora).exists():
-            ultimo_desafiante = desafios_validados_considerando_remocao.filter(desafiante=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
-            desafio_mais_recente = ultimo_desafiante
-            # Se ganhou, pega posição do desafiado
-            if desafio_mais_recente.score_desafiante > desafio_mais_recente.score_desafiado:
-                desafio_mais_recente.posicao = desafio_mais_recente.posicao_desafiado
-            else:
-                desafio_mais_recente.posicao = desafio_mais_recente.posicao_desafiante
+        if desafios_validados_considerando_remocao.filter(data_hora__lt=data_hora).filter(Q(desafiante=self) | Q(desafiado=self)).exists():
+            desafio_mais_recente = desafios_validados_considerando_remocao.filter(data_hora__lt=data_hora) \
+                .filter(Q(desafiante=self) | Q(desafiado=self)).annotate(
+                    posicao=Case(When(Q(desafiante=self) & Q(score_desafiante__gt=F('score_desafiado')), then=F('posicao_desafiado')),
+                                 When(Q(desafiante=self) & Q(score_desafiante__lt=F('score_desafiado')), then=F('posicao_desafiante')),
+                                 When(Q(desafiado=self) & Q(score_desafiante__gt=F('score_desafiado')), then=F('posicao_desafiado') + 1),
+                                 When(Q(desafiado=self) & Q(score_desafiante__lt=F('score_desafiado')), then=F('posicao_desafiado')))) \
+                                 .order_by('-data_hora')[0]
                 
-        if desafios_validados_considerando_remocao.filter(desafiado=self, data_hora__lt=data_hora).exists():
-            ultimo_desafiado = desafios_validados_considerando_remocao.filter(desafiado=self, data_hora__lt=data_hora).order_by('-data_hora')[0]
-            if desafio_mais_recente == None or desafio_mais_recente.data_hora < ultimo_desafiado.data_hora:
-                desafio_mais_recente = ultimo_desafiado
-                
-                # Se ganhou, mantém posição
-                if desafio_mais_recente.score_desafiado > desafio_mais_recente.score_desafiante:
-                    desafio_mais_recente.posicao = desafio_mais_recente.posicao_desafiado
-                else:
-                    desafio_mais_recente.posicao = desafio_mais_recente.posicao_desafiado + 1
-        
         if desafio_mais_recente:
 #             print(f'Desafio mais recente de {self}: {desafio_mais_recente.id} com {desafio_mais_recente.desafiante} VS {desafio_mais_recente.desafiado}')
             posicao = desafio_mais_recente.posicao
