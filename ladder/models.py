@@ -215,12 +215,21 @@ class DecaimentoJogador(models.Model):
     # Adicionado como datetime para facilitar comparações na hora de calcular ladder
     data = DateTimeFieldTz('Data do decaimento')
     posicao_inicial = models.SmallIntegerField('Posição da qual jogador caiu')
-    posicao_final = models.SmallIntegerField('Posição para qual jogador caiu')
+#     posicao_final = models.SmallIntegerField('Posição para qual jogador caiu')
     qtd_periodos_inatividade = models.SmallIntegerField('Quantidade de períodos inativo', validators=[MinValueValidator(1), MaxValueValidator(2)])
     
     class Meta():
         unique_together = ('jogador', 'data')
         
     def __str__(self):
-        return f'{self.jogador} cai de {self.posicao_inicial} para {self.posicao_final}'
+        return f'{self.jogador} cai de {self.posicao_inicial}'
+    
+class ResultadoDecaimentoJogador(models.Model):
+    """Resultado de um desafio de ladder"""
+    decaimento = models.ForeignKey('DecaimentoJogador', on_delete=models.CASCADE)
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    alteracao_posicao = models.SmallIntegerField(u'Alteração na posição após decaimento')
+    
+    class Meta():
+        unique_together = ('decaimento', 'jogador')
     
