@@ -84,11 +84,12 @@ def criar_luta_completa_teste(jogadores, personagens, ganhador, data, criador_lu
     return luta
 
 def criar_desafio_ladder_simples_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
-                                        desafio_coringa, criador_desafio):
+                                        desafio_coringa, criador_desafio, posicao_desafiante=0, posicao_desafiado=0):
     """Cria um desafio de ladder simples para teste"""
     return DesafioLadder.objects.create(desafiante=desafiante, desafiado=desafiado, score_desafiante=score_desafiante, 
                                          score_desafiado=score_desafiado, data_hora=data_hora, 
-                                         desafio_coringa=desafio_coringa, adicionado_por=criador_desafio)
+                                         desafio_coringa=desafio_coringa, adicionado_por=criador_desafio,
+                                         posicao_desafiante=posicao_desafiante, posicao_desafiado=posicao_desafiado)
     
 def criar_desafio_ladder_completo_teste(desafiante, desafiado, score_desafiante, score_desafiado, data_hora, 
                                         desafio_coringa, criador_desafio):
@@ -125,12 +126,13 @@ def criar_desafio_ladder_completo_teste(desafiante, desafiado, score_desafiante,
         
     return desafio_ladder
 
-def validar_desafio_ladder_teste(desafio_ladder, admin_validador):
+def validar_desafio_ladder_teste(desafio_ladder, admin_validador, realizar_alteracao=True):
     """Valida um desafio de ladder e altera posições para teste"""
     desafio_ladder.admin_validador = admin_validador
     desafio_ladder.save()
     
-    alterar_ladder(desafio_ladder)
+    if realizar_alteracao:
+        alterar_ladder(desafio_ladder)
     
 def gerar_campos_formset(dados, prefixo_form):
     """Instancia um formset diretamente para teste"""
