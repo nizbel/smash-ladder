@@ -30,8 +30,8 @@ class DesafioLadderFormTestCase(TestCase):
         criar_ladder_teste()
         
          
-        cls.mad = Jogador.objects.get(user__username='mad') # 4 na ladder
-        cls.sena = Jogador.objects.get(user__username='sena') # 3 na ladder
+        cls.jogador_pos_5 = Jogador.objects.get(user__username='blower') # 5 na ladder
+        cls.jogador_pos_4 = Jogador.objects.get(user__username='mad') # 4 na ladder
         cls.teets = Jogador.objects.get(user__username='teets') # 1 na ladder
         cls.new = criar_jogador_teste('new') # Novo entrande na ladder
         
@@ -48,74 +48,74 @@ class DesafioLadderFormTestCase(TestCase):
          
     def test_form_adicionar_desafio_com_sucesso(self):
         """Testa adicionar desafio com sucesso"""
-        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.sena).exists())
+        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.jogador_pos_4).exists())
         
         hora_atual = timezone.now()
         
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.jogador_pos_4.id})
         self.assertTrue(form.is_valid())
         # Usar commit=False como nas views
         desafio_ladder = form.save(commit=False)
         desafio_ladder.save()
          
         # Buscar desafio
-        desafio_ladder = DesafioLadder.objects.get(desafiante=self.sena)
-        self.assertEqual(desafio_ladder.desafiante, self.sena)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.jogador_pos_4)
+        self.assertEqual(desafio_ladder.desafiante, self.jogador_pos_4)
         self.assertEqual(desafio_ladder.desafiado, self.teets)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
         self.assertEqual(desafio_ladder.desafio_coringa, False)
         self.assertEqual(desafio_ladder.data_hora, hora_atual)
-        self.assertEqual(desafio_ladder.adicionado_por, self.sena)
+        self.assertEqual(desafio_ladder.adicionado_por, self.jogador_pos_4)
         self.assertEqual(desafio_ladder.admin_validador, None)
         
     def test_form_adicionar_desafio_historico_com_sucesso(self):
         """Testa adicionar desafio com sucesso em ladder no histórico"""
-        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.sena).exists())
+        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.jogador_pos_4).exists())
         
         hora_mes_passado = timezone.now().replace(month=self.mes, year=self.ano)
         
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': hora_mes_passado, 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': hora_mes_passado, 'adicionado_por': self.jogador_pos_4.id})
         self.assertTrue(form.is_valid())
         # Usar commit=False como nas views
         desafio_ladder = form.save(commit=False)
         desafio_ladder.save()
          
         # Buscar desafio
-        desafio_ladder = DesafioLadder.objects.get(desafiante=self.sena)
-        self.assertEqual(desafio_ladder.desafiante, self.sena)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.jogador_pos_4)
+        self.assertEqual(desafio_ladder.desafiante, self.jogador_pos_4)
         self.assertEqual(desafio_ladder.desafiado, self.teets)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
         self.assertEqual(desafio_ladder.desafio_coringa, False)
         self.assertEqual(desafio_ladder.data_hora, hora_mes_passado)
-        self.assertEqual(desafio_ladder.adicionado_por, self.sena)
+        self.assertEqual(desafio_ladder.adicionado_por, self.jogador_pos_4)
         self.assertEqual(desafio_ladder.admin_validador, None)
         
     def test_form_adicionar_desafio_coringa_com_sucesso(self):
         """Testa adicionar desafio usando coringa com sucesso"""
-        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.mad).exists())
+        self.assertFalse(DesafioLadder.objects.filter(desafiante=self.jogador_pos_5).exists())
         
         hora_atual = timezone.now()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.mad.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.jogador_pos_5.id})
         self.assertTrue(form.is_valid())
         # Usar commit=False como nas views
         desafio_ladder = form.save(commit=False)
         desafio_ladder.save()
          
         # Buscar desafio
-        desafio_ladder = DesafioLadder.objects.get(desafiante=self.mad)
-        self.assertEqual(desafio_ladder.desafiante, self.mad)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.jogador_pos_5)
+        self.assertEqual(desafio_ladder.desafiante, self.jogador_pos_5)
         self.assertEqual(desafio_ladder.desafiado, self.teets)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
         self.assertEqual(desafio_ladder.desafio_coringa, True)
         self.assertEqual(desafio_ladder.data_hora, hora_atual)
-        self.assertEqual(desafio_ladder.adicionado_por, self.mad)
+        self.assertEqual(desafio_ladder.adicionado_por, self.jogador_pos_5)
         self.assertEqual(desafio_ladder.admin_validador, None)
         
     def test_form_adicionar_desafio_coringa_novo_entrante_com_sucesso(self):
@@ -143,20 +143,20 @@ class DesafioLadderFormTestCase(TestCase):
         self.assertEqual(desafio_ladder.admin_validador, None)
         
  
-    def test_form_erro_desafiante_mais_que_2_abaixo(self):
-        """Testa adição de desafio feito por um desafiante mais de 2 posições abaixo do desafiado"""
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.sena.id})
+    def test_form_erro_desafiante_mais_que_qtd_abaixo(self):
+        """Testa adição de desafio feito por um desafiante mais de LIMITE_POSICOES_DESAFIO posições abaixo do desafiado"""
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.jogador_pos_4.id})
         self.assertFalse(form.is_valid())
         
         self.assertIn(f'Desafiante está mais de {DesafioLadder.LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado', form.errors['__all__'])
         self.assertTrue(len(form.errors) == 1)
         
-    def test_form_sucesso_desafiante_mais_que_2_abaixo_coringa(self):
-        """Testa adição de desafio feito por um desafiante mais de 2 posições abaixo com coringa"""
+    def test_form_sucesso_desafiante_mais_que_qtd_abaixo_coringa(self):
+        """Testa adição de desafio feito por um desafiante mais de LIMITE_POSICOES_DESAFIO posições abaixo com coringa"""
         hora_atual = timezone.now()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         self.assertTrue(form.is_valid())
         # Usar commit=False como nas views
@@ -164,8 +164,8 @@ class DesafioLadderFormTestCase(TestCase):
         desafio_ladder.save()
          
         # Buscar desafio
-        desafio_ladder = DesafioLadder.objects.get(desafiante=self.mad)
-        self.assertEqual(desafio_ladder.desafiante, self.mad)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.jogador_pos_5)
+        self.assertEqual(desafio_ladder.desafiante, self.jogador_pos_5)
         self.assertEqual(desafio_ladder.desafiado, self.teets)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
@@ -176,8 +176,8 @@ class DesafioLadderFormTestCase(TestCase):
         
     def test_form_erro_adicionado_terceiro_nao_admin(self):
         """Testa adição de desafio feita por um terceiro não admin"""
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.mad.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.jogador_pos_5.id})
           
         self.assertFalse(form.is_valid())
         self.assertIn('Jogador não pode criar desafios para ladder para terceiros', form.errors['__all__'])
@@ -187,7 +187,7 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa adição de desafio feita por um admin não participante"""
         hora_atual = timezone.now()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.sena.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.jogador_pos_4.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.teets.id}, admin=self.teets.admin)
         self.assertTrue(form.is_valid())
         # Usar commit=False como nas views
@@ -195,9 +195,9 @@ class DesafioLadderFormTestCase(TestCase):
         desafio_ladder.save()
          
         # Buscar desafio
-        desafio_ladder = DesafioLadder.objects.get(desafiante=self.mad)
-        self.assertEqual(desafio_ladder.desafiante, self.mad)
-        self.assertEqual(desafio_ladder.desafiado, self.sena)
+        desafio_ladder = DesafioLadder.objects.get(desafiante=self.jogador_pos_5)
+        self.assertEqual(desafio_ladder.desafiante, self.jogador_pos_5)
+        self.assertEqual(desafio_ladder.desafiado, self.jogador_pos_4)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
         self.assertEqual(desafio_ladder.desafio_coringa, False)
@@ -208,8 +208,8 @@ class DesafioLadderFormTestCase(TestCase):
     def test_form_erro_data_hora_futura(self):
         """Testa adição de desafio feita em horário futuro"""
         hora_futura = timezone.now() + datetime.timedelta(hours=1)
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': hora_futura, 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': hora_futura, 'adicionado_por': self.jogador_pos_4.id})
           
         self.assertFalse(form.is_valid())
         self.assertIn('data_hora', form.errors)
@@ -217,8 +217,8 @@ class DesafioLadderFormTestCase(TestCase):
         
     def test_form_erro_score_menor_que_3(self):
         """Testa adição de desafio com resultado em que ambos não alcançaram 3 pontos"""
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 2, 'score_desafiado': 1, 
-                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 2, 'score_desafiado': 1, 
+                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.jogador_pos_4.id})
           
         self.assertFalse(form.is_valid())
         self.assertIn('Resultado impossível para melhor de 5', form.errors['__all__'])
@@ -227,13 +227,13 @@ class DesafioLadderFormTestCase(TestCase):
     def test_form_erro_periodo_espera_insuficiente(self):
         """Testa adição de desafio sem respeitar período de espera entre mesmos jogadores"""
         # Gerar desafio passado
-        DesafioLadder.objects.create(desafiante=self.sena, desafiado=self.teets, score_desafiante=1, score_desafiado=3,
+        DesafioLadder.objects.create(desafiante=self.jogador_pos_4, desafiado=self.teets, score_desafiante=1, score_desafiado=3,
                                       desafio_coringa=False, 
                                       data_hora=(timezone.now() - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES-1)), 
                                       adicionado_por=self.teets)
         
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 1, 
-                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 1, 
+                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.jogador_pos_4.id})
         self.assertFalse(form.is_valid())
 
         self.assertIn(DesafioLadder.MENSAGEM_ERRO_PERIODO_ESPERA_MESMOS_JOGADORES, form.errors['__all__'])
@@ -242,8 +242,8 @@ class DesafioLadderFormTestCase(TestCase):
     def test_form_erro_add_para_ladder_historico_inexistente(self):
         """Testa adição de desafio em um mês no passado em que não existia ladder"""
         data_ano_anterior = timezone.now().replace(year=timezone.now().year-1)
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': data_ano_anterior, 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': data_ano_anterior, 'adicionado_por': self.jogador_pos_4.id})
         self.assertFalse(form.is_valid())
         
         self.assertIn(HistoricoLadder.MENSAGEM_LADDER_MES_ANO_INEXISTENTE, form.errors['__all__'])
@@ -251,8 +251,8 @@ class DesafioLadderFormTestCase(TestCase):
         
     def test_form_erro_desafiante_igual_desafiado(self):
         """Testa adição de desafio no qual desafiante e desafiado são o mesmo jogador"""
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.sena.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.sena.id})
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.jogador_pos_4.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+                                      'desafio_coringa': False, 'data_hora': timezone.now(), 'adicionado_por': self.jogador_pos_4.id})
         self.assertFalse(form.is_valid())
         
         self.assertIn(DesafioLadder.MENSAGEM_ERRO_MESMO_JOGADOR, form.errors['__all__'])
@@ -262,10 +262,10 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa adição de desafio coringa para desafiante que o usou há um período inferior ao mínimo"""
         hora_atual = timezone.now()
         # Adicionar uso de coringa para desafiante há 1 dia a menos que o período de espera
-        self.mad.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA - 1)
-        self.mad.save()
+        self.jogador_pos_5.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA - 1)
+        self.jogador_pos_5.save()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.teets.id}, admin=self.teets.admin)
         self.assertFalse(form.is_valid())
         
@@ -276,10 +276,10 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa adição de desafio coringa para desafiante que o usou há um período igual ao mínimo"""
         hora_atual = timezone.now()
         # Adicionar uso de coringa para desafiante há 1 dia a menos que o período de espera
-        self.mad.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA)
-        self.mad.save()
+        self.jogador_pos_5.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA)
+        self.jogador_pos_5.save()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         form.is_valid()
         self.assertTrue(form.is_valid())
@@ -288,10 +288,10 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa adição de desafio coringa para desafiante que o usou há um período superior ao mínimo"""
         hora_atual = timezone.now()
         # Adicionar uso de coringa para desafiante há 1 dia a menos que o período de espera
-        self.mad.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA + 1)
-        self.mad.save()
+        self.jogador_pos_5.ultimo_uso_coringa = hora_atual - datetime.timedelta(days=DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA + 1)
+        self.jogador_pos_5.save()
         
-        form = DesafioLadderForm({'desafiante': self.mad.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_5.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': True, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         self.assertTrue(form.is_valid())
         
@@ -299,16 +299,16 @@ class DesafioLadderFormTestCase(TestCase):
         """Testa erro ao cadastrar desafio em data que um dos participantes esteja sendo removido"""
         hora_atual = timezone.localtime()
         # Gerar remoção
-        remover_jogador(RemocaoJogador.objects.create(jogador=self.sena, data=hora_atual, 
+        remover_jogador(RemocaoJogador.objects.create(jogador=self.jogador_pos_4, data=hora_atual, 
                                       admin_removedor=self.teets, 
-                                      posicao_jogador=self.sena.posicao_em(hora_atual)))
+                                      posicao_jogador=self.jogador_pos_4.posicao_em(hora_atual)))
         
         # Tentar gerar desafio
-        form = DesafioLadderForm({'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
+        form = DesafioLadderForm({'desafiante': self.jogador_pos_4.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         self.assertFalse(form.is_valid())
         
-        self.assertIn(f'{self.sena} é removido da ladder na data especificada', form.errors['__all__'])
+        self.assertIn(f'{self.jogador_pos_4} é removido da ladder na data especificada', form.errors['__all__'])
         
 class DesafioLadderLutaFormTestCase(TestCase):
     """Testar form de adicionar desafio da ladder"""
