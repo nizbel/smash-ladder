@@ -187,7 +187,7 @@ class RemocaoJogador(models.Model):
     """Registro de remoção de jogador da ladder"""
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     # Adicionado como datetime para facilitar comparações na hora de calcular ladder
-    data = DateTimeFieldTz('Data/hora da remoção')
+    data = DateTimeFieldTz('Data da remoção')
     admin_removedor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='admin_removedor')
     posicao_jogador = models.SmallIntegerField('Posição durante remoção')
     
@@ -205,4 +205,22 @@ class RemocaoJogador(models.Model):
         if self.is_historico():
             return (self.data.month, self.data.year)
         return (None, None)
+    
+class DecaimentoJogador(models.Model):
+    """Registro de decaimento de jogador na ladder"""
+    PERIODO_INATIVIDADE = 30 # Quantidade de dias inativo para decair
+    QTD_POSICOES_DECAIMENTO = 3 # Quantidade de posições a decair por vez
+    
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    # Adicionado como datetime para facilitar comparações na hora de calcular ladder
+    data = DateTimeFieldTz('Data do decaimento')
+    posicao_inicial = models.SmallIntegerField('Posição da qual jogador caiu')
+    posicao_final = models.SmallIntegerField('Posição para qual jogador caiu')
+    qtd_periodos_inatividade = models.SmallIntegerField('Quantidade de períodos inativo', validators=[MinValueValidator(1), MaxValueValidator(2)])
+    
+    class Meta():
+        unique_together = ('jogador', 'data')
+        
+    def __str__(self):
+        return f'{self.jogador} cai de {self.posicao_inicial} para {self.posicao_final}'
     

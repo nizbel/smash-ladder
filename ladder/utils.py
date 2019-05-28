@@ -6,12 +6,13 @@ import datetime
 from django.db import transaction
 from django.db.models.aggregates import Sum, Max
 from django.db.models.expressions import F
+from django.db.models.query_utils import Q
 from django.utils import timezone
 
-from jogadores.models import Jogador
+from jogadores.models import Jogador, RegistroFerias
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
-    RemocaoJogador
+    RemocaoJogador, DecaimentoJogador
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -868,3 +869,85 @@ def processar_remocao(remocao):
     except:
         raise
     
+def avaliar_decaimento(jogador):
+    """Avalia se jogador é alvo de decaimento por inatividade"""
+    # Jogador deve estar na ladder atualmente
+    if not PosicaoLadder.objects.filter(jogador=jogador).exists():
+        raise ValueError(f'{jogador} não está na ladder')
+    
+    # Verificar último desafio validado do jogador
+    ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('-data_hora')[0]
+    
+    # Verificar períodos de férias desde último desafio
+    registros_ferias = RegistroFerias.objects.filter(jogador=jogador, data_inicio__gt=ultimo_desafio.data_hora.date())
+    qtd_dias_ferias = 0
+    for registro_ferias in registros_ferias:
+        qtd_dias_ferias += (registro_ferias.data_fim - registro_ferias.data_inicio).days
+    
+    # Verificar se jogador já possui decaimento desde último desafio
+    decaimentos_desde_desafio = DecaimentoJogador.objects.filter(jogador=jogador, data__gt=ultimo_desafio.data_hora)
+    
+    # Verificar quantidade de períodos de inatividade
+    qtd_periodos_inatividade = (timezone.localdate() - ultimo_desafio.data_hora.date()).days - qtd_dias_ferias
+    qtd_periodos_inatividade = qtd_periodos_inatividade // DecaimentoJogador.PERIODO_INATIVIDADE
+    
+    # Gerar decaimento para quantidade de períodos apontado na variável, se 0, não deve ser criado
+    decaimento_atual = 0
+    for numero_decaimento in range(1, qtd_periodos_inatividade + 1, 1):
+        if numero_decaimento not in [decaimento.qtd_periodos_inatividade for decaimento in decaimentos_desde_desafio]:
+            decaimento_atual = numero_decaimento
+            break
+    
+    if decaimento_atual > 0:
+        # Gerar decaimento
+        try: 
+            with transaction.atomic():
+                # Buscar data em que o período de inatividade foi completado
+                data_decaimento = ultimo_desafio.data_hora.date() + datetime.timedelta(days=decaimento_atual * 
+                                                                                       DecaimentoJogador.PERIODO_INATIVIDADE)
+                # Remover dias de férias
+                for registro_ferias in registros_ferias:
+                    if registro_ferias.data_inicio <= data_decaimento:
+                        data_decaimento += datetime.timedelta(days=(registro_ferias.data_fim - registro_ferias.data_inicio).days)
+                
+                data_decaimento = timezone.datetime(data_decaimento.year, data_decaimento.month, data_decaimento.day, 
+                                                    tzinfo=timezone.get_current_timezone())
+                
+                posicao_inicial = jogador.posicao_em(data_decaimento)
+                posicao_final = min(posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO, 
+                                    PosicaoLadder.objects.all().order_by('-posicao').values_list('posicao', flat=True)[0])
+                decaimento = DecaimentoJogador(jogador=jogador, data=data_decaimento, posicao_inicial=posicao_inicial, 
+                                               posicao_final=posicao_final, qtd_periodos_inatividade=decaimento_atual)
+                decaimento.save()
+                
+                return decaimento
+        except:
+            raise
+    
+    return None
+    
+def decair_jogador(decaimento):
+    """Decai um jogador por inatividade"""
+    # Se decaimento for de jogador no fim da ladder (não tem para onde cair), terminar função
+    if decaimento.posicao_inicial == decaimento.posicao_final:
+        return
+    
+    try:
+        with transaction.atomic():
+            posicoes_entre_jogadores = list(PosicaoLadder.objects.filter(posicao__gte=decaimento.posicao_inicial, 
+                                                                       posicao__lte=decaimento.posicao_final).order_by('posicao'))
+            # Retira jogador decaído da ladder momentaneamente
+            posicoes_entre_jogadores[0].posicao = 0
+            posicoes_entre_jogadores[0].save()
+            
+            # Retira uma posição de cada jogador à frente 
+            for posicao_jogador in posicoes_entre_jogadores[1:]:
+                posicao_jogador.posicao -= 1
+                posicao_jogador.save()
+                
+            # Coloca desafiante uma posição à frente do desafiado (final da lista)
+            posicoes_entre_jogadores[0].posicao = decaimento.posicao_final
+            posicoes_entre_jogadores[0].save()
+            
+    except:
+        raise

@@ -9,12 +9,13 @@ from jogadores.models import Jogador, RegistroFerias
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
-    CancelamentoDesafioLadder, RemocaoJogador
+    CancelamentoDesafioLadder, RemocaoJogador, DecaimentoJogador
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
-    recalcular_ladder, copiar_ladder, remover_jogador
+    recalcular_ladder, copiar_ladder, remover_jogador, decair_jogador, \
+    avaliar_decaimento
 
 
 class AlterarLadderTestCase(TestCase):
@@ -1210,64 +1211,24 @@ class DecairJogadorTestCase(TestCase):
         cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
         cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
         
-        # Jogadores para validar alterações no ranking
-        cls.jogadores = [cls.jogador_pos_1, cls.jogador_pos_2,
-                         cls.jogador_pos_3, cls.jogador_pos_4,
-                         cls.jogador_pos_5, cls.jogador_pos_6,
-                         cls.jogador_pos_7]
-        
         # Criar ladders para verificar que adicionar desafio não as afeta
         criar_ladder_teste()
         
-        # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        # Gerar decaimentos
+        cls.decaimento_jogador_3 = DecaimentoJogador(jogador=cls.jogador_pos_3, posicao_inicial=3, posicao_final=6, 
+                                                     data=timezone.localtime(), qtd_periodos_inatividade=1)
+        cls.decaimento_jogador_9 = DecaimentoJogador(jogador=cls.jogador_pos_9, posicao_inicial=9, posicao_final=10, 
+                                                     data=timezone.localtime(), qtd_periodos_inatividade=1)
+        cls.decaimento_jogador_10 = DecaimentoJogador(jogador=cls.jogador_pos_10, posicao_inicial=10, posicao_final=10, 
+                                                      data=timezone.localtime(), qtd_periodos_inatividade=2)
         
-        criar_ladder_historico_teste(cls.ano, cls.mes)
-        
-        # Criar novo entrante
-        cls.new = criar_jogador_teste('new')
-        
-        # Criar outro novo entrante
-        cls.new_2 = criar_jogador_teste('new_2')
-        
-        horario_atual = timezone.now()
-        horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
-        
-        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 3, 1, 
-                                                                          horario_atual, False, cls.jogador_pos_1)
-        cls.desafio_ladder_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_6, 0, 3, 
-                                                                          horario_atual + datetime.timedelta(minutes=1), False, cls.jogador_pos_1)
-        cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_2, 3, 1, 
-                                                                          horario_historico, True, cls.jogador_pos_1)
-        cls.desafio_ladder_historico_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_5, 0, 3, 
-                                                                          horario_historico + datetime.timedelta(minutes=1), True, cls.jogador_pos_1)
-        
-        # Desafios coringa
-        cls.desafio_ladder_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_1, 3, 1, 
-                                                                          horario_atual + datetime.timedelta(minutes=2), False, cls.jogador_pos_1)
-        cls.desafio_ladder_historico_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_2, 3, 1, 
-                                                                          horario_historico + datetime.timedelta(minutes=2), True, cls.jogador_pos_1)
-        
-        # Desafios de novo entrante
-        cls.desafio_ladder_novo_entrante_vitoria = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 3, 1, 
-                                                                          horario_atual.replace(day=15), False, cls.jogador_pos_1)
-        cls.desafio_ladder_novo_entrante_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 0, 3, 
-                                                                          horario_atual.replace(day=5), False, cls.jogador_pos_1)
-        cls.desafio_ladder_novos_entrantes_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.new_2, 0, 3, 
-                                                                          horario_atual.replace(day=3), False, cls.jogador_pos_1)
-                                                                          
     def test_decair_jogador_sucesso(self):
         """Testa decaimento de jogador com sucesso"""
         # Pegar situação da ladder antes
         ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
         
         # Decair jogador 3 por inatividade
-        decair_jogador(self.jogador_pos_3)
+        decair_jogador(self.decaimento_jogador_3)
         
         # Pegar situação da ladder após
         ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
@@ -1289,16 +1250,14 @@ class DecairJogadorTestCase(TestCase):
         for situacao_antes, situacao_apos in zip(ladder_antes[6:], ladder_apos[6:]):
             self.assertEqual(situacao_antes, situacao_apos)
             
-        # TODO Validar decaimento
-        
     def test_decair_jogador_prox_final_ladder(self):
-        """Testa decaimento de jogador com menos de POSICOES_DECAIMENTO posições do fim da ladder"""
+        """Testa decaimento de jogador com menos de QTD_POSICOES_DECAIMENTO posições do fim da ladder"""
         
         # Pegar situação da ladder antes
         ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
         
         # Decair jogador 9 por inatividade
-        decair_jogador(self.jogador_pos_9)
+        decair_jogador(self.decaimento_jogador_9)
         
         # Pegar situação da ladder após
         ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
@@ -1314,4 +1273,200 @@ class DecairJogadorTestCase(TestCase):
         self.assertIn((self.jogador_pos_9.id, 10), ladder_apos)
         self.assertIn((self.jogador_pos_10.id, 9), ladder_apos)
 
-        # TODO Validar decaimento
+    def test_decair_jogador_final_ladder(self):
+        """Testa decaimento de jogador no fim da ladder, não deve alterar posição"""
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Decair jogador 10 por inatividade
+        decair_jogador(self.decaimento_jogador_10)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve ser o mesmo
+        self.assertEqual(len(ladder_antes), len(ladder_apos))
+        
+        # Posições não devem mudar
+        for situacao_antes, situacao_apos in zip(ladder_antes, ladder_apos):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+class AvaliarDecaimentoTestCase(TestCase):
+    """Testes para a função de gerar decaimento de jogador"""
+    @classmethod
+    def setUpTestData(cls):
+        super(AvaliarDecaimentoTestCase, cls).setUpTestData()
+        
+        criar_jogadores_teste()
+        
+        # Pegar objetos de jogador de acordo com sua posição
+        cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
+        cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva') # Último desafio validado a PERIODO_INATIVIDADE * 2 dias (gerar decaimento 2)
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena') # Último desafio validado a PERIODO_INATIVIDADE + 5 dias (férias de 5 dias)
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad') # Último desafio validado a PERIODO_INATIVIDADE + 4 dias (férias de 5 dias)
+        cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer') # Último desafio validado a PERIODO_INATIVIDADE - 1 dias
+        cls.jogador_pos_6 = Jogador.objects.get(nick='frodo') # Último desafio validado a PERIODO_INATIVIDADE  dias
+        cls.jogador_pos_7 = Jogador.objects.get(nick='dan') # Último desafio validado a PERIODO_INATIVIDADE + 1 dias (sem registro)
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils') # Último desafio validado a PERIODO_INATIVIDADE + 1 dias (com registro)
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata') # Último desafio validado a PERIODO_INATIVIDADE dias
+        cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky') # Último desafio validado a PERIODO_INATIVIDADE dias
+        
+        # Criar novo entrante
+        cls.new = criar_jogador_teste('new')
+        
+        # Criar ladders para verificar que adicionar desafio não as afeta
+        criar_ladder_teste()
+        
+        # Gerar desafios validados
+        # Jogador posição 2
+        desafio_2 = criar_desafio_ladder_simples_teste(cls.jogador_pos_2, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE*2), 
+                                                       False, cls.jogador_pos_1, 2, 1)
+        validar_desafio_ladder_teste(desafio_2, cls.jogador_pos_1, False)
+        DecaimentoJogador.objects.create(jogador=cls.jogador_pos_2, data=timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE), 
+                                         posicao_inicial=1, posicao_final=2, qtd_periodos_inatividade=1)
+        
+        # Jogador posição 3
+        desafio_3 = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+5), 
+                                                       False, cls.jogador_pos_1, 3, 1)
+        validar_desafio_ladder_teste(desafio_3, cls.jogador_pos_1, False)
+        # Adicionar registro férias de 5 dias
+        RegistroFerias.objects.create(jogador=cls.jogador_pos_3, data_inicio=timezone.localdate() - datetime.timedelta(days=10), 
+                                      data_fim=timezone.localdate() - datetime.timedelta(days=5))
+        
+        # Jogador posição 4
+        desafio_4 = criar_desafio_ladder_simples_teste(cls.jogador_pos_4, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+4), 
+                                                       False, cls.jogador_pos_1, 4, 1)
+        validar_desafio_ladder_teste(desafio_4, cls.jogador_pos_1, False)
+        # Adicionar registro férias de 5 dias
+        RegistroFerias.objects.create(jogador=cls.jogador_pos_4, data_inicio=timezone.localdate() - datetime.timedelta(days=10), 
+                                      data_fim=timezone.localdate() - datetime.timedelta(days=5))
+        
+        # Jogador posição 5
+        desafio_5 = criar_desafio_ladder_simples_teste(cls.jogador_pos_5, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE-1), 
+                                                       True, cls.jogador_pos_1, 5, 1)
+        validar_desafio_ladder_teste(desafio_5, cls.jogador_pos_1, False)
+        
+        # Jogador posição 6
+        desafio_6 = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE), 
+                                                       True, cls.jogador_pos_1, 6, 1)
+        validar_desafio_ladder_teste(desafio_6, cls.jogador_pos_1, False)
+        
+        # Jogador posição 7
+        desafio_7 = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+1), 
+                                                       True, cls.jogador_pos_1, 7, 1)
+        validar_desafio_ladder_teste(desafio_7, cls.jogador_pos_1, False)
+        
+        # Jogador posição 8
+        desafio_8 = criar_desafio_ladder_simples_teste(cls.jogador_pos_8, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE+1), 
+                                                       True, cls.jogador_pos_1, 8, 1)
+        validar_desafio_ladder_teste(desafio_8, cls.jogador_pos_1, False)
+        DecaimentoJogador.objects.create(jogador=cls.jogador_pos_8, data=timezone.localtime() - datetime.timedelta(days=1), 
+                                         posicao_inicial=5, posicao_final=8, qtd_periodos_inatividade=1)
+        
+        # Jogador posição 9
+        desafio_9 = criar_desafio_ladder_simples_teste(cls.jogador_pos_9, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE), 
+                                                       True, cls.jogador_pos_1, 9, 1)
+        validar_desafio_ladder_teste(desafio_9, cls.jogador_pos_1, False)
+        
+        # Jogador posição 10
+        desafio_10 = criar_desafio_ladder_simples_teste(cls.jogador_pos_10, cls.jogador_pos_1, 0, 3, 
+                                                       timezone.localtime() - datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE), 
+                                                       True, cls.jogador_pos_1, 10, 1)
+        validar_desafio_ladder_teste(desafio_10, cls.jogador_pos_1, False)
+        
+    def test_avaliar_jogador_quase_periodo_inatividade(self):
+        """Testa avaliar jogador próximo de completar período de inatividade"""
+        # Não deve gerar decaimento
+        self.assertEqual(avaliar_decaimento(self.jogador_pos_5), None)
+        
+    def test_avaliar_jogador_no_periodo_inatividade(self):
+        """Testa avaliar jogador que acaba de completar período de inatividade"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_6)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_6)
+        self.assertEqual(decaimento.data.date(), timezone.localdate())
+        self.assertEqual(decaimento.posicao_inicial, 6)
+        self.assertEqual(decaimento.posicao_final, 6 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_jogador_apos_periodo_inatividade_sem_registro(self):
+        """Testa avaliar jogador após período de inatividade, sem registro de decaimento"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_7)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_7)
+        self.assertEqual(decaimento.data.date(), timezone.localdate() - datetime.timedelta(days=1))
+        self.assertEqual(decaimento.posicao_inicial, 7)
+        self.assertEqual(decaimento.posicao_final, 7 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_jogador_apos_periodo_inatividade_com_registro(self):
+        """Testa avaliar jogador após período de inatividade, com registro de decaimento"""
+        # Não deve gerar decaimento
+        self.assertEqual(avaliar_decaimento(self.jogador_pos_8), None)
+        
+    def test_avaliar_jogador_decaimento_prox_fim_ladder(self):
+        """Testa avaliar decaimento de jogador próximo ao fim da ladder"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_9)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_9)
+        self.assertEqual(decaimento.data.date(), timezone.localdate())
+        self.assertEqual(decaimento.posicao_inicial, 9)
+        self.assertEqual(decaimento.posicao_final, 10)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_jogador_decaimento_fim_ladder(self):
+        """Testa avaliar decaimento de jogador no fim da ladder"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_10)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_10)
+        self.assertEqual(decaimento.data.date(), timezone.localdate())
+        self.assertEqual(decaimento.posicao_inicial, 10)
+        self.assertEqual(decaimento.posicao_final, 10)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_jogador_decaimento_2_periodos_inatividade(self):
+        """Testa avaliar decaimento para jogador há 2 perídos inativo"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_2)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_2)
+        self.assertEqual(decaimento.data.date(), timezone.localdate())
+        self.assertEqual(decaimento.posicao_inicial, 2)
+        self.assertEqual(decaimento.posicao_final, 2 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 2)
+        
+    def test_avaliar_jogador_ferias_sem_cair_no_periodo_inatividade(self):
+        """Testa avaliar jogador com férias que não cai no período de inatividade"""
+        # Não deve gerar decaimento
+        self.assertEqual(avaliar_decaimento(self.jogador_pos_4), None)
+        
+    def test_avaliar_jogador_ferias_caindo_no_periodo_inatividade(self):
+        """Testa avaliar jogador com férias que cai no período de inatividade"""
+        # Deve gerar decaimento
+        decaimento = avaliar_decaimento(self.jogador_pos_3)
+        
+        self.assertEqual(decaimento.jogador, self.jogador_pos_3)
+        self.assertEqual(decaimento.data.date(), timezone.localdate())
+        self.assertEqual(decaimento.posicao_inicial, 3)
+        self.assertEqual(decaimento.posicao_final, 3 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_jogador_fora_ladder(self):
+        """Testa erro avaliar jogador que não está na ladder"""
+        # Deve jogar erro
+        with self.assertRaisesMessage(ValueError, f'{self.new} não está na ladder'):
+            avaliar_decaimento(self.new)
+        
