@@ -1190,3 +1190,128 @@ class CopiarLadderTestCase(TestCase):
             self.assertEqual(registro_origem.posicao, registro_depois.posicao)
             self.assertEqual(registro_origem.jogador, registro_depois.jogador)
             
+class DecairJogadorTestCase(TestCase):
+    """Testes para a função de decair jogador na ladder"""
+    @classmethod
+    def setUpTestData(cls):
+        super(DecairJogadorTestCase, cls).setUpTestData()
+        
+        criar_jogadores_teste()
+        
+        # Pegar objetos de jogador de acordo com sua posição
+        cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
+        cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva')
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena')
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad')
+        cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer')
+        cls.jogador_pos_6 = Jogador.objects.get(nick='frodo')
+        cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils')
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
+        cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
+        
+        # Jogadores para validar alterações no ranking
+        cls.jogadores = [cls.jogador_pos_1, cls.jogador_pos_2,
+                         cls.jogador_pos_3, cls.jogador_pos_4,
+                         cls.jogador_pos_5, cls.jogador_pos_6,
+                         cls.jogador_pos_7]
+        
+        # Criar ladders para verificar que adicionar desafio não as afeta
+        criar_ladder_teste()
+        
+        # Preparar mês anterior para histórico
+        data_atual = timezone.now().date()
+        cls.ano = data_atual.year
+        cls.mes = data_atual.month - 1
+        if cls.mes == 0:
+            cls.mes = 12
+            cls.ano -= 1
+        
+        criar_ladder_historico_teste(cls.ano, cls.mes)
+        
+        # Criar novo entrante
+        cls.new = criar_jogador_teste('new')
+        
+        # Criar outro novo entrante
+        cls.new_2 = criar_jogador_teste('new_2')
+        
+        horario_atual = timezone.now()
+        horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
+        
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 3, 1, 
+                                                                          horario_atual, False, cls.jogador_pos_1)
+        cls.desafio_ladder_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_6, 0, 3, 
+                                                                          horario_atual + datetime.timedelta(minutes=1), False, cls.jogador_pos_1)
+        cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_2, 3, 1, 
+                                                                          horario_historico, True, cls.jogador_pos_1)
+        cls.desafio_ladder_historico_derrota = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_5, 0, 3, 
+                                                                          horario_historico + datetime.timedelta(minutes=1), True, cls.jogador_pos_1)
+        
+        # Desafios coringa
+        cls.desafio_ladder_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_7, cls.jogador_pos_1, 3, 1, 
+                                                                          horario_atual + datetime.timedelta(minutes=2), False, cls.jogador_pos_1)
+        cls.desafio_ladder_historico_coringa = criar_desafio_ladder_simples_teste(cls.jogador_pos_6, cls.jogador_pos_2, 3, 1, 
+                                                                          horario_historico + datetime.timedelta(minutes=2), True, cls.jogador_pos_1)
+        
+        # Desafios de novo entrante
+        cls.desafio_ladder_novo_entrante_vitoria = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 3, 1, 
+                                                                          horario_atual.replace(day=15), False, cls.jogador_pos_1)
+        cls.desafio_ladder_novo_entrante_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.jogador_pos_10, 0, 3, 
+                                                                          horario_atual.replace(day=5), False, cls.jogador_pos_1)
+        cls.desafio_ladder_novos_entrantes_derrota = criar_desafio_ladder_simples_teste(cls.new, cls.new_2, 0, 3, 
+                                                                          horario_atual.replace(day=3), False, cls.jogador_pos_1)
+                                                                          
+    def test_decair_jogador_sucesso(self):
+        """Testa decaimento de jogador com sucesso"""
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Decair jogador 3 por inatividade
+        decair_jogador(self.jogador_pos_3)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve ser o mesmo
+        self.assertEqual(len(ladder_antes), len(ladder_apos))
+        
+        # 2 primeiras posições não devem mudar
+        for situacao_antes, situacao_apos in zip(ladder_antes[:2], ladder_apos[:2]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Jogadores afetados pelo decaimento de 3
+        self.assertIn((self.jogador_pos_3.id, 6), ladder_apos)
+        self.assertIn((self.jogador_pos_4.id, 3), ladder_apos)
+        self.assertIn((self.jogador_pos_5.id, 4), ladder_apos)
+        self.assertIn((self.jogador_pos_6.id, 5), ladder_apos)
+        
+        # Outras permanecem
+        for situacao_antes, situacao_apos in zip(ladder_antes[6:], ladder_apos[6:]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # TODO Validar decaimento
+        
+    def test_decair_jogador_prox_final_ladder(self):
+        """Testa decaimento de jogador com menos de POSICOES_DECAIMENTO posições do fim da ladder"""
+        
+        # Pegar situação da ladder antes
+        ladder_antes = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Decair jogador 9 por inatividade
+        decair_jogador(self.jogador_pos_9)
+        
+        # Pegar situação da ladder após
+        ladder_apos = list(PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
+        
+        # Tamanho da ladder deve ser o mesmo
+        self.assertEqual(len(ladder_antes), len(ladder_apos))
+        
+        # 2 primeiras posições não devem mudar
+        for situacao_antes, situacao_apos in zip(ladder_antes[:7], ladder_apos[:7]):
+            self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Jogadores afetados pelo decaimento de 9
+        self.assertIn((self.jogador_pos_9.id, 10), ladder_apos)
+        self.assertIn((self.jogador_pos_10.id, 9), ladder_apos)
+
+        # TODO Validar decaimento
