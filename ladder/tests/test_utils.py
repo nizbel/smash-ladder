@@ -534,7 +534,7 @@ class AlterarLadderTestCase(TestCase):
         # Verificar posições para desafios
         self.assertEqual(desafio.posicao_desafiante, 11)
         self.assertEqual(desafio.posicao_desafiado, 10)
-
+        
 class RecalcularLadderTestCase(TestCase):
     """Testes para a função de recalcular ladder"""
     @classmethod
@@ -553,11 +553,11 @@ class RecalcularLadderTestCase(TestCase):
         cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
         cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
         
-        # Jogadores para validar alterações no ranking
-        cls.jogadores = [cls.jogador_pos_1, cls.jogador_pos_2,
-                         cls.jogador_pos_3, cls.jogador_pos_4,
-                         cls.jogador_pos_5, cls.jogador_pos_6,
-                         cls.jogador_pos_7]
+#         # Jogadores para validar alterações no ranking
+#         cls.jogadores = [cls.jogador_pos_1, cls.jogador_pos_2,
+#                          cls.jogador_pos_3, cls.jogador_pos_4,
+#                          cls.jogador_pos_5, cls.jogador_pos_6,
+#                          cls.jogador_pos_7]
         
         # Criar ladder inicial
         criar_ladder_inicial_teste()
@@ -785,6 +785,31 @@ class RecalcularLadderTestCase(TestCase):
 #         regex = re.escape(f'Desafio Ladder {self.desafio_ladder.id}: ') + r'.+'
 #         with self.assertRaisesRegex(ValueError, regex):
 #             recalcular_ladder()
+
+    def test_alterar_ladder_deve_desfazer_decaimento(self):
+        """Testa se alteração de ladder desfaz um decaimento para o jogador"""
+        # Realizar decaimento
+        decaimento = DecaimentoJogador.objects.create(jogador=self.jogador_pos_4, data=timezone.localtime() + datetime.timedelta(days=1), 
+                                                      posicao_inicial=4, qtd_periodos_inatividade=1)
+        decair_jogador(decaimento)
+        
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=4, jogador=self.jogador_pos_5).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=5, jogador=self.jogador_pos_6).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=6, jogador=self.jogador_pos_7).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=7, jogador=self.jogador_pos_4).exists())
+        
+        # Alterar ladder
+        validar_desafio_ladder_teste(self.desafio_ladder, self.jogador_pos_1)
+        
+        # Decaimento deve ser apagado e seus resultados desfeitos
+        self.assertFalse(DecaimentoJogador.objects.filter(jogador=self.jogador_pos_4).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=2, jogador=self.jogador_pos_1).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=3, jogador=self.jogador_pos_2).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=4, jogador=self.jogador_pos_3).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=1, jogador=self.jogador_pos_4).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=5, jogador=self.jogador_pos_5).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=6, jogador=self.jogador_pos_6).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=7, jogador=self.jogador_pos_7).exists())
 
 class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
     """Testes para a função que verifica se desafiante está abaixo do desafiado na ladder"""
@@ -1250,6 +1275,19 @@ class DecairJogadorTestCase(TestCase):
         for situacao_antes, situacao_apos in zip(ladder_antes[6:], ladder_apos[6:]):
             self.assertEqual(situacao_antes, situacao_apos)
             
+        # Validar resultados
+        resultados = self.decaimento_jogador_3.resultadodecaimentojogador_set.all()
+        self.assertEqual(resultados.count(), 4)
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_3, jogador=self.jogador_pos_3, 
+                                          alteracao_posicao=DecaimentoJogador.QTD_POSICOES_DECAIMENTO).exists())
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_3, jogador=self.jogador_pos_4, 
+                                          alteracao_posicao=-1).exists())
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_3, jogador=self.jogador_pos_5, 
+                                          alteracao_posicao=-1).exists())
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_3, jogador=self.jogador_pos_6, 
+                                          alteracao_posicao=-1).exists())
+        
+            
     def test_decair_jogador_prox_final_ladder(self):
         """Testa decaimento de jogador com menos de QTD_POSICOES_DECAIMENTO posições do fim da ladder"""
         
@@ -1272,6 +1310,14 @@ class DecairJogadorTestCase(TestCase):
         # Jogadores afetados pelo decaimento de 9
         self.assertIn((self.jogador_pos_9.id, 10), ladder_apos)
         self.assertIn((self.jogador_pos_10.id, 9), ladder_apos)
+        
+        # Validar resultados
+        resultados = self.decaimento_jogador_9.resultadodecaimentojogador_set.all()
+        self.assertEqual(resultados.count(), 2)
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_9, jogador=self.jogador_pos_9, 
+                                          alteracao_posicao=1).exists())
+        self.assertTrue(resultados.filter(decaimento=self.decaimento_jogador_9, jogador=self.jogador_pos_10, 
+                                          alteracao_posicao=-1).exists())
 
     def test_decair_jogador_final_ladder(self):
         """Testa decaimento de jogador no fim da ladder, não deve alterar posição"""
@@ -1291,6 +1337,10 @@ class DecairJogadorTestCase(TestCase):
         # Posições não devem mudar
         for situacao_antes, situacao_apos in zip(ladder_antes, ladder_apos):
             self.assertEqual(situacao_antes, situacao_apos)
+            
+        # Validar resultados
+        resultados = self.decaimento_jogador_3.resultadodecaimentojogador_set.all()
+        self.assertEqual(resultados.count(), 0)
             
 class AvaliarDecaimentoTestCase(TestCase):
     """Testes para a função de gerar decaimento de jogador"""
