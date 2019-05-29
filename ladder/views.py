@@ -21,7 +21,7 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm,\
     RemocaoJogadorForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    DesafioLadder, CancelamentoDesafioLadder, InicioLadder
+    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador
 from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
     remover_jogador
 
@@ -491,7 +491,9 @@ def detalhar_regras(request):
                                                   'MELHOR_DE': DesafioLadder.MELHOR_DE, 
                                                   'PERIODO_ESPERA_MESMOS_JOGADORES': DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES,
                                                   'PERIODO_ESPERA_DESAFIO_CORINGA': DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA,
-                                                  'PERIODO_MAX_FERIAS': RegistroFerias.PERIODO_MAX_FERIAS})
+                                                  'PERIODO_MAX_FERIAS': RegistroFerias.PERIODO_MAX_FERIAS,
+                                                  'QTD_POSICOES_DECAIMENTO': DecaimentoJogador.QTD_POSICOES_DECAIMENTO,
+                                                  'PERIODO_INATIVIDADE': DecaimentoJogador.PERIODO_INATIVIDADE})
 
 def listar_desafios_ladder(request, ano=None, mes=None):
     """Listar desafios de ladder específica"""
