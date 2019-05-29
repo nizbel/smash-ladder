@@ -161,6 +161,8 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     mes, ano = evento.mes_ano_ladder
                 elif isinstance(evento, RemocaoJogador):
                     mes, ano = evento.mes_ano_ladder
+                elif isinstance(evento, DecaimentoJogador):
+                    mes, ano = evento.mes_ano_ladder
                     
                 if mes != mes_atual or ano != ano_atual:
                     # Alterou mês/ano na última iteração
@@ -972,6 +974,9 @@ def decair_jogador(decaimento):
     
     try:
         with transaction.atomic():
+            # Remover resultados para recalculá-los
+            ResultadoDecaimentoJogador.objects.filter(decaimento=decaimento).delete()
+                
             posicoes_entre_jogadores = list(PosicaoLadder.objects.filter(posicao__gte=decaimento.posicao_inicial, 
                                                                          posicao__lte=decaimento.posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO) \
                                                                          .order_by('posicao'))
@@ -1006,6 +1011,6 @@ def verificar_decaimento_valido(decaimento):
         .filter(data_hora__lt=decaimento.data).order_by('-data_hora').values_list('data_hora', flat=True)[0]
     
     # Retorna válido para caso de período de inatividade apontado pelo decaimento ainda ser verdadeiro
-    return decaimento.data >= data_hora_ultimo_desafio \
+    return decaimento.data.date() >= data_hora_ultimo_desafio.date() \
         + datetime.timedelta(days=decaimento.qtd_periodos_inatividade * DecaimentoJogador.PERIODO_INATIVIDADE)
     
