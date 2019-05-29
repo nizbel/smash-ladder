@@ -190,6 +190,7 @@ class RemocaoJogador(models.Model):
     data = DateTimeFieldTz('Data da remoção')
     admin_removedor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='admin_removedor')
     posicao_jogador = models.SmallIntegerField('Posição durante remoção')
+    remocao_por_inatividade = models.BooleanField('Remoção devido a inatividade?', default=False)
     
     class Meta():
         unique_together = ('jogador', 'data')

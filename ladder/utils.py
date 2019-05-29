@@ -58,7 +58,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')
                 eventos.extend(list(decaimentos))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
@@ -102,7 +102,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__month=mes_atual, data__year=ano_atual) \
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 if HistoricoLadder.objects.all().exists():
@@ -130,7 +130,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__gte=data) \
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 mes_anterior = mes - 1
