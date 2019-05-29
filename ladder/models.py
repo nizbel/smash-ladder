@@ -226,6 +226,18 @@ class DecaimentoJogador(models.Model):
         
         return f'{self.jogador} cai de {self.posicao_inicial} em {self.data.strftime("%d/%m/%Y")}'
     
+    def is_historico(self):
+        """Define se é histórico"""
+        horario_atual = timezone.localtime()
+        return self.data.month != horario_atual.month or self.data.year != horario_atual.year
+    
+    @property
+    def mes_ano_ladder(self):
+        """Retorna mes e ano de ladder da qual remoção faz parte"""
+        if self.is_historico():
+            return (self.data.month, self.data.year)
+        return (None, None)
+    
 class ResultadoDecaimentoJogador(models.Model):
     """Resultado de um desafio de ladder"""
     decaimento = models.ForeignKey('DecaimentoJogador', on_delete=models.CASCADE)
