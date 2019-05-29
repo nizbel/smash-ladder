@@ -56,6 +56,9 @@ class ViewDetalharJogadorTestCase(TestCase):
         
         cls.jogador_1 = Jogador.objects.get(nick='sena')
         cls.jogador_2 = Jogador.objects.get(nick='teets')
+        cls.jogador_5 = Jogador.objects.get(nick='mad')
+        
+        criar_ladder_teste()
         
         dia_anterior = timezone.now() - datetime.timedelta(days=1)
         # Gerar desafios para jogador_2
@@ -84,6 +87,14 @@ class ViewDetalharJogadorTestCase(TestCase):
                                                                       desafio_coringa=False, adicionado_por=cls.jogador_1,
                                                                       score_desafiante=3, score_desafiado=2, 
                                                                       admin_validador=cls.jogador_2)
+        
+        # Derrota jogador 5
+        cls.desafio_validado_derrota_3 = DesafioLadder.objects.create(desafiante=cls.jogador_5, desafiado=cls.jogador_3, 
+                                                                      data_hora=dia_anterior.replace(hour=8),
+                                                                      desafio_coringa=False, adicionado_por=cls.jogador_2,
+                                                                      score_desafiante=2, score_desafiado=3, 
+                                                                      admin_validador=cls.jogador_2)
+                                                            
         
         
         cls.desafio_nao_validado_vitoria = DesafioLadder.objects.create(desafiante=cls.jogador_1, desafiado=cls.jogador_2, 
@@ -186,6 +197,73 @@ class ViewDetalharJogadorTestCase(TestCase):
         # Deve mostrar últimos desafios
         self.assertContains(response, 'Últimos desafios')
         self.assertContains(response, reverse('jogadores:listar_desafios_jogador', kwargs={'username': self.jogador_2.user.username}))
+        
+    def test_jogador_com_remocoes_afetando_grafico_ladder(self):
+        """Testa mostrar gráfico de posições na ladder com remoções que o afetam"""
+        # Adicionar remoção para jogador 1
+        remocao = RemocaoJogador.objects.create(jogador=self.jogador_1, data=timezone.localtime() - datetime.timedelta(days=1), 
+                                      admin_removedor=self.jogador_2)
+        remover_jogador(remocao)
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_5.user.username}))
+        self.assertEqual(response.status_code, 200)
+        graf_variacao_ladder = response.context['jogador.grafico_variacao_posicao']
+        self.assertNotEqual(graf_variacao_ladder, [])
+        self.assertEqual(graf_variacao_ladder[0].y, 5)
+        self.assertEqual(graf_variacao_ladder[1].y, 4)
+        
+    def test_jogador_com_decaimentos_afetando_grafico_ladder(self):
+        """Testa mostrar gráfico de posições na ladder com decaimentos que o afetam"""
+        # Adicionar decaimento para jogador 4
+        decaimento = DecaimentoJogador.objects.create(jogador=self.jogador_4, data=timezone.localtime() - datetime.timedelta(days=1), 
+                                         posicao_inicial=4, qtd_periodos_inatividade=1)
+        decair_jogador(decaimento)
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_5.user.username}))
+        self.assertEqual(response.status_code, 200)
+        graf_variacao_ladder = response.context['jogador.grafico_variacao_posicao']
+        self.assertNotEqual(graf_variacao_ladder, [])
+        self.assertEqual(graf_variacao_ladder[0].y, 5)
+        self.assertEqual(graf_variacao_ladder[1].y, 4)
+        
+    def test_jogador_com_desafios_afetando_grafico_ladder(self):
+        """Testa mostrar gráfico de posições na ladder com desafios que o afetam"""
+        # Adicionar desafio para jogador 6
+        desafio = DesafioLadder.objects.create(desafiante=cls.jogador_6, desafiado=cls.jogador_4, 
+                                                                      data_hora=timezone.localtime() - datetime.timedelta(minutes=1),
+                                                                      desafio_coringa=False, adicionado_por=self.jogador_2,
+                                                                      score_desafiante=3, score_desafiado=2, 
+                                                                      admin_validador=cls.jogador_2)
+        alterar_ladder(desafio)
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_5.user.username}))
+        self.assertEqual(response.status_code, 200)
+        graf_variacao_ladder = response.context['jogador.grafico_variacao_posicao']
+        self.assertNotEqual(graf_variacao_ladder, [])
+        self.assertEqual(graf_variacao_ladder[0].y, 5)
+        self.assertEqual(graf_variacao_ladder[1].y, 6)
+        
+    def test_jogador_removido_recomeca_grafico_ladder(self):
+        """Testa recomeço de gráfico de ladder caso jogador tenha sido removido previamente"""
+        # Adicionar remoção para jogador 1
+        remocao = RemocaoJogador.objects.create(jogador=self.jogador_2, data=timezone.localtime() - datetime.timedelta(days=1), 
+                                      admin_removedor=self.jogador_2)
+        remover_jogador(remocao)
+        
+        # Novo desafio recomeçando a ladder, desafiando último (posição 9)
+        desafio = DesafioLadder.objects.create(desafiante=cls.jogador_2, desafiado=PosicaoLadder.objects.get(posicao=9), 
+                                                                      data_hora=timezone.localtime() - datetime.timedelta(minutes=1),
+                                                                      desafio_coringa=False, adicionado_por=self.jogador_2,
+                                                                      score_desafiante=3, score_desafiado=2, 
+                                                                      admin_validador=cls.jogador_2)
+        alterar_ladder(desafio)
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        graf_variacao_ladder = response.context['jogador.grafico_variacao_posicao']
+        self.assertNotEqual(graf_variacao_ladder, [])
+        self.assertEqual(graf_variacao_ladder[0].y, 10)
+        self.assertEqual(graf_variacao_ladder[1].y, 9)
         
 
 class ViewEditarJogadorTestCase(TestCase):
