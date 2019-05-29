@@ -8,7 +8,7 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
-    HistoricoLadder, RemocaoJogador
+    HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador
 
 
 class Jogador(models.Model):
@@ -68,6 +68,10 @@ class Jogador(models.Model):
 #             print(f'Desafio mais recente de {self}: {desafio_mais_recente.id} com {desafio_mais_recente.desafiante} VS {desafio_mais_recente.desafiado}')
             posicao = desafio_mais_recente.posicao
             
+            # Buscar alterações feitas por remoções de outros jogadores
+            posicao -= RemocaoJogador.objects.filter(data__range=[desafio_mais_recente.data_hora, data_hora], posicao_jogador__lt=posicao) \
+                .exclude(data=data_hora).count()
+            
 #             print(self, ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__range=[desafio_mais_recente.data_hora, data_hora]) \
 #                 .exclude(desafio_ladder=desafio_mais_recente).exclude(desafio_ladder__data_hora=data_hora) \
 #                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
@@ -77,9 +81,10 @@ class Jogador(models.Model):
                 .exclude(desafio_ladder=desafio_mais_recente).exclude(desafio_ladder__data_hora=data_hora) \
                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
-            # Buscar alterações feitas por remoções de outros jogadores
-            posicao -= RemocaoJogador.objects.filter(data__range=[desafio_mais_recente.data_hora, data_hora], posicao_jogador__lt=posicao) \
-                .exclude(data=data_hora).count()
+            # Buscar alterações feitas por decaimentos de outros jogadores
+            posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__range=[desafio_mais_recente.data_hora, data_hora]) \
+                .exclude(decaimento__data=data_hora) \
+                .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
             return posicao
         
@@ -109,15 +114,33 @@ class Jogador(models.Model):
 #             print(self, ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
 #                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
-            # Buscar alterações feitas por desafios de outros jogadores
+            # Buscar alterações feitas por alterações de outros jogadores
             if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
+                # Remoções
+                posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao) \
+                    .filter(data__month=data_hora.month, data__year=data_hora.year).count()
+                
+                # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
                     .filter(desafio_ladder__data_hora__month=data_hora.month, desafio_ladder__data_hora__year=data_hora.year,
                             desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
+                
+                # Decaimentos
+                posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__lt=data_hora) \
+                    .filter(decaimento__data__month=data_hora.month, decaimento__data__year=data_hora.year)
+                    .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             else:
+                # Remoções
+                posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao).count()
+                    
+                # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora,
                             desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
+                    .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
+                
+                # Decaimentos
+                posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__lt=data_hora) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
             return posicao
