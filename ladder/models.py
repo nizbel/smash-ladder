@@ -222,7 +222,8 @@ class DecaimentoJogador(models.Model):
         unique_together = ('jogador', 'data')
         
     def __str__(self):
-        return f'{self.jogador} cai de {self.posicao_inicial}'
+        
+        return f'{self.jogador} cai de {self.posicao_inicial} em {self.data.strftime("%d/%m/%Y")}'
     
 class ResultadoDecaimentoJogador(models.Model):
     """Resultado de um desafio de ladder"""
