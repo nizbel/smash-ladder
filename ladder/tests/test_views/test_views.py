@@ -63,15 +63,16 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         # Criar desafios para ladder
         cls.horario_historico = cls.horario_atual.replace(year=cls.ano, month=cls.mes)
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
-                                                                          cls.horario_atual.replace(day=15), False, cls.teets)
+                                                                          cls.horario_atual, False, cls.teets)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
-                                                                                    cls.horario_historico.replace(day=15), False, cls.sena)
+                                                                                    cls.horario_historico.replace(day=1) - datetime.timedelta(days=15), 
+                                                                                    False, cls.sena)
         
         cls.desafio_ladder_add_por_nao_admin = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
-                                                                          cls.horario_atual.replace(day=10), False, cls.sena)
+                                                                          cls.horario_atual - datetime.timedelta(days=4), False, cls.sena)
         
         cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.saraiva, 1, 3, 
-                                                                          cls.horario_atual.replace(day=5), False, cls.sena)
+                                                                          cls.horario_atual - datetime.timedelta(days=8), False, cls.sena)
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de editar desafio de ladder sem logar"""
@@ -399,12 +400,12 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder_add_por_nao_admin.score_desafiante, 3)
         self.assertEqual(self.desafio_ladder_add_por_nao_admin.score_desafiado, 1)
         self.assertEqual(self.desafio_ladder_add_por_nao_admin.desafio_coringa, False)
-        self.assertEqual(self.desafio_ladder_add_por_nao_admin.data_hora, self.horario_atual.replace(day=10))
+        self.assertEqual(self.desafio_ladder_add_por_nao_admin.data_hora, self.horario_atual - datetime.timedelta(days=4))
         self.assertEqual(self.desafio_ladder_add_por_nao_admin.adicionado_por, self.sena)
         
     def test_editar_desafio_nao_validado_completo_sucesso(self):
         """Testa editar desafio de ladder completo não validado com sucesso"""
-        horario_atual = datetime.datetime.now().replace(day=4)
+        novo_horario = self.desafio_ladder_completo.data_hora - datetime.timedelta(days=1)
         
         # Guardar ids dos modelos relacionados a luta para verificar posteriormente se nenhuma nova foi criada
         lutas_antes = Luta.objects.all().values_list('id')
@@ -412,7 +413,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         lutas_ladder_antes = LutaLadder.objects.all().values_list('id')
         
         form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 1, 
-                                      'desafio_coringa': True, 'data_hora': horario_atual}
+                                      'desafio_coringa': True, 'data_hora': timezone.make_naive(novo_horario)}
         
         lutas = Luta.objects.filter(lutaladder__desafio_ladder=self.desafio_ladder_completo).select_related('lutaladder') \
                 .order_by('lutaladder__indice_desafio_ladder')
@@ -450,7 +451,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
         self.assertEqual(self.desafio_ladder_completo.score_desafiado, 1)
         self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.data_hora, novo_horario)
         self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
@@ -512,15 +513,14 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         
     def test_editar_desafio_nao_validado_completo_sucesso_adicionando_1_luta(self):
         """Testa editar desafio de ladder completo não validado adicionando 1 luta, com sucesso"""
-        horario_atual = datetime.datetime.now().replace(day=4)
-        
+        novo_horario = self.desafio_ladder_completo.data_hora - datetime.timedelta(days=1)
         # Verificar que existem apenas 4 lutas
         self.assertEqual(Luta.objects.count(), 4)
         self.assertEqual(JogadorLuta.objects.count(), 8)
         self.assertEqual(LutaLadder.objects.count(), 4)
         
         form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
-                                      'desafio_coringa': True, 'data_hora': horario_atual}
+                                      'desafio_coringa': True, 'data_hora': timezone.make_naive(novo_horario)}
         
         formset_lutas = gerar_campos_formset([{'ganhador': self.sena.id, 'stage': self.stage.id, 
                                      'personagem_desafiante': self.fox.id, 'personagem_desafiado': self.fox.id},
@@ -557,7 +557,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
         self.assertEqual(self.desafio_ladder_completo.score_desafiado, 2)
         self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.data_hora, novo_horario)
         self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
@@ -615,7 +615,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         
     def test_editar_desafio_nao_validado_completo_sucesso_removendo_ultima_luta(self):
         """Testa editar desafio de ladder completo não validado removendo última luta, com sucesso"""
-        horario_atual = datetime.datetime.now().replace(day=4)
+        novo_horario = self.desafio_ladder_completo.data_hora - datetime.timedelta(days=1)
         
         # Verificar que existem apenas 4 lutas
         self.assertEqual(Luta.objects.count(), 4)
@@ -628,7 +628,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         lutas_ladder_antes = LutaLadder.objects.all().values_list('id')
         
         form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 0, 
-                                      'desafio_coringa': True, 'data_hora': horario_atual}
+                                      'desafio_coringa': True, 'data_hora': timezone.make_naive(novo_horario)}
         
         formset_lutas = gerar_campos_formset([{'ganhador': self.sena.id, 'stage': self.stage.id, 
                                      'personagem_desafiante': self.fox.id, 'personagem_desafiado': self.fox.id},
@@ -661,7 +661,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
         self.assertEqual(self.desafio_ladder_completo.score_desafiado, 0)
         self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.data_hora, novo_horario)
         self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
@@ -714,7 +714,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
             
     def test_editar_desafio_nao_validado_completo_sucesso_alterando_luta_meio(self):
         """Testa editar desafio de ladder completo não validado removendo luta do meio, com sucesso"""
-        horario_atual = datetime.datetime.now().replace(day=4)
+        novo_horario = self.desafio_ladder_completo.data_hora - datetime.timedelta(days=1)
         
         # Verificar que existem apenas 4 lutas
         self.assertEqual(Luta.objects.count(), 4)
@@ -727,7 +727,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         lutas_ladder_antes = LutaLadder.objects.all().values_list('id')
         
         form = {'desafiante': self.sena.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 0, 
-                                      'desafio_coringa': True, 'data_hora': horario_atual}
+                                      'desafio_coringa': True, 'data_hora': timezone.make_naive(novo_horario)}
         
         formset_lutas = gerar_campos_formset([{'ganhador': self.sena.id, 'stage': self.stage.id, 
                                      'personagem_desafiante': self.fox.id, 'personagem_desafiado': self.fox.id},
@@ -760,7 +760,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(self.desafio_ladder_completo.score_desafiante, 3)
         self.assertEqual(self.desafio_ladder_completo.score_desafiado, 0)
         self.assertEqual(self.desafio_ladder_completo.desafio_coringa, True)
-        self.assertEqual(self.desafio_ladder_completo.data_hora, timezone.make_aware(horario_atual))
+        self.assertEqual(self.desafio_ladder_completo.data_hora, novo_horario)
         self.assertEqual(self.desafio_ladder_completo.adicionado_por, self.sena)
         
         # Verificar alterações em lutas
