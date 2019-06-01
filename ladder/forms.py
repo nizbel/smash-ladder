@@ -8,7 +8,7 @@ from django.forms import ValidationError
 from django.forms.models import ModelForm, ModelChoiceField
 from django.utils import timezone
 
-from jogadores.models import Personagem
+from jogadores.models import Personagem, Stage, Jogador
 from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
     RemocaoJogador
 from ladder.utils import verificar_posicoes_desafiante_desafiado
@@ -137,6 +137,8 @@ class DesafioLadderLutaForm(ModelForm):
         
         if 'id' in self.initial and self.instance.id == None:
             self.instance = Luta.objects.get(id=self.initial['id'])
+            
+        self.fields['stage'].queryset = Stage.objects.filter(stagevalidaladder__isnull=False)
             
 class RemocaoJogadorForm(ModelForm):
     """Formulário para remoção de jogador da ladder"""
