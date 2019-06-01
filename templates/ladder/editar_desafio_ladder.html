@@ -49,6 +49,29 @@ Editar desafio
 <script type="text/javascript">
 $(document).ready(function(){
 	$('select').select2();
+	
+	// Forçar ganhador a ser um dos 2 jogadores selecionados
+	$("select[id$='ganhador'] option[value!='']").each(function() {
+		// Desafiante
+		var desafiante = $("select[id='id_desafiante']").select2('data')[0];
+		// Desafiado
+		var desafiado = $("select[id='id_desafiado']").select2('data')[0];
+		
+		if ($(this).val() == '' || $(this).val() == desafiante.id || $(this).val() == desafiado.id) {
+			return;
+		} else {
+			$(this).remove();
+		}
+	});
+	
+	$("select[id='id_desafiante']").on('select2:select', function (e) {
+	  	recarregarParticipantes();
+	});
+	
+	$("select[id='id_desafiado']").on('select2:select', function (e) {
+	  	recarregarParticipantes();
+	});
+	
 	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
 	
 	// Verificar se data está preenchida
@@ -67,5 +90,24 @@ $(document).ready(function(){
 		}
 	});
 });
+
+function recarregarParticipantes() {
+	// Apagar atuais
+	$("select[id$='ganhador'] option[value!='']").remove();
+	
+	// Desafiante
+	var desafiante = $("select[id='id_desafiante']").select2('data')[0];
+	if (desafiante.id) {
+		var newOption = new Option(desafiante.text, desafiante.id, false, false);
+		$("select[id$='ganhador']").append(newOption).trigger('change');
+	}
+	
+	// Desafiado
+	var desafiado = $("select[id='id_desafiado']").select2('data')[0];
+	if (desafiado.id) {
+		var newOption = new Option(desafiado.text, desafiado.id, false, false);
+		$("select[id$='ganhador']").append(newOption).trigger('change');
+	}
+}
 </script>
 {% endblock %}
