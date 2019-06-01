@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models.aggregates import Count, Max, Sum
-from django.db.models.expressions import F
+from django.db.models.expressions import F, Value
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
@@ -15,7 +15,8 @@ from django.utils import timezone
 from jogadores.forms import JogadorForm, StagesValidasForm
 from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
-    JogadorLuta
+    JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
+from django.db.models.fields import IntegerField
 
 
 def detalhar_jogador(request, username):
@@ -90,37 +91,36 @@ def detalhar_jogador(request, username):
         
             # Preencher gráfico com variações a partir dessa data
             posicao_atual = posicao_inicial
-            resultados_desafios = ResultadoDesafioLadder.objects.filter(jogador=jogador).annotate(data_hora=F('desafio_ladder__data_hora')) \
-                    .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')).annotate(tipo=Value(1)) \
-                    .values('alteracao_total', 'data_hora', 'tipo').order_by('data_hora', 'desafio_ladder__posicao_desafiado')
-            resultados_decaimentos = ResultadoDecaimentoJogador.objects.filter(jogador=jogador).annotate(data_hora=F('decaimento__data')) \
-                    .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')).annotate(tipo=Value(2)) \
-                    .values('alteracao_total', 'data_hora', 'tipo').order_by('data_hora', 'decaimento__posicao_inicial')
-            resultados_remocoes = Remocao.objects.filter(data__gt=data_inicial).annotate(data_hora=F('data')).annotate(tipo=Value(3)) \
-                    .values('posicao_jogador', 'data_hora', 'tipo').order_by('data_hora', 'posicao_jogador')
+            resultados_desafios = list(ResultadoDesafioLadder.objects.filter(jogador=jogador, desafio_ladder__data_hora__gte=data_inicial) \
+                                       .annotate(data_hora=F('desafio_ladder__data_hora')) \
+                                       .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')) \
+                                       .annotate(tipo=Value(1, output_field=IntegerField())) \
+                                       .values('alteracao_total', 'data_hora', 'tipo').order_by('data_hora', 'desafio_ladder__posicao_desafiado'))
+            resultados_decaimentos = list(ResultadoDecaimentoJogador.objects.filter(jogador=jogador, decaimento__data__gte=data_inicial) \
+                                          .annotate(data_hora=F('decaimento__data')) \
+                                          .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')) \
+                                          .annotate(tipo=Value(2, output_field=IntegerField())) \
+                                          .values('alteracao_total', 'data_hora', 'tipo').order_by('data_hora', 'decaimento__posicao_inicial'))
+            resultados_remocoes = list(RemocaoJogador.objects.filter(data__gte=data_inicial).annotate(data_hora=F('data'))
+                                       .annotate(tipo=Value(3, output_field=IntegerField())) \
+                                       .values('posicao_jogador', 'data_hora', 'tipo').order_by('data_hora', 'posicao_jogador'))
             
-            resultados = resultados_desafios.extend(resultados_decaimentos).extend(resultados_remocoes)
+            resultados = resultados_desafios
+            resultados.extend(resultados_decaimentos)
+            resultados.extend(resultados_remocoes)
             
-            resultados.sort(key=lambda x: x.data_hora)
+            resultados.sort(key=lambda x: x['data_hora'])
             
             for indice, resultado in enumerate(resultados):
-                if resultado.tipo in [1, 2]:
+                if resultado['tipo'] in [1, 2]:
                     posicao_atual += resultado['alteracao_total']
-                elif resultado.tipo == 3:
+                elif resultado['tipo'] == 3:
                     if resultado['posicao_jogador'] < posicao_atual:
                         posicao_atual -= 1
                         
                 if indice == len(resultados)-1 or (resultado['data_hora'] != resultados[indice+1]['data_hora']):
                     jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%d/%m/%Y %H:%M'), 'y': posicao_atual})
                         
-            # TODO remover
-            for resultado in ResultadoDesafioLadder.objects.filter(jogador=jogador).annotate(data_hora=F('desafio_ladder__data_hora')) \
-                    .values('data_hora').annotate(alteracao_total=Sum('alteracao_posicao')) \
-                    .values('alteracao_total', 'data_hora').order_by('data_hora', 'desafio_ladder__posicao_desafiado'):
-                posicao_atual += resultado['alteracao_total']
-            
-                jogador.grafico_variacao_posicao.append({'x': resultado['data_hora'].strftime('%d/%m/%Y %H:%M'), 'y': posicao_atual})
-            
         # Adicionar últimos desafios
         jogador.ultimos_desafios = list(reversed(todos_desafios[-3:]))
             
