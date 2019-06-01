@@ -300,7 +300,7 @@ def listar_ladder_historico(request):
 def detalhar_luta(request, luta_id):
     """Detalhar uma luta"""
     luta = get_object_or_404(Luta.objects.select_related('lutaladder__desafio_ladder', 'ganhador'), id=luta_id)
-    participantes = JogadorLuta.objects.filter(luta=luta).select_related('jogador', 'personagem')
+    participantes = JogadorLuta.objects.filter(luta=luta).select_related('jogador__user', 'personagem')
     
     return render(request, 'ladder/luta.html', {'luta': luta, 'participantes': participantes})
 
