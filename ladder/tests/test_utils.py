@@ -63,7 +63,7 @@ class AlterarLadderTestCase(TestCase):
         # Criar outro novo entrante
         cls.new_2 = criar_jogador_teste('new_2')
         
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         horario_historico = horario_atual.replace(month=cls.mes, year=cls.ano)
         
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.jogador_pos_3, cls.jogador_pos_1, 3, 1, 
@@ -316,7 +316,7 @@ class AlterarLadderTestCase(TestCase):
         """Testa alteração de ladder com desafio anterior a último validado com novo entrante"""
         # Preparar desafios
         # Garantir que novo entrante desafie antes
-        desafio_anterior = DesafioLadder(data_hora=self.desafio_ladder_novo_entrante_vitoria.data_hora - datetime.timedelta(days=5), 
+        desafio_anterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora - datetime.timedelta(days=5), 
                                           desafiante=self.desafio_ladder_novo_entrante_vitoria.desafiante,
                                           desafiado=self.desafio_ladder_novo_entrante_vitoria.desafiado,
                                           adicionado_por=self.desafio_ladder_novo_entrante_vitoria.adicionado_por,
@@ -360,7 +360,7 @@ class AlterarLadderTestCase(TestCase):
         
         # Tamanho da ladder deve aumentar 1 posição
         self.assertEqual(len(ladder_antes) + 1, len(ladder_apos))
-            
+        
         # Novo entrante está em décimo primeiro
         # Outras posições permanecem
         for situacao_antes, situacao_apos in zip(ladder_antes[:10], ladder_apos[:10]):
@@ -386,11 +386,15 @@ class AlterarLadderTestCase(TestCase):
         """Testa alteração de ladder para marcar entrada anterior para novo entrante"""
         # Preparar desafios
         # Garantir que novo entrante desafie antes
-        desafio_anterior = self.desafio_ladder_novo_entrante_vitoria 
-        desafio_anterior.data_hora = timezone.now() - datetime.timedelta(days=5)
+        desafio_anterior = DesafioLadder(data_hora=timezone.localtime() - datetime.timedelta(days=5), 
+                                          desafiante=self.desafio_ladder_novo_entrante_vitoria.desafiante,
+                                          desafiado=self.desafio_ladder_novo_entrante_vitoria.desafiado,
+                                          adicionado_por=self.desafio_ladder_novo_entrante_vitoria.adicionado_por,
+                                          score_desafiante=3, score_desafiado=1, desafio_coringa=False)
         desafio_anterior.save()
         
-        desafio_posterior = self.desafio_ladder
+        desafio_posterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora, score_desafiante=self.desafio_ladder.score_desafiante, 
+                                          score_desafiado=self.desafio_ladder.score_desafiado, desafio_coringa=False)
         desafio_posterior.desafiante = self.new_2
         desafio_posterior.desafiado = self.jogador_pos_10
         desafio_posterior.adicionado_por = self.jogador_pos_10
