@@ -5,7 +5,7 @@ from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem
+from jogadores.models import Jogador, Personagem, StageValidaLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste, criar_stage_teste, criar_personagens_teste
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
@@ -323,6 +323,8 @@ class DesafioLadderLutaFormTestCase(TestCase):
                 
         # Stage
         cls.stage = criar_stage_teste()
+        # Configurar stage como válida
+        StageValidaLadder.objects.create(stage=cls.stage)
         
         # Personagens
         criar_personagens_teste()   

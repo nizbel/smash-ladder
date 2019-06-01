@@ -8,7 +8,8 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem, RegistroFerias
+from jogadores.models import Jogador, Personagem, RegistroFerias, \
+    StageValidaLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, criar_stage_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, JogadorLuta, \
@@ -45,6 +46,8 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         
         # Stage
         cls.stage = criar_stage_teste()
+        # Configurar stage como válida
+        StageValidaLadder.objects.create(stage=cls.stage)
         
         # Criar ladders para verificar que adicionar desafio não as afeta
         criar_ladder_teste()
