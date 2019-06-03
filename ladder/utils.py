@@ -12,7 +12,8 @@ from django.utils import timezone
 from jogadores.models import Jogador, RegistroFerias
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
-    RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador
+    RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador,\
+    ResultadoRemocaoJogador
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -58,7 +59,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')
                 eventos.extend(list(decaimentos))
                 
-                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
@@ -85,6 +86,12 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                                                                remocoes, decaimentos)
                     
                     copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), ladder_resultante)
+                
+                # Limpar resultados
+                ResultadoDecaimentoJogador.objects.filter(decaimento__in=decaimentos).delete()
+                ResultadoDesafioLadder.objects.filter(desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
+                    .filter(desafio_ladder__data_hora__gte=desafio_ladder.data_hora).delete()
+                ResultadoRemocaoJogador.objects.filter(remocao__in=remocoes).delete()
                             
             elif informou_ladder_atual:
                 data_atual = timezone.localdate()
@@ -102,7 +109,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__month=mes_atual, data__year=ano_atual) \
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 if HistoricoLadder.objects.all().exists():
@@ -117,6 +124,13 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 mes = None
                 ano = None
                 
+                # Limpar resultados
+                ResultadoDecaimentoJogador.objects.filter(decaimento__data__month=mes_atual, decaimento__data__year=ano_atual).delete()
+                ResultadoDesafioLadder.objects.filter(desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
+                    .filter(desafio_ladder__data_hora__month=mes_atual, desafio_ladder__data_hora__year=ano_atual).delete()
+                ResultadoRemocaoJogador.objects.filter(remocao__data__month=mes_atual, remocao__data__year=ano_atual).delete()
+                
+                
             elif informou_ladder_historico:
                 data = timezone.make_aware(timezone.datetime(ano, mes, 1))
                 eventos = list(DesafioLadder.validados.filter(data_hora__gte=data) \
@@ -130,7 +144,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__gte=data) \
                     .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, -x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 mes_anterior = mes - 1
@@ -149,13 +163,19 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     copiar_ladder(HistoricoLadder.objects.filter(mes=mes, ano=ano).order_by('posicao'), 
                               InicioLadder.objects.all().order_by('posicao'),
                               mes, ano)
-            
+                    
+                # Limpar resultados
+                ResultadoDecaimentoJogador.objects.filter(decaimento__data__gte=data).delete()
+                ResultadoDesafioLadder.objects.filter(desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
+                    .filter(desafio_ladder__data_hora__gte=data).delete()
+                ResultadoRemocaoJogador.objects.filter(remocao__data__gte=data).delete()
+                
             mes_atual = mes
             ano_atual = ano
             
             # Reescrever
             for evento in eventos:
-                
+
                 # Verificar se alterou mês/ano para próximo desafio
                 if isinstance(evento, DesafioLadder):
                     mes, ano = evento.mes_ano_ladder
@@ -319,8 +339,22 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
                 novo_entrante = PosicaoLadder(posicao=posicao_desafiante, jogador=desafiante)
             novo_entrante.save()
         
-        posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__lte=posicao_desafiante, 
-                                                                posicao__gte=posicao_desafiado).order_by('-posicao'))
+        posicoes_entre_jogadores = list()
+        posicoes_alterar_ladder = list(ladder_para_alterar.all().order_by('-posicao'))
+        # Buscar desafiado e desafiante nas posições da ladder
+        achou_desafiante = False
+        for posicao in posicoes_alterar_ladder:
+            if posicao.jogador == desafiante:
+                posicoes_entre_jogadores.append(posicao)
+                achou_desafiante = True
+                
+            elif achou_desafiante:
+                posicoes_entre_jogadores.append(posicao)
+                if posicao.jogador == desafiado:
+                    break
+            
+#         posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__lte=posicao_desafiante, 
+#                                                                 posicao__gte=posicao_desafiado).order_by('-posicao'))
         
         # Retira desafiante da ladder momentaneamente
         posicoes_entre_jogadores[0].posicao = 0
@@ -334,7 +368,7 @@ def alterar_ladder(desafio_ladder, verificar_posteriores=True):
             # Adiciona aos resultados do desafio
             resultado_jogador = ResultadoDesafioLadder(desafio_ladder=desafio_ladder, jogador=posicao_jogador.jogador, alteracao_posicao=1)
             resultado_jogador.save()
-        
+            
         # Coloca desafiante uma posição à frente do desafiado (final da lista)
         posicoes_entre_jogadores[0].posicao = posicoes_entre_jogadores[-1].posicao - 1
         posicoes_entre_jogadores[0].save()
@@ -547,6 +581,11 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
                 else:
                     ladder = desfazer_lote_desafios(list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora)), 
                                                                      list(PosicaoLadder.objects.all()))
+            
+            else:
+                # Desfazer alterações de desafios no mesmo horário
+                ladder = desfazer_lote_desafios(list(DesafioLadder.validados.filter(data_hora=desafio_ladder.data_hora)), 
+                                                ladder)
             
             # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
             desafiaveis = list()
@@ -906,6 +945,10 @@ def processar_remocao(remocao):
                 posicao_ladder.posicao -= 1
                 posicao_ladder.save()
                 
+                # Gravar resultado da remoção
+                resultado_remocao = ResultadoRemocaoJogador(jogador=posicao_ladder.jogador, alteracao_posicao=-1, remocao=remocao)
+                resultado_remocao.save()
+                
     except:
         raise
     
@@ -972,14 +1015,22 @@ def decair_jogador(decaimento):
     if decaimento.posicao_inicial == PosicaoLadder.objects.all().aggregate(ultima_posicao=Max('posicao'))['ultima_posicao']:
         return
     
+    # Definir se deve alterar histórico
+    if decaimento.is_historico():
+        mes, ano = decaimento.mes_ano_ladder
+        ladder_para_alterar = HistoricoLadder.objects.filter(ano=ano, mes=mes)
+    else:
+        ladder_para_alterar = PosicaoLadder.objects
+    
     try:
         with transaction.atomic():
             # Remover resultados para recalculá-los
             ResultadoDecaimentoJogador.objects.filter(decaimento=decaimento).delete()
                 
-            posicoes_entre_jogadores = list(PosicaoLadder.objects.filter(posicao__gte=decaimento.posicao_inicial, 
+            posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__gte=decaimento.posicao_inicial, 
                                                                          posicao__lte=decaimento.posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO) \
                                                                          .order_by('posicao'))
+            
             # Retira jogador decaído da ladder momentaneamente
             posicoes_entre_jogadores[0].posicao = 0
             posicoes_entre_jogadores[0].save()
