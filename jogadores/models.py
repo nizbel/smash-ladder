@@ -8,7 +8,8 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
-    HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador
+    HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador,\
+    ResultadoRemocaoJogador
 
 
 class Jogador(models.Model):
@@ -67,10 +68,10 @@ class Jogador(models.Model):
         if desafio_mais_recente:
 #             print(f'Desafio mais recente de {self}: {desafio_mais_recente.id} com {desafio_mais_recente.desafiante} VS {desafio_mais_recente.desafiado}')
             posicao = desafio_mais_recente.posicao
-            
+
             # Buscar alterações feitas por remoções de outros jogadores
-            posicao -= RemocaoJogador.objects.filter(data__range=[desafio_mais_recente.data_hora, data_hora], posicao_jogador__lt=posicao) \
-                .exclude(data=data_hora).count()
+            posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__range=[desafio_mais_recente.data_hora, data_hora], jogador=self) \
+                .exclude(remocao__data=data_hora).aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
 #             print(self, ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__range=[desafio_mais_recente.data_hora, data_hora]) \
 #                 .exclude(desafio_ladder=desafio_mais_recente).exclude(desafio_ladder__data_hora=data_hora) \
@@ -78,6 +79,7 @@ class Jogador(models.Model):
             
             # Buscar alterações feitas por desafios de outros jogadores
             posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__range=[desafio_mais_recente.data_hora, data_hora]) \
+                .filter(desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
                 .exclude(desafio_ladder=desafio_mais_recente).exclude(desafio_ladder__data_hora=data_hora) \
                 .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             
@@ -117,8 +119,11 @@ class Jogador(models.Model):
             # Buscar alterações feitas por alterações de outros jogadores
             if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
                 # Remoções
-                posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao) \
-                    .filter(data__month=data_hora.month, data__year=data_hora.year).count()
+                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, jogador=self) \
+                            .filter(remocao__data__month=data_hora.month, remocao__data__year=data_hora.year)
+                            .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
+#                 posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao) \
+#                     .filter(data__month=data_hora.month, data__year=data_hora.year).count()
                 
                 # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora) \
@@ -132,7 +137,9 @@ class Jogador(models.Model):
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
             else:
                 # Remoções
-                posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao).count()
+#                 posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao).count()
+                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, jogador=self) \
+                            .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                     
                 # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora,

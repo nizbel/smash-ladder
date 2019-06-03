@@ -207,6 +207,15 @@ class RemocaoJogador(models.Model):
             return (self.data.month, self.data.year)
         return (None, None)
     
+class ResultadoRemocaoJogador(models.Model):
+    """Resultado de um desafio de ladder"""
+    remocao = models.ForeignKey('RemocaoJogador', on_delete=models.CASCADE)
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    alteracao_posicao = models.SmallIntegerField(u'Alteração na posição após remoção')
+    
+    class Meta():
+        unique_together = ('remocao', 'jogador')
+    
 class DecaimentoJogador(models.Model):
     """Registro de decaimento de jogador na ladder"""
     PERIODO_INATIVIDADE = 30 # Quantidade de dias inativo para decair
