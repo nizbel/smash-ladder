@@ -21,7 +21,8 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm,\
     RemocaoJogadorForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador
+    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador,\
+    ResultadoDesafioLadder
 from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
     remover_jogador
 
@@ -330,6 +331,13 @@ def cancelar_desafio_ladder(request, desafio_id):
             # Cancelar desafio
             try:
                 with transaction.atomic():
+                    # Gerar cancelamento para desafio
+                    cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
+                    cancelamento.save()
+                    
+                    # Remover resultados
+                    ResultadoDesafioLadder.objects.filter(desafio_ladder=desafio_ladder).delete()
+                    
                     # Se validado, verificar alterações decorrentes da operação
                     if desafio_ladder.is_validado():
 #                         # Verificar se desafio é de histórico
@@ -338,9 +346,8 @@ def cancelar_desafio_ladder(request, desafio_id):
 #                         else:
 #                             mes, ano = None, None
                         
-                        # Gerar cancelamento para desafio e tentar recalcular ladder
-                        cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
-                        cancelamento.save()
+                        
+                        # Remover resultados
                         
                         # Recalcula ladder para verificar se cancelamento é válido
 #                         recalcular_ladder(mes, ano)
@@ -365,11 +372,6 @@ def cancelar_desafio_ladder(request, desafio_id):
                                     desafiante.ultimo_uso_coringa = None
                                 desafiante.save()
                         
-                    # Se não validado, cancelar
-                    else:
-                        cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
-                        cancelamento.save()
-                    
                     messages.success(request, MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER)
                     return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_id}))
             
@@ -381,6 +383,10 @@ def cancelar_desafio_ladder(request, desafio_id):
 def detalhar_desafio_ladder(request, desafio_id):
     """Detalhar um desafio de ladder"""
     desafio_ladder = get_object_or_404(DesafioLadder.objects.select_related('desafiante', 'desafiado'), id=desafio_id)
+    
+    # Buscar alterações após desafio
+    desafio_ladder.alteracoes_ladder = desafio_ladder.resultadodesafioladder_set.all().annotate(alteracao=F('alteracao_posicao')*-1) \
+        .order_by('-alteracao', '-id')
     
     # Verificar se usuário pode alterar desafio
     if request.user.is_authenticated:

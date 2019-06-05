@@ -2,6 +2,7 @@
 """Funções para ladder"""
 import calendar
 import datetime
+import re
 
 from django.db import transaction
 from django.db.models.aggregates import Sum, Max
@@ -9,10 +10,10 @@ from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django.utils import timezone
 
-from jogadores.models import Jogador, RegistroFerias
+from jogadores.models import RegistroFerias
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
-    RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador,\
+    RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
     ResultadoRemocaoJogador
 
 
@@ -287,7 +288,8 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
     except Exception as e:
         if evento:
-            raise ValueError(f'Desafio Ladder {evento.id}: {e}')
+            nome_evento = re.sub(r'(\w)([A-Z])', r'\1 \2', evento.__class__.__name__)
+            raise ValueError(f'{nome_evento} {evento.id}: {e}')
         raise
 
 def alterar_ladder(desafio_ladder, verificar_posteriores=True):
@@ -733,12 +735,21 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     resultados_decaimentos = dict(ResultadoDecaimentoJogador.objects.filter(decaimento__in=decaimentos).order_by('jogador').values('jogador') \
                               .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
     
-    resultados = { k: resultados_desafios.get(k, 0) + resultados_decaimentos.get(k, 0) for k in set(resultados_desafios) | set(resultados_decaimentos) }
-    
     if not remocoes:
         remocoes = list()
     
+    resultados_remocoes = dict(ResultadoRemocaoJogador.objects.filter(remocao__in=remocoes).order_by('jogador').values('jogador') \
+                              .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
+    
+    resultados = { k: resultados_desafios.get(k, 0) + resultados_decaimentos.get(k, 0) + resultados_remocoes.get(k, 0)  \
+                  for k in set(resultados_desafios) | set(resultados_decaimentos) | set(resultados_remocoes) }
+    
+    # Listar jogadores removidos pois serão tratados diferente
     jogadores_remocoes = [remocao.jogador_id for remocao in remocoes]
+    
+    # Adicionar removidos a resultados caso não estejam presentes
+    for jogador_removido in [jogador for jogador in jogadores_remocoes if jogador not in resultados]:
+        resultados[jogador_removido] = 0
     
     # Se remoções está preenchido, verificar se ladder é atual ou histórico para posterior operação
     if remocoes:
@@ -763,8 +774,12 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
                                                                             desafio_ladder__data_hora__lt=primeira_remocao.data) \
                                       .values('jogador').aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0
                                       
-            alteracao_jogador += ResultadoDecaimentoJogador.objects.filter(decaimentos__in=decaimentos, jogador__id=jogador,
+            alteracao_jogador += ResultadoDecaimentoJogador.objects.filter(decaimento__in=decaimentos, jogador__id=jogador,
                                                                             decaimento__data__lt=primeira_remocao.data) \
+                                      .values('jogador').aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0
+                                      
+            alteracao_jogador += ResultadoRemocaoJogador.objects.filter(remocao__in=remocoes, jogador__id=jogador,
+                                                                            remocao__data__lt=primeira_remocao.data) \
                                       .values('jogador').aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0
             
             if ladder_atual:
@@ -787,8 +802,18 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     # Verificar quais jogadores já existiam na ladder
     desafio_mais_antigo = sorted(desafios, key=lambda x: x.data_hora)[0]
     novos_entrantes = list()
+    
     for posicao_ladder in reversed(ladder):
-        if Jogador.objects.get(id=posicao_ladder.jogador_id).posicao_em(desafio_mais_antigo.data_hora) == 0:
+        if DesafioLadder.validados.filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
+            .filter(data_hora__lt=desafio_mais_antigo.data_hora).exists():
+            # Se jogador possuir desafio e não possuir remoção desde este desafio, não é novo entrante
+            desafio_mais_recente_pre_desfeitos = DesafioLadder.validados \
+                .filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
+                .filter(data_hora__lt=desafio_mais_antigo.data_hora).order_by('-data_hora')[0]
+            if RemocaoJogador.objects.filter(jogador__id=posicao_ladder.jogador_id).filter(data__range=[desafio_mais_recente_pre_desfeitos.data_hora, 
+                                                                                                        desafio_mais_antigo.data_hora]).exists():
+                novos_entrantes.append(posicao_ladder)
+        elif not InicioLadder.objects.filter(jogador__id=posicao_ladder.jogador_id).exists():
             novos_entrantes.append(posicao_ladder)
     
     for posicao in novos_entrantes:
