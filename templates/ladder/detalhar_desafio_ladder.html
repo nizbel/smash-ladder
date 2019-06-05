@@ -4,6 +4,10 @@
 
 {% block page_header %}Desafio{% endblock %}
 
+{% block extra_header %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+{% endblock %}
+
 {% block content %}
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
@@ -146,6 +150,33 @@
 			  	{% for luta in desafio_ladder.lutas %}
 					<li class="list-group-item">
 						<a href="{% url 'ladder:detalhar_luta' luta.id %}">Luta {{ luta.lutaladder.indice_desafio_ladder }}: {{ luta.ganhador.nick }}</a>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	{% else %}
+		  	<div class="card-body">
+		  		<h6 class="card-title">Informações das lutas não foram cadastradas</h6>
+		  	</div>
+		  	{% endif %}
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Alterações na Ladder
+		  	</div>
+		  	{% if desafio_ladder.alteracoes_ladder %}
+		  	<ul class="list-group list-group-flush">
+			  	{% for alteracao_ladder in desafio_ladder.alteracoes_ladder %}
+					<li class="list-group-item d-flex">
+						<div class="mr-auto pl-0">{{ alteracao_ladder.jogador.nick }}</div>
+						{% if alteracao_ladder.alteracao > 0 %}
+							<div class="ml-auto pl-0 text-success"><i class="fas fa-arrow-up"></i> {{ alteracao_ladder.alteracao }}</div>
+						{% elif alteracao_ladder.alteracao < 0 %}
+							<div class="ml-auto pl-0 text-danger"><i class="fas fa-arrow-down"></i> {{ alteracao_ladder.alteracao }}</div>
+						{% endif %}
+						
 					</li>
 				{% endfor %}
 		  	</ul>

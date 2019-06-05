@@ -393,7 +393,8 @@ class AlterarLadderTestCase(TestCase):
                                           score_desafiante=3, score_desafiado=1, desafio_coringa=False)
         desafio_anterior.save()
         
-        desafio_posterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora, score_desafiante=self.desafio_ladder.score_desafiante, 
+        desafio_posterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora - datetime.timedelta(minutes=5), 
+                                          score_desafiante=self.desafio_ladder.score_desafiante, 
                                           score_desafiado=self.desafio_ladder.score_desafiado, desafio_coringa=False)
         desafio_posterior.desafiante = self.new_2
         desafio_posterior.desafiado = self.jogador_pos_10
