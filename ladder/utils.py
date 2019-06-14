@@ -52,15 +52,15 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                     
                 # Adicionar remoções
                 remocoes = RemocaoJogador.objects.filter(data__gte=desafio_ladder.data_hora) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', '-posicao_desafiado')
                 eventos.extend(list(remocoes))
                     
                 # Adicionar decaimentos
                 decaimentos = DecaimentoJogador.objects.filter(data__gte=desafio_ladder.data_hora) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', '-posicao_desafiado')
                 eventos.extend(list(decaimentos))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado if isinstance(x, DesafioLadder) else -x.posicao_desafiado))
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
@@ -104,13 +104,13 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 
                 # Adicionar remoções
                 eventos.extend(list(RemocaoJogador.objects.filter(data__month=mes_atual, data__year=ano_atual) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')))
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', '-posicao_desafiado')))
                 
                 # Adicionar decaimentos
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__month=mes_atual, data__year=ano_atual) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', '-posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado if isinstance(x, DesafioLadder) else -x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 if HistoricoLadder.objects.all().exists():
@@ -139,13 +139,13 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 
                 # Adicionar remoções
                 eventos.extend(list(RemocaoJogador.objects.filter(data__gte=data) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', 'posicao_desafiado')))
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', '-posicao_desafiado')))
                 
                 # Adicionar decaimentos
                 eventos.extend(list(DecaimentoJogador.objects.filter(data__gte=data) \
-                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', 'posicao_desafiado')))
+                    .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', '-posicao_desafiado')))
                 
-                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado))
+                eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado if isinstance(x, DesafioLadder) else -x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
                 mes_anterior = mes - 1
@@ -176,7 +176,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
             # Reescrever
             for evento in eventos:
-
                 # Verificar se alterou mês/ano para próximo desafio
                 if isinstance(evento, DesafioLadder):
                     mes, ano = evento.mes_ano_ladder
@@ -962,8 +961,15 @@ def processar_remocao(remocao):
         
     try:
         with transaction.atomic():
+            posicao_jogador_ladder = ladder_para_alterar.get(jogador=remocao.jogador)
+            
+            # Salva posição do jogador caso tenha sido alterada
+            if posicao_jogador_ladder.posicao != remocao.posicao_jogador:
+                remocao.posicao_jogador = posicao_jogador_ladder.posicao
+                remocao.save()
+            
             # Remove jogador da ladder
-            ladder_para_alterar.get(jogador=remocao.jogador).delete()
+            posicao_jogador_ladder.delete()
             
             # Sobe uma posição todos os estiverem abaixo dele
             for posicao_ladder in ladder_para_alterar.filter(posicao__gt=remocao.posicao_jogador).order_by('posicao'):
@@ -1051,7 +1057,14 @@ def decair_jogador(decaimento):
         with transaction.atomic():
             # Remover resultados para recalculá-los
             ResultadoDecaimentoJogador.objects.filter(decaimento=decaimento).delete()
+            
+            # Salva posição do jogador caso tenha sido alterada
+            posicao_jogador_ladder = ladder_para_alterar.get(jogador=decaimento.jogador)
+            if posicao_jogador_ladder.posicao != decaimento.posicao_inicial:
+                decaimento.posicao_inicial = posicao_jogador_ladder.posicao
+                decaimento.save()
                 
+            # Buscar posições de jogadores que serão alteradas
             posicoes_entre_jogadores = list(ladder_para_alterar.filter(posicao__gte=decaimento.posicao_inicial, 
                                                                          posicao__lte=decaimento.posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO) \
                                                                          .order_by('posicao'))
