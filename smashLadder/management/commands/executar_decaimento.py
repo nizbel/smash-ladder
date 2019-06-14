@@ -4,7 +4,7 @@ from django.db import transaction
 
 from jogadores.models import Jogador
 from ladder.models import PosicaoLadder, RemocaoJogador
-from ladder.utils import avaliar_decaimento, decair_jogador, remover_jogador, \
+from ladder.utils import avaliar_decaimento, remover_jogador, \
     recalcular_ladder
 
 
@@ -23,9 +23,10 @@ def executar_decaimento():
                 decaimento = avaliar_decaimento(posicao_ladder.jogador)
                 if decaimento:
                     # Verificar se deve apenas decair ou deve remover jogador
-                    if decaimento.qtd_periodos_inatividade < 3:
-                        recalcular_ladder()
-                    else:
+#                     if decaimento.qtd_periodos_inatividade < 3:
+#                         recalcular_ladder()
+#                     else:
+                    if decaimento.qtd_periodos_inatividade >= 3:
                         # Usar qualquer admin como admin removedor
                         remocao = RemocaoJogador(jogador=decaimento.jogador, admin_removedor=Jogador.objects.filter(admin=True)[0],
                                                  data=decaimento.data, posicao_jogador=decaimento.posicao_inicial,
@@ -33,6 +34,8 @@ def executar_decaimento():
                         remocao.save()
                         remover_jogador(remocao)
                         decaimento.delete()
+
+            recalcular_ladder()
     except:
         raise
     
