@@ -8,8 +8,9 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
-    HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador,\
+    HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador, \
     ResultadoRemocaoJogador
+from smashLadder.utils import DateTimeFieldTz
 
 
 class Jogador(models.Model):
@@ -222,4 +223,10 @@ class RegistroFerias(models.Model):
     class Meta():
         verbose_name_plural = 'registros de férias'
         unique_together = (('jogador', 'data_inicio'), ('jogador', 'data_fim'))
+        
+class Feedback(models.Model):
+    avaliador = models.ForeignKey('Jogador', on_delete=models.CASCADE, related_name='avaliador')
+    avaliado = models.ForeignKey('Jogador', on_delete=models.CASCADE, related_name='avaliado')
+    texto = models.CharField('Texto do feedback', max_length=250)
+    data_hora = DateTimeFieldTz(u'Data e hora do feedback')
         

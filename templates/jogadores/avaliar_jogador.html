@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Avaliar {{ jogador.nick }}{% endblock %}
+
+{% block page_header %}
+Avaliar {{ jogador.nick }}
+{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'jogadores:avaliar_jogador' jogador.user.username %}" method="post">
+	    {% csrf_token %}
+    	{% include "form.html" with form=form_feedback %}
+    	
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
+	</form>
+{% endblock %}
+
+{% block extra_scripts %}
+{% endblock %}
