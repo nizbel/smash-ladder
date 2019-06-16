@@ -7,16 +7,17 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F, Value
+from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.forms import JogadorForm, StagesValidasForm
-from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem
+from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm
+from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem, \
+    Feedback
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
     JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
-from django.db.models.fields import IntegerField
 
 
 def detalhar_jogador(request, username):
@@ -289,3 +290,43 @@ def listar_desafios_jogador(request, username):
     desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('data_hora').select_related('desafiante', 'desafiado')
     
     return render(request, 'jogadores/listar_desafios_jogador.html', {'jogador': jogador, 'desafios': desafios})
+
+@login_required
+def avaliar_jogador(request, username):
+    """Deixar feedback para um jogador"""
+    jogador = get_object_or_404(Jogador, user__username=username)
+    
+    if jogador == request.user.jogador:
+        messages.error(request, 'Feedbacks devem ser feitos para outros jogadores')
+        return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': username}))
+    
+    if request.POST:
+        form_feedback = FeedbackForm(request.POST)
+        
+        if form_feedback.is_valid():
+            try:
+                with transaction.atomic():
+                    feedback = form_feedback.save(commit=False)
+                    
+                    feedback.avaliador = request.user.jogador
+                    feedback.data_hora = timezone.localtime()
+                    feedback.avaliado = jogador
+                    feedback.save()
+                                    
+                    return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': username}))
+            except Exception as e:
+                messages.error(request, str(e))
+    else:
+        # Preparar form
+        form_feedback = FeedbackForm()
+    
+    return render(request, 'jogadores/avaliar_jogador.html', {'form_feedback': form_feedback, 'jogador': jogador})
+
+@login_required
+def listar_avaliacoes(request):
+    """Listar feedbacks de um jogador"""
+    jogador = request.user.jogador
+    
+    feedbacks = Feedback.objects.filter(avaliado=jogador)
+    
+    return render(request, 'jogadores/listar_avaliacoes.html', {'feedbacks': feedbacks})

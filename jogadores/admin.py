@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
-from jogadores.models import Jogador, Personagem, Stage, RegistroFerias
+from jogadores.models import Jogador, Personagem, Stage, RegistroFerias, \
+    Feedback
 
 
 # Define an inline admin descriptor for Employee model
@@ -40,3 +41,10 @@ class RegistroFeriasAdmin(admin.ModelAdmin):
     search_fields = ['jogador__nick']
     
 admin.site.register(RegistroFerias, RegistroFeriasAdmin)
+
+
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('avaliador', 'avaliado', 'data_hora')
+    search_fields = ['avaliador__nick', 'avaliado__nick']
+    
+admin.site.register(Feedback, FeedbackAdmin)

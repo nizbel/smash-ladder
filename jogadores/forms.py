@@ -4,8 +4,9 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.forms import Form
 from django.forms.models import ModelForm
+from django.forms.widgets import Textarea
 
-from jogadores.models import Jogador, Stage, StageValidaLadder
+from jogadores.models import Jogador, Stage, StageValidaLadder, Feedback
 from smashLadder.utils import preparar_classes_form
 
 
@@ -44,7 +45,6 @@ class StagesValidasForm(Form):
     def clean_stages_validas(self):
         stages_validas = self.cleaned_data['stages_validas']
         retorno = self.cleaned_data['retorno']
-        print(retorno)
         
         stages_validas = [int(stage_valida) for stage_valida in stages_validas] 
         
@@ -56,3 +56,22 @@ class StagesValidasForm(Form):
                 raise ValidationError('A seleção não pode incluir stages que já foram marcadas para serem de retorno')
                
         return stages_validas
+    
+class FeedbackForm(ModelForm):
+
+    class Meta:
+        model = Feedback
+        fields = ('texto',)
+        widgets = {
+            'texto': Textarea(attrs={'rows': 10}),
+        }
+        help_texts = {
+            'texto': 'Limite de 250 caracteres',
+        }
+        
+    
+    def __init__(self,*args,**kwargs):
+        super(FeedbackForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+        
