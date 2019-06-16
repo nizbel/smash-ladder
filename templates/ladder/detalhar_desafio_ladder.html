@@ -161,12 +161,12 @@
 		</div>
 	</div>
 	
+  	{% if desafio_ladder.alteracoes_ladder %}
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
 		    	Alterações na Ladder
 		  	</div>
-		  	{% if desafio_ladder.alteracoes_ladder %}
 		  	<ul class="list-group list-group-flush">
 			  	{% for alteracao_ladder in desafio_ladder.alteracoes_ladder %}
 					<li class="list-group-item d-flex">
@@ -180,12 +180,8 @@
 					</li>
 				{% endfor %}
 		  	</ul>
-		  	{% else %}
-		  	<div class="card-body">
-		  		<h6 class="card-title">Informações das lutas não foram cadastradas</h6>
-		  	</div>
-		  	{% endif %}
 		</div>
 	</div>
+  	{% endif %}
 	
 {% endblock %}
