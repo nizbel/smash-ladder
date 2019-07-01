@@ -35,7 +35,7 @@ class DesafioLadderForm(ModelForm):
     def clean_data_hora(self):
         data_hora = self.cleaned_data['data_hora']
         
-        if data_hora > timezone.now():
+        if data_hora > timezone.localtime():
             raise ValidationError('Horário da partida não pode ocorrer no futuro')
         
         return data_hora

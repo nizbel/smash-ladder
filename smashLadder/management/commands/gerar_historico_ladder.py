@@ -21,7 +21,7 @@ class Command(BaseCommand):
 def copiar_info_ladder_atual_para_mes_passado():
     try:
         with transaction.atomic():
-            data_mes_passado = timezone.now().replace(day=1) - datetime.timedelta(days=1)
+            data_mes_passado = timezone.localtime().replace(day=1) - datetime.timedelta(days=1)
             mes = data_mes_passado.month
             ano = data_mes_passado.year
             if DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).exists():
