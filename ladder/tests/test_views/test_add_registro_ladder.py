@@ -16,6 +16,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, gerar_campos_formset
 from ladder.views import MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER
 from smashLadder import settings
+from smashLadder.utils import mes_ano_ant
 
 
 class ViewAddDesafioLadderTestCase(TestCase):
@@ -49,11 +50,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         

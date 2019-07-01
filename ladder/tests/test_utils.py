@@ -16,6 +16,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, copiar_ladder, remover_jogador, decair_jogador, \
     avaliar_decaimento
+from smashLadder.utils import mes_ano_ant
 
 
 class AlterarLadderTestCase(TestCase):
@@ -49,11 +50,7 @@ class AlterarLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -572,11 +569,7 @@ class RecalcularLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         horario_atual = timezone.localtime()
-        cls.ano = horario_atual.date().year
-        cls.mes = horario_atual.date().month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(horario_atual.month, horario_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -708,11 +701,7 @@ class RecalcularLadderTestCase(TestCase):
         HistoricoLadder.objects.all().delete()
         
         # Criar ladder histórico de mês anterior a ladder histórico
-        ano_hist_anterior = self.ano
-        mes_hist_anterior = self.mes - 1 
-        if mes_hist_anterior == 0:
-            mes_hist_anterior = 12
-            ano_hist_anterior -= 1
+        mes_hist_anterior, ano_hist_anterior = mes_ano_ant(self.mes, self.ano)
         criar_ladder_historico_teste(ano_hist_anterior, mes_hist_anterior)
         
         # Recalcula ladder histórico
@@ -843,11 +832,7 @@ class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.localdate()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -1026,11 +1011,7 @@ class CopiarLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         

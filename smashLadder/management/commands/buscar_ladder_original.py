@@ -6,6 +6,7 @@ from django.db import transaction
 
 from ladder.models import InicioLadder, HistoricoLadder
 from smashLadder import settings
+from smashLadder.utils import mes_ano_ant
 
 
 class Command(BaseCommand):
@@ -42,7 +43,7 @@ class Command(BaseCommand):
             nova_ladder = InicioLadder.objects.all().select_related('jogador').order_by('posicao')
             
             # Decrementar mes ano para poder copiar
-            mes, ano = decremento_mes_ano(mes, ano)
+            mes, ano = mes_ano_ant(mes, ano)
             nova_opcao = copiar_ladder_como_historico(nova_ladder, mes, ano)
             opcoes_ladder = [nova_opcao,]
             
@@ -106,7 +107,7 @@ class Command(BaseCommand):
                                 
                                 # Apenas adiciona situação de vitória se ganhador estiver 1 na frente
                                 if posicao_1 + 1 == posicao_2:
-                                    mes, ano = decremento_mes_ano(mes, ano)
+                                    mes, ano = mes_ano_ant(mes, ano)
                                     opcao_2_diferenca = copiar_ladder_como_historico(opcao_ladder, mes, ano)
     #                                 print('Voltar 2 posições', jogador_1)
                                     opcao_2_diferenca.filter(posicao=posicao_1).update(posicao=0)
@@ -117,7 +118,7 @@ class Command(BaseCommand):
                                     opcoes_ladder.insert(indice+1, opcao_2_diferenca)
                                     indice_prox += 1
                                 
-                                    mes, ano = decremento_mes_ano(mes, ano)
+                                    mes, ano = mes_ano_ant(mes, ano)
                                     opcao_1_diferenca = copiar_ladder_como_historico(opcao_ladder, mes, ano)
     #                                     print('Voltar 1 posição', jogador_1)
                                     opcao_1_diferenca.filter(posicao=posicao_1).update(posicao=0)
@@ -146,7 +147,7 @@ class Command(BaseCommand):
                                 
                                 # Apenas adiciona situação de vitória se ganhador estiver 1 na frente
                                 if posicao_2 + 1 == posicao_1:
-                                    mes, ano = decremento_mes_ano(mes, ano)
+                                    mes, ano = mes_ano_ant(mes, ano)
                                     opcao_2_diferenca = copiar_ladder_como_historico(opcao_ladder, mes, ano)
     #                                 print('Voltar 2 posições', jogador_2)
                                     opcao_2_diferenca.filter(posicao=posicao_2).update(posicao=0)
@@ -157,7 +158,7 @@ class Command(BaseCommand):
                                     opcoes_ladder.insert(indice+1, opcao_2_diferenca)
                                     indice_prox += 1
                                 
-                                    mes, ano = decremento_mes_ano(mes, ano)
+                                    mes, ano = mes_ano_ant(mes, ano)
                                     opcao_1_diferenca = copiar_ladder_como_historico(opcao_ladder, mes, ano)
     #                                     print('Voltar 1 posição', jogador_2)
                                     opcao_1_diferenca.filter(posicao=posicao_2).update(posicao=0)
@@ -204,11 +205,4 @@ def copiar_ladder_como_historico(ladder, mes, ano):
         HistoricoLadder.objects.create(posicao=reg.posicao, jogador=reg.jogador, mes=mes, ano=ano)
     
     return HistoricoLadder.objects.filter(mes=mes, ano=ano)
-        
-def decremento_mes_ano(mes, ano):
-    mes -= 1
-    if mes == 0:
-        mes = 12
-        ano -= 1
-    return (mes, ano)
-        
+                

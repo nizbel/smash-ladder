@@ -10,7 +10,7 @@ from django.utils import timezone
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
     HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador, \
     ResultadoRemocaoJogador
-from smashLadder.utils import DateTimeFieldTz
+from smashLadder.utils import DateTimeFieldTz, mes_ano_ant
 
 
 class Jogador(models.Model):
@@ -93,12 +93,7 @@ class Jogador(models.Model):
         
         # Se não houver desafios cadastrados, verificar última ladder
         # Definir ultima ladder
-        mes = data_hora.month
-        ano = data_hora.year
-        mes -= 1
-        if mes == 0:
-            mes = 12
-            ano -= 1
+        mes, ano = mes_ano_ant(data_hora.month, data_hora.year)
         
         if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
             # Se houver remoção e ela ocorrer no mês atual, ignorar busca e retornar como novo entrante

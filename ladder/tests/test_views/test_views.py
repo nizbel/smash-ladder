@@ -21,6 +21,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
     MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
 from smashLadder import settings
+from smashLadder.utils import mes_ano_ant
 
 
 class ViewEditarDesafioLadderTestCase(TestCase):
@@ -55,11 +56,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         # Preparar mês anterior para histórico
         cls.horario_atual = timezone.now()
         data_atual = cls.horario_atual.date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -896,11 +893,7 @@ class ViewDetalharDesafioLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -1063,11 +1056,7 @@ class ViewListarHistoricoLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -1101,10 +1090,7 @@ class ViewListarHistoricoLadderTestCase(TestCase):
         ano = self.ano
         mes = self.mes
         for _ in range(12):
-            mes -= 1
-            if mes == 0:
-                ano -= 1
-                mes = 12
+            mes, ano = mes_ano_ant(mes, ano)
             criar_ladder_historico_teste(ano, mes)
             
         response = self.client.get(reverse('ladder:listar_ladder_historico'))
@@ -1117,10 +1103,7 @@ class ViewListarHistoricoLadderTestCase(TestCase):
             self.assertEqual(ladder['mes'], mes)
             
             # Atualizar mes e ano
-            mes -= 1
-            if mes == 0:
-                ano -= 1
-                mes = 12
+            mes, ano = mes_ano_ant(mes, ano)
 
 
 class ViewDetalharHistoricoLadderTestCase(TestCase):
@@ -1134,11 +1117,7 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -1207,11 +1186,7 @@ class ViewListarDesafiosLadderPendentesValidacaoTestCase(TestCase):
         # Preparar mês anterior para histórico
         horario_atual = timezone.now()
         data_atual = horario_atual.date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
@@ -1295,11 +1270,7 @@ class ViewListarDesafiosLadderEspecificaTestCase(TestCase):
         # Preparar mês anterior para histórico
         horario_atual = timezone.now()
         cls.data_atual = horario_atual.date()
-        cls.ano = cls.data_atual.year
-        cls.mes = cls.data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(cls.data_atual.month, cls.data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         

@@ -14,6 +14,8 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     validar_desafio_ladder_teste
 from ladder.views import MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER
 from smashLadder import settings
+from smashLadder.utils import mes_ano_ant
+
 
 class ViewCancelarDesafioLadderTestCase(TestCase):
     """Testes para a view de cancelar desafio para ladder"""
@@ -34,11 +36,7 @@ class ViewCancelarDesafioLadderTestCase(TestCase):
         # Preparar mês anterior para histórico
         horario_atual = timezone.localtime()
         data_atual = horario_atual.date()
-        cls.ano = data_atual.year
-        cls.mes = data_atual.month - 1
-        if cls.mes == 0:
-            cls.mes = 12
-            cls.ano -= 1
+        cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
         
