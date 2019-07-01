@@ -594,8 +594,6 @@ def validar_desafio_ladder(request, desafio_id):
             try:
                 with transaction.atomic():
                     # Validação
-                    # Verificar posições
-#                     verificar_posicoes_desafiante_desafiado(desafio_ladder)
                     
                     # Gravar validador
                     desafio_ladder.admin_validador = request.user.jogador
