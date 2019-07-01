@@ -37,7 +37,18 @@ $(document).ready(function(){
 	$('select').select2();
 	
 	// Forçar ganhador a ser um dos 2 jogadores selecionados
-	$("select[id$='ganhador'] option[value!='']").remove();
+	$("select[id$='ganhador'] option[value!='']").each(function() {
+		// Desafiante
+		var desafiante = $("select[id='id_desafiante']").select2('data')[0];
+		// Desafiado
+		var desafiado = $("select[id='id_desafiado']").select2('data')[0];
+		
+		if ($(this).val() == '' || $(this).val() == desafiante.id || $(this).val() == desafiado.id) {
+			return;
+		} else {
+			$(this).remove();
+		}
+	});
 	
 	$("select[id='id_desafiante']").on('select2:select', function (e) {
 	  	recarregarParticipantes();
