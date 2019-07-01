@@ -104,7 +104,7 @@ def detalhar_ladder_atual(request):
     ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user').prefetch_related('jogador__registroferias_set'))
     
     data_atual = timezone.localtime()
-    data_mes_anterior = timezone.now().replace(day=1) - datetime.timedelta(days=1)
+    data_mes_anterior = data_atual.replace(day=1) - datetime.timedelta(days=1)
     
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).exists():
