@@ -138,7 +138,8 @@ class DesafioLadderLutaForm(ModelForm):
         if 'id' in self.initial and self.instance.id == None:
             self.instance = Luta.objects.get(id=self.initial['id'])
             
-        self.fields['stage'].queryset = Stage.objects.filter(stagevalidaladder__isnull=False)
+        self.fields['stage'].queryset = Stage.objects.all().exclude(stagevalidaladder__isnull=True, modelo=Stage.TIPO_NORMAL) \
+            .order_by('stagevalidaladder', 'nome', 'modelo')
             
 class RemocaoJogadorForm(ModelForm):
     """Formulário para remoção de jogador da ladder"""
