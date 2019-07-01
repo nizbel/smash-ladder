@@ -15,6 +15,7 @@ from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
     ResultadoRemocaoJogador
+from smashLadder.utils import mes_ano_ant
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -148,12 +149,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 eventos.sort(key=lambda x: (x.data_hora, x.posicao_desafiado if isinstance(x, DesafioLadder) else -x.posicao_desafiado))
                 
                 # Copiar último histórico ou inicial
-                mes_anterior = mes - 1
-                if mes_anterior == 0:
-                    mes_anterior = 12
-                    ano_anterior = ano - 1
-                else:
-                    ano_anterior = ano
+                mes_anterior, ano_anterior = mes_ano_ant(mes, ano)
                     
                 if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
                     # Pegar último histórico

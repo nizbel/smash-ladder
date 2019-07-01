@@ -25,6 +25,7 @@ from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     ResultadoDesafioLadder
 from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
     remover_jogador
+from smashLadder.utils import mes_ano_ant
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
@@ -224,11 +225,7 @@ def detalhar_ladder_historico(request, ano, mes):
         .select_related('jogador__user')
     
     # Pegar mês/ano anterior
-    mes_anterior = mes - 1
-    ano_anterior = ano
-    if mes_anterior == 0:
-        ano_anterior -= 1
-        mes_anterior = 12
+    mes_anterior, ano_anterior = mes_ano_ant(mes, ano)
     
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
