@@ -513,7 +513,7 @@ def listar_desafios_ladder(request, ano=None, mes=None):
         raise Http404('Ano e mês devem ser preenchidos')
     elif mes not in [_ for _ in range(1, 13)]:
         raise Http404('Mês inválido')
-    elif ano * 12 + mes > timezone.now().year * 12 + timezone.now().month:
+    elif ano * 12 + mes > timezone.localtime().year * 12 + timezone.localtime().month:
         raise Http404('Data futura é inválida para histórico')
     
     
