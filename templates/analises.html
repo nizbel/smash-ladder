@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Análises{% endblock %}
+
+{% block page_header %}Análises{% endblock %}
+
+
+{% block content %}
+	<div class="col-12 col-md-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Quantidade/Resultado de desafios por posição
+		  	</div>
+		  	<div class="card-body col-12">
+				<img src="{% static 'qtd_result_por_pos.png' %}" width="100%">
+			</div>
+		</div>
+	</div>	
+	
+	{% comment %}
+	<div class="col-12 col-md-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Quantidade/Resultado de desafios por posição
+		  	</div>
+		  	<div class="card-body col-12">
+				<img src="{% static 'teste3.png' %}" width="100%">
+			</div>
+		</div>
+	</div>
+	{% endcomment %}	
+	
+	<div class="col-12 col-md-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Vitórias/derrotas por diferença de posições
+		  	</div>
+		  	<div class="card-body col-12">
+				<img src="{% static 'vit_derr.png' %}" width="45%">
+				<img src="{% static 'percentual.png' %}" width="45%">
+			</div>
+		</div>
+	</div>
+{% endblock %}
