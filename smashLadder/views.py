@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Views gerais"""
 from django.shortcuts import render
+
 from ladder.models import PosicaoLadder, DesafioLadder
+from smashLadder.management.commands.analise import analisar
 
 
 def home(request):
@@ -19,3 +21,6 @@ def home(request):
     return render(request, 'home.html', {'ultimos_desafios_ladder': ultimos_desafios_ladder,
                                                   'top_10_ladder': top_10_ladder})
 
+def analises(request):
+    analisar()
+    return render(request, 'analises.html', {})
