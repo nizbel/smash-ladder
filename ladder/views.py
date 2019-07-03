@@ -94,7 +94,8 @@ def add_desafio_ladder(request):
                 messages.error(request, erro)
                 
     else:
-        form_desafio_ladder = DesafioLadderForm(initial={'adicionado_por': request.user.jogador.id}, admin=request.user.jogador.admin)
+        form_desafio_ladder = DesafioLadderForm(initial={'adicionado_por': request.user.jogador.id, 'data_hora': timezone.localtime()}, 
+                                                admin=request.user.jogador.admin)
         form_desafio_ladder.fields['adicionado_por'].disabled = True
         
     return render(request, 'ladder/adicionar_desafio_ladder.html', {'form_desafio_ladder': form_desafio_ladder, 
