@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Views gerais"""
-import datetime
-
 from django.shortcuts import render
 
 from ladder.models import PosicaoLadder, DesafioLadder
