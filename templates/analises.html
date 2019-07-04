@@ -10,13 +10,25 @@
 	<div class="col-12 text-center mb-3">
 		<h4>Recomendável ver em dispositivos com telas maiores</h4>
 	</div>
+	
+	<div class="col-12 col-md-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Vitórias por personagem
+		  	</div>
+		  	<div class="card-body col-12">
+				<img src="{% static imagens.vitorias_por_personagem %}" width="100%">
+			</div>
+		</div>
+	</div>
+	
 	<div class="col-12 col-md-12 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
 		    	Quantidade/Resultado de desafios por posição
 		  	</div>
 		  	<div class="card-body col-12">
-				<img src="{% static 'analises/qtd_result_por_pos.png' %}" width="100%">
+				<img src="{% static imagens.result_por_posicao %}" width="100%">
 			</div>
 		</div>
 	</div>	
@@ -27,14 +39,17 @@
 		    	Resultado acumulado de desafios entre jogadores
 		  	</div>
 		  	<div class="card-body col-12">
+		  		<div class="col-12 text-center mb-0">
+		  			<h4><span id="mes"></span> / <span id="ano"></span></h4>
+		  		</div>
 		  		<div class="col-12 text-center mb-3">
 		  			<input class="btn btn-lg btn-dark mt-4" id="ant_acumulado" type="button" value="Anterior">
 		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
 	  			</div>
-				<img id="2019-4" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-4.png' %}" width="100%">
-				<img id="2019-5" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-5.png' %}" width="100%">
-				<img id="2019-6" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-6.png' %}" width="100%">
-				<img id="2019-7" src="{% static 'analises/acumulado_entre_jogadores-2019-7.png' %}" width="100%">
+				<img id="2019-4" style="display: none" src="{% static 'analises/acumulado_entre_jogadores_2019_4.png' %}" width="100%">
+				<img id="2019-5" style="display: none" src="{% static 'analises/acumulado_entre_jogadores_2019_5.png' %}" width="100%">
+				<img id="2019-6" style="display: none" src="{% static 'analises/acumulado_entre_jogadores_2019_6.png' %}" width="100%">
+				<img id="2019-7" src="{% static imagens.result_acum_entre_jogadores %}" width="100%">
 			</div>
 		</div>
 	</div>
@@ -45,8 +60,8 @@
 		    	Vitórias/derrotas por diferença de posições
 		  	</div>
 		  	<div class="card-body col-12">
-				<img src="{% static 'analises/vit_derr.png' %}" width="45%">
-				<img src="{% static 'analises/percentual.png' %}" width="45%">
+				<img src="{% static imagens.result_dif_posicao %}" width="48%">
+				<img src="{% static imagens.result_dif_posicao_perc %}" width="48%">
 			</div>
 		</div>
 	</div>
@@ -59,7 +74,14 @@ var max_mes = 7;
 var min_mes = 4;
 var mes = 7;
 var ano = 2019;
+
+function alterar_mes_ano() {
+	$('#mes').html(mes);
+	$('#ano').html(ano);
+}
+
 $(document).ready(function(){
+	alterar_mes_ano();
 	
 	$('#prox_acumulado').click(function() {
 		if (mes < max_mes) {
@@ -70,6 +92,7 @@ $(document).ready(function(){
 				mes = 1;
 			}
 			$('#' + ano + '-' + mes).show();
+			alterar_mes_ano();
 		}
 	});
 	
@@ -82,6 +105,7 @@ $(document).ready(function(){
 				mes = 12;
 			}
 			$('#' + ano + '-' + mes).show();
+			alterar_mes_ano();
 		}
 	});
 });
