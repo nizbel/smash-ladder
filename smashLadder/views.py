@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """Views gerais"""
+import datetime
+
 from django.shortcuts import render
 
 from ladder.models import PosicaoLadder, DesafioLadder
-from smashLadder.management.commands.analise import analisar
+from smashLadder.management.commands.analise import analisar, \
+    gerar_acumulados_anteriores
 
 
 def home(request):
@@ -22,5 +25,11 @@ def home(request):
                                                   'top_10_ladder': top_10_ladder})
 
 def analises(request):
-    analisar()
-    return render(request, 'analises.html', {})
+    """Mostrar análises dos dados de desafios"""
+    gerar_acumulados_anteriores()
+
+    imagens = analisar()
+    for imagem in imagens:
+        imagens[imagem] = 'analises/' + imagens[imagem]
+        
+    return render(request, 'analises.html', {'imagens': imagens})
