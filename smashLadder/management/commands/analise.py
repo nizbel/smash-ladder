@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
 
 from django.core.management.base import BaseCommand
 from django.db.models.expressions import F
+from django.utils import timezone
 
 from ladder.models import DesafioLadder
 import matplotlib.pyplot as plt
@@ -18,6 +20,7 @@ class Command(BaseCommand):
         analisar()
         
 def analisar():
+    data_atual = timezone.localtime()
     desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
                                     .annotate(nick_desafiado=F('desafiado__nick')).values(
                                         'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
@@ -73,7 +76,7 @@ def analisar():
     cbytick_obj = plt.getp(color_bar.ax.axes, 'yticklabels')               
     plt.setp(cbytick_obj)
     
-    salvar_imagem('acumulado_entre_jogadores.png', plt)
+    salvar_imagem(f'acumulado_entre_jogadores-{data_atual.year}-{data_atual.month}.png', plt)
     
     # RESULTADO POR POSIÇÃO
     resultados_posicao_df = desafios_df.copy(True)
@@ -149,5 +152,5 @@ def salvar_imagem(nome_arquivo, plot_ctrl):
     caminho = 'smashLadder/static/analises/' + nome_arquivo
     if os.path.isfile(caminho):
         os.remove(caminho)
-    plot_ctrl.savefig(caminho)
+    plot_ctrl.savefig(caminho, bbox_inches='tight')
     
