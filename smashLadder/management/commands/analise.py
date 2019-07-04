@@ -12,9 +12,10 @@ from ladder.models import DesafioLadder, JogadorLuta
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from smashLadder import settings
 
 
-CAMINHO_ANALISES = 'smashLadder/static/analises/'
+CAMINHO_ANALISES = 'smashLadder/static/analises/' if settings.DEBUG else f'{settings.STATIC_ROOT}/analises/'
 
 class Command(BaseCommand):
     help = 'Teste pandas'
