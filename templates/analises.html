@@ -27,7 +27,14 @@
 		    	Resultado acumulado de desafios entre jogadores
 		  	</div>
 		  	<div class="card-body col-12">
-				<img src="{% static 'analises/acumulado_entre_jogadores.png' %}" width="100%">
+		  		<div class="col-12 text-center mb-3">
+		  			<input class="btn btn-lg btn-dark mt-4" id="ant_acumulado" type="button" value="Anterior">
+		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
+	  			</div>
+				<img id="2019-4" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-4.png' %}" width="100%">
+				<img id="2019-5" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-5.png' %}" width="100%">
+				<img id="2019-6" style="display: none" src="{% static 'analises/acumulado_entre_jogadores-2019-6.png' %}" width="100%">
+				<img id="2019-7" src="{% static 'analises/acumulado_entre_jogadores-2019-7.png' %}" width="100%">
 			</div>
 		</div>
 	</div>
@@ -43,4 +50,40 @@
 			</div>
 		</div>
 	</div>
+	
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+var max_mes = 7;
+var min_mes = 4;
+var mes = 7;
+var ano = 2019;
+$(document).ready(function(){
+	
+	$('#prox_acumulado').click(function() {
+		if (mes < max_mes) {
+			$('#' + ano + '-' + mes).hide();
+			mes += 1;
+			if (mes == 13) {
+				ano += 1;
+				mes = 1;
+			}
+			$('#' + ano + '-' + mes).show();
+		}
+	});
+	
+	$('#ant_acumulado').click(function() {
+		if (mes > min_mes) {
+			$('#' + ano + '-' + mes).hide();
+			mes -= 1;
+			if (mes == 0) {
+				ano -= 1;
+				mes = 12;
+			}
+			$('#' + ano + '-' + mes).show();
+		}
+	});
+});
+</script>
 {% endblock %}
