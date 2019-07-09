@@ -16,6 +16,9 @@ from smashLadder import settings
 
 
 CAMINHO_ANALISES = 'smashLadder/static/analises/' if settings.DEBUG else f'{settings.STATIC_ROOT}/analises/'
+TEMPO_APAGAR_IMAGENS = 5
+TEMPO_GERAR_NOVA_IMAGEM = 1
+
 
 class Command(BaseCommand):
     help = 'Teste pandas'
@@ -29,7 +32,7 @@ def analisar():
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
         if '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds > 120:
+            if (datetime.datetime.now() - horario).seconds > TEMPO_APAGAR_IMAGENS:
                 os.remove(os.path.join(CAMINHO_ANALISES, img))
         
     
@@ -82,7 +85,7 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
         if f'{nome_arquivo}_' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= 60:
+            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 return img
     
     resultado_pares_df = df.copy(True)
@@ -152,7 +155,7 @@ def analisar_resultados_por_posicao(df):
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
         if f'{nome_arquivo}_' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= 60:
+            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 return img
             
     resultados_posicao_df = df.copy(True)
@@ -168,9 +171,14 @@ def analisar_resultados_por_posicao(df):
     plt.figure()
     
     max_qtd_desafios = int(resultados_posicao_df['qtd_desafios'].max())
-    resultados_posicao_df.plot.scatter(x='posicao_desafiante', y='posicao_desafiado', c='resultado', cmap='viridis', 
-                                       s=resultados_posicao_df['qtd_desafios'] / max_qtd_desafios * 100)
+    xticks = list(range(2, resultados_posicao_df['posicao_desafiante'].max(), round(float(resultados_posicao_df['posicao_desafiante'].max())/20)))
+    yticks = list(range(1, resultados_posicao_df['posicao_desafiado'].max(), round(float(resultados_posicao_df['posicao_desafiado'].max())/20)))
+    scatter = resultados_posicao_df.plot.scatter(x='posicao_desafiante', y='posicao_desafiado', c='resultado', cmap='viridis', 
+                                       s=resultados_posicao_df['qtd_desafios'] / max_qtd_desafios * 100, xticks=xticks, yticks=yticks)
     
+    plt.xlabel('Posição do desafiante')
+    plt.ylabel('Posição do desafiado')
+
     nome_formatado = salvar_imagem(nome_arquivo, plt)
     
     return nome_formatado
@@ -186,11 +194,11 @@ def analisar_resultados_por_dif_de_posicao(df):
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
         if img_retornar_1 == None and f'{nome_arquivo_1}_' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= 60:
+            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 img_retornar_1 = img
         if img_retornar_2 == None and f'{nome_arquivo_2}_' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= 60:
+            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 img_retornar_2 = img
                 
         if img_retornar_1 != None and img_retornar_2 != None:
@@ -226,16 +234,20 @@ def analisar_resultados_por_dif_de_posicao(df):
     
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.fillna(0)
     
-    perc_resultados_dif_pos_df['% Vitórias'] = 100* perc_resultados_dif_pos_df['Vitória'] / \
+    perc_resultados_dif_pos_df['% Vitórias'] = 100 * perc_resultados_dif_pos_df['Vitória'] / \
         (perc_resultados_dif_pos_df['Vitória'] + perc_resultados_dif_pos_df['Derrota'])
-    perc_resultados_dif_pos_df['% Derrotas'] = 100* perc_resultados_dif_pos_df['Derrota'] / \
+    perc_resultados_dif_pos_df['% Derrotas'] = 100 * perc_resultados_dif_pos_df['Derrota'] / \
         (perc_resultados_dif_pos_df['Vitória'] + perc_resultados_dif_pos_df['Derrota'])
     
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['Derrota', 'Vitória'], axis=1)
     
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.rename_axis('', axis='columns')
     
-    perc_resultados_dif_pos_df.plot.bar(stacked=True)
+    perc_resultados_dif_pos_df.plot.bar(stacked=True, legend=False)
+    
+    plt.legend(loc=9, bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
+    
+    plt.xlabel('Diferença de posições')
 
     nome_formatado_2 = salvar_imagem(nome_arquivo_2, plt)
     
@@ -263,7 +275,7 @@ def analisar_vitorias_por_personagem(df):
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
         if f'{nome_arquivo}_' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= 60:
+            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 return img
             
     vitorias_por_personagem_df = df.copy(True)
@@ -271,12 +283,6 @@ def analisar_vitorias_por_personagem(df):
     vitorias_por_personagem_df['Qtd. lutas'] = 1    
     
     vitorias_por_personagem_df = vitorias_por_personagem_df.groupby('nome_personagem').sum()
-
-    
-    plt.rcParams.update({'font.size': 10, 'figure.figsize': (14, 7)})
-    plt.figure()
-    
-    vitorias_por_personagem_df = vitorias_por_personagem_df.rename_axis('Personagem')
     
     vitorias_por_personagem_df['% Vitórias'] = 100 * vitorias_por_personagem_df['vitoria'] / vitorias_por_personagem_df['Qtd. lutas']
     
@@ -286,8 +292,21 @@ def analisar_vitorias_por_personagem(df):
     cols = vitorias_por_personagem_df.columns.tolist()
     cols = cols[-1:] + cols[:-1]
     vitorias_por_personagem_df = vitorias_por_personagem_df[cols]
-        
-    vitorias_por_personagem_df.plot.bar()
+    
+    vitorias_por_personagem_df = vitorias_por_personagem_df.loc[vitorias_por_personagem_df['Qtd. lutas'] >= 10]
+    
+    plt.rcParams.update({'font.size': 10, 'figure.figsize': (14, 7)})
+    plt.figure()
+    
+    ax = vitorias_por_personagem_df.plot.bar(secondary_y='% Vitórias')
+    
+    ax.set_xlabel('Personagem (com 10 lutas ou mais)')
+    ax.grid('on', which='major', axis='y', linestyle=':', alpha=0.5)
+
+    # Alterar eixo da direita
+    ax.right_ax.set_yticks(list(range(10, 101, 10)))
+    ax.right_ax.set_yticklabels([f'{n}%' for n in list(range(10, 101, 10))])
+    ax.right_ax.grid('on', which='major', axis='y', linestyle='--', c='b', alpha=0.2)
     
     nome_formatado = salvar_imagem(nome_arquivo, plt)
     
