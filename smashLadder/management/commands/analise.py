@@ -16,8 +16,8 @@ from smashLadder import settings
 
 
 CAMINHO_ANALISES = 'smashLadder/static/analises/' if settings.DEBUG else f'{settings.STATIC_ROOT}/analises/'
-TEMPO_APAGAR_IMAGENS = 5
-TEMPO_GERAR_NOVA_IMAGEM = 1
+TEMPO_APAGAR_IMAGENS = 120
+TEMPO_GERAR_NOVA_IMAGEM = 60
 
 
 class Command(BaseCommand):
