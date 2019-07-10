@@ -1505,4 +1505,63 @@ class AvaliarDecaimentoTestCase(TestCase):
         # Deve jogar erro
         with self.assertRaisesMessage(ValueError, f'{self.new} não está na ladder'):
             avaliar_decaimento(self.new)
+            
+class BuscarDesafiaveisTestCase(TestCase):
+    """Testes para a função de buscar jogadores desafiáveis"""
+    @classmethod
+    def setUpTestData(cls):
+        super(BuscarDesafiaveisTestCase, cls).setUpTestData()
+        # TODO Preparar ladder
+        criar_jogadores_teste()
+    
+        criar_ladder_teste()
+    
+    def test_trazer_desafiaveis_com_sucesso(self):
+        """Testa trazer os desafiáveis para jogador"""
+        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        
+        self.assertEquals(len(desafiaveis), QTD_POSICOES_DESAFIO)
+        for jogador_id in desafiaveis:
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, list(range(1, QTD_POSICOES_DESAFIO+1)) + posicao_desafiante)
+        
+    def test_erro_jogador_nao_preenchido(self):
+        """Testa erro ao não enviar jogador"""
+        with self.assertRaises(ValueError, 'Desafiante inválido'):
+            desafiaveis = buscar_desafiaveis(None, timezone.localtime())
+        
+    def test_erro_data_nao_preenchida(self):
+        """Testa erro ao não enviar data"""
+        with self.assertRaises(ValueError, 'Data inválida'):
+            desafiaveis = buscar_desafiaveis(id_desafiante, None)
+        
+    def test_trazer_desafiaveis_sucesso_coringa(self):
+        """Testa trazer desafiáveis para desafio coringa"""
+        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime(), True)
+        
+        self.assertEquals(len(desafiaveis), QTD_POSICOES_DESAFIO)
+        for jogador_id in desafiaveis:
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, list(range(1, QTD_POSICOES_DESAFIO+1)) + posicao_desafiante)
+            
+    def test_erro_desafiante_nao_possui_coringa(self):
+        """Testa erro caso desafiante ainda não possa utilizar coringa"""
+        with self.assertRaises(ValueError, 'Jogador não pode usar coringa na data'):
+            desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime(), True)
+        
+    def test_trazer_desafiaveis_com_ferias(self):
+        """Testa se jogador de férias é excluído de desafiáveis e o próximo da lista entra no seu lugar"""
+        pass
+    
+    def test_trazer_lista_vazia_para_1_lugar(self):
+        """Testa se desafiante for o primeiro colocado, trazer lista vazia"""
+        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        
+        self.assertEquals(len(desafiaveis), 0)
+        
+    def test_trazer_desafiaveis_anterior_a_desafio(self):
+        """Testa se desafios posteriores à data informada são desfeitos para listar desafiáveis"""
+        # TODO Adicionar desafio
+        
+        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        
+        pass
         
