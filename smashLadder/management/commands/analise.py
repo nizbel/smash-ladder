@@ -50,7 +50,9 @@ def analisar():
     imgs['result_dif_posicao'] = imgs_resultados_dif_posicao[0]
     imgs['result_dif_posicao_perc'] = imgs_resultados_dif_posicao[1]
      
-    desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False) \
+    desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
+                                                                           luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
+                                                                           luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
                                                 .annotate(nome_personagem=F('personagem__nome')) \
                                                 .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
                                                                         output_field=IntegerField())) \
