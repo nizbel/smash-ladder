@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-import re
 
 from django.test.testcases import TestCase
 from django.utils import timezone
@@ -15,7 +14,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, copiar_ladder, remover_jogador, decair_jogador, \
-    avaliar_decaimento
+    avaliar_decaimento, buscar_desafiaveis
 from smashLadder.utils import mes_ano_ant
 
 
@@ -1511,57 +1510,108 @@ class BuscarDesafiaveisTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         super(BuscarDesafiaveisTestCase, cls).setUpTestData()
-        # TODO Preparar ladder
         criar_jogadores_teste()
+        
+        # Pegar objetos de jogador de acordo com sua posição
+        cls.jogador_pos_1 = Jogador.objects.get(nick='teets')
+        cls.jogador_pos_2 = Jogador.objects.get(nick='saraiva')
+        cls.jogador_pos_3 = Jogador.objects.get(nick='sena')
+        cls.jogador_pos_4 = Jogador.objects.get(nick='mad')
+        cls.jogador_pos_5 = Jogador.objects.get(nick='blöwer')
+        cls.jogador_pos_6 = Jogador.objects.get(nick='frodo')
+        cls.jogador_pos_6.posicao_ladder = 6
+        cls.jogador_pos_7 = Jogador.objects.get(nick='dan')
+        cls.jogador_pos_8 = Jogador.objects.get(nick='phils')
+        cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
+        cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
+        
+        
     
         criar_ladder_teste()
     
     def test_trazer_desafiaveis_com_sucesso(self):
         """Testa trazer os desafiáveis para jogador"""
-        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        desafiaveis = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime())
         
-        self.assertEquals(len(desafiaveis), QTD_POSICOES_DESAFIO)
+        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
         for jogador_id in desafiaveis:
-            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, list(range(1, QTD_POSICOES_DESAFIO+1)) + posicao_desafiante)
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
+                          list(range(self.jogador_pos_6.posicao_ladder - 1, self.jogador_pos_6.posicao_ladder - 1 \
+                                      - DesafioLadder.LIMITE_POSICOES_DESAFIO, -1)))
         
     def test_erro_jogador_nao_preenchido(self):
         """Testa erro ao não enviar jogador"""
-        with self.assertRaises(ValueError, 'Desafiante inválido'):
-            desafiaveis = buscar_desafiaveis(None, timezone.localtime())
+        with self.assertRaisesMessage(ValueError, 'Desafiante inválido'):
+            buscar_desafiaveis(None, timezone.localtime())
         
-    def test_erro_data_nao_preenchida(self):
-        """Testa erro ao não enviar data"""
-        with self.assertRaises(ValueError, 'Data inválida'):
-            desafiaveis = buscar_desafiaveis(id_desafiante, None)
+    def test_erro_data_hora_nao_preenchida(self):
+        """Testa erro ao não enviar data/hora"""
+        with self.assertRaisesMessage(ValueError, 'Data/hora inválida'):
+            buscar_desafiaveis(self.jogador_pos_6, None)
         
     def test_trazer_desafiaveis_sucesso_coringa(self):
         """Testa trazer desafiáveis para desafio coringa"""
-        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime(), True)
+        desafiaveis = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime(), True)
         
-        self.assertEquals(len(desafiaveis), QTD_POSICOES_DESAFIO)
+        self.assertEqual(len(desafiaveis), self.jogador_pos_6.posicao_ladder - 1)
         for jogador_id in desafiaveis:
-            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, list(range(1, QTD_POSICOES_DESAFIO+1)) + posicao_desafiante)
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
+                          list(range(self.jogador_pos_6.posicao_ladder - 1, 0, -1)))
             
     def test_erro_desafiante_nao_possui_coringa(self):
         """Testa erro caso desafiante ainda não possa utilizar coringa"""
-        with self.assertRaises(ValueError, 'Jogador não pode usar coringa na data'):
-            desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime(), True)
+        # Adicionar uso de coringa para jogador
+        self.jogador_pos_6.ultimo_uso_coringa = timezone.localdate() - datetime.timedelta(days=1)
+        self.jogador_pos_6.save()
+        
+        with self.assertRaisesMessage(ValueError, 'Jogador não pode usar coringa na data'):
+            buscar_desafiaveis(self.jogador_pos_6, timezone.localtime(), True)
+            
+        # Apagar uso de coringa
+        self.jogador_pos_6.ultimo_uso_coringa = None
+        self.jogador_pos_6.save()
         
     def test_trazer_desafiaveis_com_ferias(self):
         """Testa se jogador de férias é excluído de desafiáveis e o próximo da lista entra no seu lugar"""
-        pass
+        # Adicionar férias para jogador na posição 5
+        RegistroFerias.objects.create(jogador=self.jogador_pos_5, data_inicio=timezone.localdate(), 
+                                      data_fim=timezone.localdate() + datetime.timedelta(days=10))
+        
+        desafiaveis = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime())
+        
+        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
+        for jogador_id in desafiaveis:
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
+                          list(range(self.jogador_pos_6.posicao_ladder - 1, self.jogador_pos_6.posicao_ladder - 1 \
+                                      - DesafioLadder.LIMITE_POSICOES_DESAFIO - 1, -1)))
     
     def test_trazer_lista_vazia_para_1_lugar(self):
         """Testa se desafiante for o primeiro colocado, trazer lista vazia"""
-        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        desafiaveis = buscar_desafiaveis(self.jogador_pos_1, timezone.localtime())
         
-        self.assertEquals(len(desafiaveis), 0)
+        self.assertEqual(len(desafiaveis), 0)
         
     def test_trazer_desafiaveis_anterior_a_desafio(self):
         """Testa se desafios posteriores à data informada são desfeitos para listar desafiáveis"""
-        # TODO Adicionar desafio
+        desafio = criar_desafio_ladder_simples_teste(self.jogador_pos_6, self.jogador_pos_4, 3, 0, timezone.localtime(), False, 
+                                                     self.jogador_pos_6, 6, 4)
         
-        desafiaveis = buscar_desafiaveis(id_desafiante, timezone.localtime())
+        validar_desafio_ladder_teste(desafio, self.jogador_pos_1)
+        desafiaveis_atual = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime())
+        desafiaveis_anterior = buscar_desafiaveis(self.jogador_pos_6, timezone.localtime() - datetime.timedelta(minutes=30))
         
-        pass
+        self.assertEqual(len(desafiaveis_anterior), len(desafiaveis_atual))
+        self.assertNotEqual(desafiaveis_anterior, desafiaveis_atual)
+        
+    def test_trazer_ultimos_para_desafiante_fora_ladder(self):
+        """Testa trazer os últimos colocados da ladder para caso de desafiante novo entrante"""
+        novo_jogador = criar_jogador_teste('new')
+        posicao_jogador = 11
+        
+        desafiaveis = buscar_desafiaveis(novo_jogador, timezone.localtime())
+        
+        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
+        for jogador_id in desafiaveis:
+            self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
+                          list(range(posicao_jogador - 1, posicao_jogador - 1 - DesafioLadder.LIMITE_POSICOES_DESAFIO, -1)))
         
