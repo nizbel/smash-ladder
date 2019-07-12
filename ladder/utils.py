@@ -10,7 +10,7 @@ from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django.utils import timezone
 
-from jogadores.models import RegistroFerias
+from jogadores.models import RegistroFerias, Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
@@ -1098,4 +1098,65 @@ def verificar_decaimento_valido(decaimento):
     # Retorna válido para caso de período de inatividade apontado pelo decaimento ainda ser verdadeiro
     return decaimento.data.date() >= data_hora_ultimo_desafio.date() \
         + datetime.timedelta(days=decaimento.qtd_periodos_inatividade * DecaimentoJogador.PERIODO_INATIVIDADE)
+        
+def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
+    """Retorna lista com jogadores desafiáveis pelo jogador"""
+    # Verificar se valores foram preenchidos
+    if jogador == None:
+        raise ValueError('Desafiante inválido')
+    
+    if data_hora == None:
+        raise ValueError('Data/hora inválida')
+    
+    # Verificar se jogador pode usar coringa na data
+    if coringa and not jogador.pode_usar_coringa_na_data(data_hora.date()):
+        raise ValueError('Jogador não pode usar coringa na data')
+    
+    # Buscar ladder para data_hora especificada
+    data_atual = timezone.localtime()
+    if data_hora.month == data_atual.month and data_hora.year == data_atual.year:
+        ladder_para_alterar = PosicaoLadder.objects.all().select_related('jogador')
+    else:
+        ladder_para_alterar = HistoricoLadder.objects.filter(ano=data_hora.year, mes=data_hora.month).select_related('jogador')
+    
+    # Desfazer desafios posteriores
+    # Buscar remoções, decaimentos e desafios para desfazer
+    remocoes = RemocaoJogador.objects.filter(data__gte=data_hora) \
+        .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_jogador')).order_by('data', '-posicao_desafiado')
+        
+    decaimentos = DecaimentoJogador.objects.filter(data__gte=data_hora) \
+        .annotate(data_hora=F('data')).annotate(posicao_desafiado=F('posicao_inicial')).order_by('data', '-posicao_desafiado')
+        
+    desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=data_hora).filter(data_hora__month=data_hora.month, 
+                                                                                                          data_hora__year=data_hora.year))
+    
+    ladder_para_alterar = desfazer_lote_desafios(desafios_a_desfazer, list(ladder_para_alterar), remocoes, decaimentos)
+    ladder_para_alterar.sort(key=lambda x: -x.posicao)
+    
+    for posicao_ladder in ladder_para_alterar:
+        if posicao_ladder.jogador == jogador:
+            posicao_jogador = posicao_ladder.posicao
+            break
+    else:
+        posicao_jogador = ladder_para_alterar[0].posicao + 1
+#     # Definir posição do jogador
+#     if ladder_para_alterar.filter(jogador=jogador).exists():
+#         posicao_jogador = ladder_para_alterar.get(jogador=jogador).posicao
+#     else:
+#         posicao_jogador = ladder_para_alterar.all().aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'] + 1
+    
+    # Montar lista com desafiáveis
+    desafiaveis = list()
+    for desafiavel in [posicao_ladder.jogador for posicao_ladder in \
+                       ladder_para_alterar if posicao_ladder.posicao < posicao_jogador]:
+        if not desafiavel.de_ferias_na_data(data_hora.date()):
+            if retornar_ids:
+                desafiaveis.append(desafiavel.id)
+            else:
+                desafiaveis.append(desafiavel)
+            
+        if not coringa and len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+            break
+        
+    return desafiaveis
     

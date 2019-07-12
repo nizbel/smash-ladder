@@ -19,7 +19,7 @@ class DesafioLadderForm(ModelForm):
     """Formulário para desafio da ladder"""
     class Meta:
         model = DesafioLadder
-        fields = ('desafiante', 'desafiado', 'score_desafiante', 'score_desafiado', 'desafio_coringa', 
+        fields = ('desafiante', 'desafio_coringa', 'desafiado', 'score_desafiante', 'score_desafiado',
                   'data_hora', 'adicionado_por')
         
     def __init__(self,*args,**kwargs):
