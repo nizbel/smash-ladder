@@ -1602,6 +1602,9 @@ class BuscarDesafiaveisTestCase(TestCase):
         
         self.assertEqual(len(desafiaveis_anterior), len(desafiaveis_atual))
         self.assertNotEqual(desafiaveis_anterior, desafiaveis_atual)
+        self.assertIn(self.jogador_pos_3.id, desafiaveis_atual)
+        self.assertIn(self.jogador_pos_2.id, desafiaveis_atual)
+        self.assertIn(self.jogador_pos_1.id, desafiaveis_atual)
         
     def test_trazer_ultimos_para_desafiante_fora_ladder(self):
         """Testa trazer os últimos colocados da ladder para caso de desafiante novo entrante"""
@@ -1614,4 +1617,24 @@ class BuscarDesafiaveisTestCase(TestCase):
         for jogador_id in desafiaveis:
             self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
                           list(range(posicao_jogador - 1, posicao_jogador - 1 - DesafioLadder.LIMITE_POSICOES_DESAFIO, -1)))
+            
+    def test_nao_trazer_novos_entrantes_apos_data_hora(self):
+        """Testa se jogadores novos entrantes após data/hora da checagem não são retornados"""
+        novo_jogador_1 = criar_jogador_teste('new')
+        
+        novo_jogador_2 = criar_jogador_teste('new_2')
+        posicao_jogador_2 = 11
+        
+        desafio = criar_desafio_ladder_simples_teste(novo_jogador_2, self.jogador_pos_9, 3, 0, timezone.localtime(), False, 
+                                                     self.jogador_pos_9, posicao_jogador_2, 9)
+        
+        validar_desafio_ladder_teste(desafio, self.jogador_pos_1)
+        
+        desafiaveis = buscar_desafiaveis(novo_jogador_1, timezone.localtime() - datetime.timedelta(minutes=5))
+        
+        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
+        
+        self.assertIn(self.jogador_pos_10.id, desafiaveis)
+        self.assertIn(self.jogador_pos_9.id, desafiaveis)
+        self.assertIn(self.jogador_pos_8.id, desafiaveis)
         

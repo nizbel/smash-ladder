@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Views para jogadores"""
 
+import datetime
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -9,6 +12,7 @@ from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F, Value
 from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
+from django.http.response import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
@@ -18,6 +22,7 @@ from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem, \
     Feedback
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
     JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
+from ladder.utils import buscar_desafiaveis
 
 
 def detalhar_jogador(request, username):
@@ -330,3 +335,35 @@ def listar_avaliacoes(request):
     feedbacks = Feedback.objects.filter(avaliado=jogador)
     
     return render(request, 'jogadores/listar_avaliacoes.html', {'feedbacks': feedbacks})
+
+def listar_desafiaveis(request):
+    """Listar jogadores desafiáveis por um jogador usando ou não coringa em determinada data/hora"""
+    data = {}
+    if not request.POST:
+        data['mensagem_erro'] = 'Requisição deve ser POST'
+        return JsonResponse(data)
+        
+    jogador_id = request.POST.get('jogador_id')
+    if Jogador.objects.filter(id=jogador_id).exists():
+        jogador = Jogador.objects.get(id=jogador_id)
+    else:
+        data['mensagem_erro'] = 'Id de jogador informado inexistente'
+        return JsonResponse(data)
+    
+    data_hora = request.POST.get('data_hora')
+    try:
+        data_hora = timezone.make_aware(datetime.datetime.strptime(data_hora, '%d/%m/%Y %H:%M'), timezone.get_current_timezone())
+    except:
+        data['mensagem_erro'] = 'Data/hora deve estar no formato DD/MM/AAAA hh:mm'
+        return JsonResponse(data)
+        
+    coringa = int(request.POST.get('coringa', 0)) == 1
+    
+    try:
+        desafiaveis = buscar_desafiaveis(jogador, data_hora, coringa, False)
+    except ValueError as e:
+        data['mensagem_erro'] = str(e)
+        return JsonResponse(data)
+    
+    data['desafiaveis'] = [{'id':desafiavel.id, 'nick': desafiavel.nick} for desafiavel in desafiaveis]
+    return JsonResponse(data)

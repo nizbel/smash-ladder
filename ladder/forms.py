@@ -8,7 +8,7 @@ from django.forms import ValidationError
 from django.forms.models import ModelForm, ModelChoiceField
 from django.utils import timezone
 
-from jogadores.models import Personagem, Stage, Jogador
+from jogadores.models import Personagem, Stage
 from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
     RemocaoJogador
 from ladder.utils import verificar_posicoes_desafiante_desafiado
@@ -19,8 +19,8 @@ class DesafioLadderForm(ModelForm):
     """Formulário para desafio da ladder"""
     class Meta:
         model = DesafioLadder
-        fields = ('desafiante', 'desafio_coringa', 'desafiado', 'score_desafiante', 'score_desafiado',
-                  'data_hora', 'adicionado_por')
+        fields = ('data_hora', 'desafiante', 'desafio_coringa', 'desafiado', 'score_desafiante', 
+                  'score_desafiado', 'adicionado_por')
         
     def __init__(self,*args,**kwargs):
         if 'admin' in kwargs:
@@ -134,6 +134,12 @@ class DesafioLadderLutaForm(ModelForm):
         super(DesafioLadderLutaForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
+        
+        # Diminuir tamanho de campo de escolha de personagens
+        classes_atuais = self.fields['personagem_desafiante'].widget.attrs['class']
+        self.fields['personagem_desafiante'].widget.attrs.update({'class': ' '.join([classes_atuais, 'col-8'])})
+        classes_atuais = self.fields['personagem_desafiado'].widget.attrs['class']
+        self.fields['personagem_desafiado'].widget.attrs.update({'class': ' '.join([classes_atuais, 'col-8'])})
         
         if 'id' in self.initial and self.instance.id == None:
             self.instance = Luta.objects.get(id=self.initial['id'])
