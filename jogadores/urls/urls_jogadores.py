@@ -25,4 +25,8 @@ urlpatterns = [
     path(r'listar/', views.listar_jogadores, name='listar_jogadores'),
     path(r'listar-avaliacoes/', views.listar_avaliacoes, name='listar_avaliacoes'),
     path(r'listar-desafios/<slug:username>/', views.listar_desafios_jogador, name='listar_desafios_jogador'),
+    
+    # JSON
+    path(r'listar-desafiaveis/', views.listar_desafiaveis, name='listar_desafiaveis'),
+    
 ]
