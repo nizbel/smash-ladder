@@ -27,6 +27,7 @@ urlpatterns = [
     path(r'listar-desafios/<slug:username>/', views.listar_desafios_jogador, name='listar_desafios_jogador'),
     
     # JSON
+    path(r'buscar-quantidade-feedbacks', views.buscar_qtd_feedbacks_jogador, name='buscar_qtd_feedbacks'),
     path(r'listar-desafiaveis/', views.listar_desafiaveis, name='listar_desafiaveis'),
     
 ]

@@ -366,3 +366,15 @@ def listar_desafiaveis(request):
     
     data['desafiaveis'] = [{'id':desafiavel.id, 'nick': desafiavel.nick} for desafiavel in desafiaveis]
     return JsonResponse(data)
+
+@login_required
+def buscar_qtd_feedbacks_jogador(request):
+    """Buscar quantidade de feedbacks recebidos por um jogador"""
+    data = {}
+    if request.method != 'GET':
+        data['mensagem_erro'] = 'Requisição deve ser GET'
+        return JsonResponse(data)
+    
+    data['qtd_feedbacks'] = Feedback.objects.filter(avaliado__user__id=request.user.id).count()
+    print(data)
+    return JsonResponse(data)
