@@ -380,7 +380,8 @@ def cancelar_desafio_ladder(request, desafio_id):
 
 def detalhar_desafio_ladder(request, desafio_id):
     """Detalhar um desafio de ladder"""
-    desafio_ladder = get_object_or_404(DesafioLadder.objects.select_related('desafiante', 'desafiado'), id=desafio_id)
+    desafio_ladder = get_object_or_404(DesafioLadder.objects.select_related('admin_validador', 'adicionado_por', 
+                                                                            'desafiante__user', 'desafiado__user'), id=desafio_id)
     
     # Buscar alterações após desafio
     desafio_ladder.alteracoes_ladder = desafio_ladder.resultadodesafioladder_set.all().annotate(alteracao=F('alteracao_posicao')*-1) \
