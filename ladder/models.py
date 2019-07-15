@@ -195,6 +195,9 @@ class RemocaoJogador(models.Model):
     class Meta():
         unique_together = ('jogador', 'data')
         
+    def __str__(self):
+        return f'{self.jogador}: {self.data}'
+    
     def is_historico(self):
         """Define se é histórico"""
         horario_atual = timezone.localtime()
