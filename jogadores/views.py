@@ -2,7 +2,6 @@
 """Views para jogadores"""
 
 import datetime
-import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -12,7 +11,7 @@ from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F, Value
 from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
-from django.http.response import HttpResponse, JsonResponse
+from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
