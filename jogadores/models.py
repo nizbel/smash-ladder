@@ -29,11 +29,6 @@ class Jogador(models.Model):
         unique_together = ('nick',)
         ordering = ('nick',)
         
-    def qtd_feedbacks(self):
-        if not hasattr(self, 'feedback_count'):
-            self.feedback_count = Feedback.objects.filter(avaliado=self).count()
-        return self.feedback_count
-        
     def is_de_ferias(self):
         """Verifica se jogador está de férias"""
         return self.de_ferias_na_data(timezone.localdate())

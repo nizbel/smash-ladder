@@ -33,8 +33,6 @@ Adicionar desafio
 <script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
 
 <script type="text/javascript">
-var token = '{{csrf_token}}';
-
 $(document).ready(function(){
 	$('select').select2();
 	
@@ -154,15 +152,10 @@ function buscarDesafiaveis() {
 		return;
 	}
 	
-	$.ajax({
-        url : "{% url 'jogadores:listar_desafiaveis' %}",
-        type : "POST",
-        data : {jogador_id: $("select[id='id_desafiante']").val(), data_hora: $('#id_data_hora').val(), coringa: $('#id_desafio_coringa:checked').length},
-        dataType: 'json',
-        headers: { "X-CSRFToken": token },
-
-        // handle a successful response
-        success : function(resultado) {
+	ajax("{% url 'jogadores:listar_desafiaveis' %}", 
+		'POST', 
+		{jogador_id: $("select[id='id_desafiante']").val(), data_hora: $('#id_data_hora').val(), coringa: $('#id_desafio_coringa:checked').length}, 
+		function(resultado) {
         	// Verifica mensagem de erro
         	if (resultado.mensagem_erro) {
         		$("select[id='id_desafiante']").parent().find('.text-danger').remove();
@@ -191,13 +184,8 @@ function buscarDesafiaveis() {
             $("select[id='id_desafiado']").trigger('change');
             
   			recarregarParticipantes();
-        },
-
-        // handle a non-successful response
-        error : function(xhr,errmsg,err) {
-            console.log(xhr.status + ": " + xhr.responseText);
         }
-    });
+    );
 }
 </script>
 {% endblock %}
