@@ -77,7 +77,7 @@ class DesafioLadder(models.Model):
         return self.data_hora.month != horario_atual.month or self.data_hora.year != horario_atual.year
         
     def is_validado(self):
-        return self.admin_validador != None
+        return self.admin_validador_id != None
     
     @property
     def mes_ano_ladder(self):

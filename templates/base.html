@@ -102,7 +102,9 @@
 				        		</a>
 				        		<div class="dropdown-menu dropdown-menu-right" aria-labelledby="jogadorDropdown">
 				          			<a class="dropdown-item" href="{% url 'jogadores:detalhar_jogador' request.user.username %}">Meu perfil</a>
-				          			<a class="dropdown-item" href="{% url 'jogadores:listar_avaliacoes' %}">Meu feedback</a>
+				          			<a class="dropdown-item" href="{% url 'jogadores:listar_avaliacoes' %}">Meu feedback 
+				          				{% if request.user.jogador.qtd_feedbacks %}<span class="badge badge-pill badge-dark">{{ request.user.jogador.qtd_feedbacks}}</span>{% endif %}
+				          			</a>
 				          			<div class="dropdown-divider"></div>
 			          				<a class="dropdown-item" href="{% url 'logout' %}">Sair</a>
 			        			</div>
