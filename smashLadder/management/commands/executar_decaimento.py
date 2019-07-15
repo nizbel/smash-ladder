@@ -32,10 +32,11 @@ def executar_decaimento():
                                                  data=decaimento.data, posicao_jogador=decaimento.posicao_inicial,
                                                  remocao_por_inatividade=True)
                         remocao.save()
-                        remover_jogador(remocao)
                         decaimento.delete()
-
+                        remover_jogador(remocao)
+                        
             recalcular_ladder()
+            
     except:
         raise
     
