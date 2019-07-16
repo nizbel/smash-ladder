@@ -288,10 +288,11 @@ def editar_stages_validas(request):
 
 def listar_desafios_jogador(request, username):
     """Listar desafios de um jogador pelo nick"""
-    jogador = get_object_or_404(Jogador, user__username=username)
+    jogador = get_object_or_404(Jogador.objects.select_related('user'), user__username=username)
     
     # Buscar desafios participados
-    desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('data_hora').select_related('desafiante', 'desafiado')
+    desafios = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('data_hora') \
+        .select_related('desafiante', 'desafiado', 'cancelamentodesafioladder', 'admin_validador')
     
     return render(request, 'jogadores/listar_desafios_jogador.html', {'jogador': jogador, 'desafios': desafios})
 
