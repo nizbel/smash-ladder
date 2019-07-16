@@ -27,6 +27,7 @@ urlpatterns = [
     
     path('jogadores/', include('jogadores.urls.urls_jogadores')),
     path('ladder/', include('ladder.urls')),
+    path('personagens/', include('jogadores.urls.urls_personagens')),
     path('stages/', include('jogadores.urls.urls_stages')),
 ]
 
