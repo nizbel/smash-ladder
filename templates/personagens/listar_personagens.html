@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}- Lista de personagens{% endblock %}
+
+{% block page_header %}
+Personagens
+{% endblock %}
+
+{% block content %}	
+	{% for personagem in personagens %}
+	<div class="card col-6 col-md-1">
+	  	<div class="card-body text-center">
+	  		<p class="card-text"><a href="{% url 'personagens:detalhar_personagem_por_id' personagem.id %}">{{ personagem.nome }}</a></p>
+	  	</div>
+	</div>
+	{% endfor %}
+{% endblock %}

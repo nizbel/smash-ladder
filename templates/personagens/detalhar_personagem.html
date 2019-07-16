@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- {{ personagem.nome }}{% endblock %}
+
+{% block page_header %}{{ personagem.nome }}{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Lutas
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Quantidade</h6>
+					    <h6 class="card-title">
+						    <strong>{{ personagem.qtd_lutas }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Maior ganhador</h6>
+					    <h6 class="card-title">
+					    	{% if personagem.maior_ganhador %}
+						    <a href="{% url 'jogadores:detalhar_jogador' personagem.maior_ganhador.user.username %}">
+						    	<strong>{{ personagem.maior_ganhador.nick }}</strong>
+					    	</a>
+					    	{% else %}
+					    	<strong>Indefinido</strong>
+					    	{% endif %}
+					    </h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	{% if personagem.qtd_lutas > 0 %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Top 5 ganhadores
+		  	</div>
+		  	<div class="card-body col-12">
+		  		{% for registro in personagem.top_5_ganhadores %}
+		  		<div class="row">
+			  		<div class="col-12 col-md-3">
+				  		<h6 class="card-title my-1">
+						    <strong>{{ registro.luta__ganhador.nick }}</strong>
+					    </h6>
+				    </div>
+				    <div class="col-12 col-md-9">
+						<div class="progress my-1">
+						  	<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-2
+						  	{% if registro.qtd_vitorias < personagem.maior_qtd_vitorias %} bg-cinza-3 {% endif %}" role="progressbar" 
+						  	aria-valuenow="{% widthratio registro.qtd_vitorias personagem.maior_qtd_vitorias 100 %}" 
+						  	aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+						  		{{ registro.qtd_vitorias }}
+						  	</div>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+		  	</div>
+		</div>
+	</div>
+	
+	{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="text/javascript">
+$(document).ready(function(){
+	$(".progress-bar").each(function() {
+		$(this).css('width', $(this).attr('aria-valuenow') + '%');
+	});
+});
+</script>
+{% endblock %}

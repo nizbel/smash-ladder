@@ -36,6 +36,7 @@
 			      		<li class="nav-item {% if request.resolver_match.url_name == 'inicio' %}active{% endif %}">
 			        		<a class="nav-link" href="{% url 'inicio' %}">Início</a>
 			      		</li>
+			      		
 			      		<li class="nav-item dropdown {% if 'jogadores' in request.resolver_match.namespace %}active{% endif %}"">
 			        		<a class="nav-link dropdown-toggle" href="#" id="jogadoresDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Jogadores
@@ -45,7 +46,16 @@
 		        			</div>
 		        		</li>
 		        		
-		        		<li class="nav-item dropdown {% if 'stages' in request.resolver_match.namespace %}active{% endif %}"">
+		        		<li class="nav-item dropdown {% if 'personagens' in request.resolver_match.namespace %}active{% endif %}"">
+			        		<a class="nav-link dropdown-toggle" href="#" id="personagensDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			          			Personagens
+			        		</a>
+			        		<div class="dropdown-menu" aria-labelledby="personagensDropdown">
+	  							<a class="dropdown-item" href="{% url 'personagens:listar_personagens' %}">Ver personagens</a>
+		        			</div>
+		        		</li>
+		        		
+		        		<li class="nav-item dropdown {% if 'stages' in request.resolver_match.namespace %}active{% endif %}">
 			        		<a class="nav-link dropdown-toggle" href="#" id="stagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Stages
 			        		</a>
