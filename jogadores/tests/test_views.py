@@ -506,3 +506,77 @@ class ViewListarDesafiosJogadorTestCase(TestCase):
         # Deve conter link para voltar para tela de detalhamento
         self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_com_desafios.user.username}), 1)
         
+class ViewListarPersonagensTestCase(TestCase):
+    """Testes para a view de listar stages"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewListarPersonagensTestCase, cls).setUpTestData()
+        criar_personagens_teste()
+        cls.personagens = list(Personagem.objects.all().order_by('nome'))
+        
+        criar_jogadores_teste(['sena',])
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de listar personagens sem logar"""
+        response = self.client.get(reverse('personagens:listar_personagens'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('personagens', response.context)
+        self.assertEqual(response.context['personagens'], self.personagens)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de listar personagens logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('personagens:listar_personagens'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('personagens', response.context)
+        self.assertEqual(response.context['personagens'], self.personagens)
+        
+class ViewDetalharPersonagemTestCase(TestCase):
+    """Testes para a view de detalhar personagem"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewDetalharPersonagemTestCase, cls).setUpTestData()
+        criar_personagens_teste()
+        cls.personagem = Personagem.objects.get(nome='Marth')
+        
+        criar_jogadores_teste(['sena', 'teets',])
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
+        cls.jogador_2 = Jogador.objects.get(nick='teets')
+        
+        cls.stage = criar_stage_teste()
+        
+        cls.desafio = criar_desafio_ladder_completo_teste(cls.jogador_1, cls.jogador_2, 3, 0, timezone.now(), False, cls.jogador_1)
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de detalhar personagem sem logar"""
+        response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('personagem', response.context)
+        self.assertEqual(response.context['personagem'], self.personagem)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de detalhar personagem logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('personagens:detalhar_stage_por_id', kwargs={'personagem_id': self.personagem.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('personagem', response.context)
+        self.assertEqual(response.context['personagem'], self.personagem)
+        
+    def test_nao_mostrar_vitorias_nao_validadas(self):
+        """Testa se top 5 não está preenchido pois desafio nao foi validado"""
+        validar_desafio_ladder_teste(self.desafio, self.jogador_2)
+        response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
+        
+        self.assertFalse(hasattr(response.context['personagem'], 'top_5_ganhadores')
+        
+    def test_mostrar_top_5_vitorias(self):
+        """Testa se tela mostra corretamente top 5 vitórias de jogadores com o personagem"""
+        validar_desafio_ladder_teste(self.desafio, self.jogador_2)
+        response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
+        
+        self.assertTrue(hasattr(response.context['personagem'], 'top_5_ganhadores')
+        self.assertEqual(response.context['personagem'].top_5_ganhadores, {'luta__ganhador': self.jogador_1, 'qtd_vitorias': 3})
+        
+        
+        
