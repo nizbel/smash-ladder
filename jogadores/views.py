@@ -305,7 +305,7 @@ def listar_desafios_jogador(request, username):
 @login_required
 def avaliar_jogador(request, username):
     """Deixar feedback para um jogador"""
-    jogador = get_object_or_404(Jogador, user__username=username)
+    jogador = get_object_or_404(Jogador.objects.select_related('user'), user__username=username)
     
     if jogador == request.user.jogador:
         messages.error(request, 'Feedbacks devem ser feitos para outros jogadores')
