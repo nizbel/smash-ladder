@@ -77,6 +77,18 @@ def add_desafio_ladder(request):
                         validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas)
                         
                         messages.success(request, MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
+                        
+                        # Se jogador que adicionou foi participante, perguntar feedback
+                        if request.user.jogador.id == desafio_ladder.desafiante.id:
+                            url_feedback = reverse('jogadores:avaliar_jogador', kwargs={'username': desafio_ladder.desafiado.user.username})
+                            mensagem_feedback = f"""Aproveite para adicionar um <a href="{url_feedback}">feedback</a> para seu adversário!"""
+                            messages.info(request, mensagem_feedback, 'safe')
+                        
+                        if request.user.jogador.id == desafio_ladder.desafiado.id:
+                            url_feedback = reverse('jogadores:avaliar_jogador', kwargs={'username': desafio_ladder.desafiante.user.username})
+                            mensagem_feedback = f"""Aproveite para adicionar um <a href="{url_feedback}">feedback</a> para seu adversário!"""
+                            messages.info(request, mensagem_feedback, 'safe')
+                            
                         return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_ladder.id}))
                     
                 except Exception as e:
