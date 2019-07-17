@@ -388,7 +388,7 @@ def buscar_qtd_feedbacks_jogador(request):
 
 def listar_personagens(request):
     """Lista todos os personagens"""
-    personagens = Personagem.objects.all()
+    personagens = Personagem.objects.all().order_by('nome')
     
     return render(request, 'personagens/listar_personagens.html', {'personagens': personagens})
 
