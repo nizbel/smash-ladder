@@ -14,7 +14,8 @@ from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
 from ladder.models import DesafioLadder, RemocaoJogador, DecaimentoJogador, \
     PosicaoLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
-    criar_desafio_ladder_simples_teste
+    criar_desafio_ladder_simples_teste, criar_desafio_ladder_completo_teste, \
+    validar_desafio_ladder_teste
 from ladder.utils import remover_jogador, decair_jogador, alterar_ladder, \
     processar_remocao
 from smashLadder import settings
@@ -522,7 +523,9 @@ class ViewListarPersonagensTestCase(TestCase):
         response = self.client.get(reverse('personagens:listar_personagens'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('personagens', response.context)
-        self.assertEqual(response.context['personagens'], self.personagens)
+        self.assertEqual(len(response.context['personagens']), len(self.personagens))
+        for personagem in self.personagens:
+            self.assertIn(personagem, response.context['personagens'])
         
     def test_acesso_logado(self):
         """Testa acesso a tela de listar personagens logado"""
@@ -530,7 +533,9 @@ class ViewListarPersonagensTestCase(TestCase):
         response = self.client.get(reverse('personagens:listar_personagens'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('personagens', response.context)
-        self.assertEqual(response.context['personagens'], self.personagens)
+        self.assertEqual(len(response.context['personagens']), len(self.personagens))
+        for personagem in self.personagens:
+            self.assertIn(personagem, response.context['personagens'])
         
 class ViewDetalharPersonagemTestCase(TestCase):
     """Testes para a view de detalhar personagem"""
@@ -538,7 +543,7 @@ class ViewDetalharPersonagemTestCase(TestCase):
     def setUpTestData(cls):
         super(ViewDetalharPersonagemTestCase, cls).setUpTestData()
         criar_personagens_teste()
-        cls.personagem = Personagem.objects.get(nome='Marth')
+        cls.personagem = Personagem.objects.get(nome='Fox')
         
         criar_jogadores_teste(['sena', 'teets',])
         cls.jogador_1 = Jogador.objects.get(nick='sena')
@@ -558,25 +563,24 @@ class ViewDetalharPersonagemTestCase(TestCase):
     def test_acesso_logado(self):
         """Testa acesso a tela de detalhar personagem logado"""
         self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
-        response = self.client.get(reverse('personagens:detalhar_stage_por_id', kwargs={'personagem_id': self.personagem.id}))
+        response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
         self.assertEqual(response.status_code, 200)
         self.assertIn('personagem', response.context)
         self.assertEqual(response.context['personagem'], self.personagem)
         
     def test_nao_mostrar_vitorias_nao_validadas(self):
         """Testa se top 5 não está preenchido pois desafio nao foi validado"""
-        validar_desafio_ladder_teste(self.desafio, self.jogador_2)
         response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
         
-        self.assertFalse(hasattr(response.context['personagem'], 'top_5_ganhadores')
+        self.assertFalse(hasattr(response.context['personagem'], 'top_5_ganhadores'))
         
     def test_mostrar_top_5_vitorias(self):
         """Testa se tela mostra corretamente top 5 vitórias de jogadores com o personagem"""
         validar_desafio_ladder_teste(self.desafio, self.jogador_2)
         response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
         
-        self.assertTrue(hasattr(response.context['personagem'], 'top_5_ganhadores')
-        self.assertEqual(response.context['personagem'].top_5_ganhadores, {'luta__ganhador': self.jogador_1, 'qtd_vitorias': 3})
+        self.assertTrue(hasattr(response.context['personagem'], 'top_5_ganhadores'))
+        self.assertEqual(response.context['personagem'].top_5_ganhadores[0], {'luta__ganhador': self.jogador_1, 'qtd_vitorias': 3})
         
         
         

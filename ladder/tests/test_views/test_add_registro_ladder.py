@@ -105,7 +105,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
          
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
          
         # Testar valores para desafio de ladder criado
@@ -200,7 +200,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
         
         # Testar valores para desafio de ladder criado
@@ -300,7 +300,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
         
         # Testar valores para desafio de ladder criado
@@ -457,7 +457,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
         
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
         
         # Testar valores para desafio de ladder criado
@@ -638,7 +638,7 @@ class ViewAddDesafioLadderTestCase(TestCase):
          
         # Verificar mensagens
         messages = list(get_messages(response.wsgi_request))
-        self.assertEqual(len(messages), 1)
+        self.assertEqual(len(messages), 2)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER)
          
         # Testar valores para desafio de ladder criado
