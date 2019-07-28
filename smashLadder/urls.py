@@ -24,6 +24,7 @@ urlpatterns = [
     path('contas/', include('django.contrib.auth.urls')),
     path('', views.home, name='inicio'),
     path('analises/', views.analises, name='analises'),
+    path('analises/resultado-acumulado-jogadores/', views.analise_resultado_acumulado_jogadores, name='analise_result_acum_jogadores'),
     
     path('jogadores/', include('jogadores.urls.urls_jogadores')),
     path('ladder/', include('ladder.urls')),

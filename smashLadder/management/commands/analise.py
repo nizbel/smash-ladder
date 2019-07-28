@@ -16,8 +16,8 @@ from smashLadder import settings
 
 
 CAMINHO_ANALISES = 'smashLadder/static/analises/' if settings.DEBUG else f'{settings.STATIC_ROOT}/analises/'
-TEMPO_APAGAR_IMAGENS = 120
-TEMPO_GERAR_NOVA_IMAGEM = 60
+TEMPO_APAGAR_IMAGENS = 300
+TEMPO_GERAR_NOVA_IMAGEM = 180
 
 
 class Command(BaseCommand):
@@ -42,7 +42,6 @@ def analisar():
                                         'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
     
     imgs = {}
-    imgs['result_acum_entre_jogadores'] = analisar_resultado_acumulado_entre_jogadores(desafios_df)
        
     imgs['result_por_posicao'] = analisar_resultados_por_posicao(desafios_df)
        
@@ -81,11 +80,14 @@ def analisar():
     return imgs
     
 def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
-    nome_arquivo = 'acumulado_entre_jogadores'
+    if not mes_ano:
+        data_atual = timezone.localtime()
+        mes_ano = (data_atual.month, data_atual.year)
+    nome_arquivo = f'acumulado_entre_jogadores_{mes_ano[1]}_{mes_ano[0]}'
     
     # Retornar imagem já existente
     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if f'{nome_arquivo}_' in img and '-' in img:
+        if f'{nome_arquivo}' in img and '-' in img:
             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
                 return img
@@ -139,13 +141,7 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
     cbytick_obj = plt.getp(color_bar.ax.axes, 'yticklabels')               
     plt.setp(cbytick_obj)
     
-    if not mes_ano:
-        data_atual = timezone.localtime()
-        nome_imagem = f'{nome_arquivo}_{data_atual.year}_{data_atual.month}'
-        nome_formatado = salvar_imagem(nome_imagem, plt)
-    else:
-        nome_imagem = f'{nome_arquivo}_{mes_ano[1]}_{mes_ano[0]}'
-        nome_formatado = salvar_imagem(nome_imagem, plt, alteravel=False)
+    nome_formatado = salvar_imagem(nome_arquivo, plt)
     
     return nome_formatado
 
@@ -352,7 +348,7 @@ def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
     caminho = CAMINHO_ANALISES + nome_formatado
     
     plot_ctrl.savefig(caminho, bbox_inches='tight')
-    plot_ctrl.close('all')
+    plot_ctrl.close()
     
     return nome_formatado
     
