@@ -47,7 +47,7 @@
 		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
 	  			</div>
 	  			
-	  			<img id="grafAcumJogadores" width="100%">
+	  			<div id="grafAcumJogadores" />
 			</div>
 		</div>
 	</div>
@@ -94,7 +94,7 @@ $(document).ready(function(){
 			}
 			$('#' + ano + '-' + mes).show();
 			alterar_mes_ano();
-			buscarGraficoAcumuladoEntreJogadores();
+			plotGraficoAcumuladoEntreJogadores();
 		}
 	});
 	
@@ -108,35 +108,19 @@ $(document).ready(function(){
 			}
 			$('#' + ano + '-' + mes).show();
 			alterar_mes_ano();
-			buscarGraficoAcumuladoEntreJogadores();
+			plotGraficoAcumuladoEntreJogadores();
 		}
 	});
 	
-	//buscarGraficoAcumuladoEntreJogadores();
 	plotGraficoAcumuladoEntreJogadores();
 });
-
-function buscarGraficoAcumuladoEntreJogadores() {
-	$('#cardGrafAcumJogadores').block({ 
-        message: '<h4>...</h4>', 
-        css: { border: '3px solid #000' } 
-    }); 
-    
-	ajax("{% url 'analise_result_acum_jogadores' %}", 
-		'GET', 
-		{ano: ano, mes: mes}, 
-		function(resultado) {
-			$('#grafAcumJogadores').attr('src', resultado.grafico);
-			$('#cardGrafAcumJogadores').unblock(); 
-        }
-    );
-}
 
 function plotGraficoAcumuladoEntreJogadores() {
 	$('#cardGrafAcumJogadores').block({ 
         message: '<h4>...</h4>', 
         css: { border: '3px solid #000' } 
     });
+    
 	ajax("{% url 'analise_result_acum_jogadores' %}", 
 		'GET', 
 		{ano: ano, mes: mes}, 
@@ -146,14 +130,26 @@ function plotGraficoAcumuladoEntreJogadores() {
 				z: resultado.resultado_desafios,
 				x: resultado.jogador_enfrentado,
 				y: resultado.jogador,
+				hovertemplate: 'Jogador: <b>%{y}</b>' +
+                        '<br>Oponente: <b>%{x}</b>' +
+                        '<br>Resultado: <b>%{z:.2f}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
 				type: 'heatmap'
 			  }
 			];
-			Plotly.newPlot('grafAcumJogadores', data);
+			
+			var layout = {
+			  height: 30 * resultado.jogador.length,
+			  xaxis: {
+			  	title: 'Oponente enfrentado'
+			  }
+			};
+			
+			Plotly.newPlot('grafAcumJogadores', data, layout);
 			$('#cardGrafAcumJogadores').unblock(); 
         }
     );
-	
 }
 </script>
 {% endblock %}
