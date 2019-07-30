@@ -31,8 +31,6 @@ def home(request):
 
 def analises(request):
     """Mostrar análises dos dados de desafios"""
-#     gerar_acumulados_anteriores()
-
     imagens = analisar()
     for imagem in imagens:
         imagens[imagem] = 'analises/' + imagens[imagem]
@@ -40,6 +38,7 @@ def analises(request):
     return render(request, 'analises.html', {'imagens': imagens})
 
 def analise_resultado_acumulado_jogadores(request):
+    """Retorna dados sobre acumulado de resultados de desafios entre jogadores"""
     if request.is_ajax():
         ano = int(request.GET.get('ano'))
         mes = int(request.GET.get('mes'))
@@ -67,7 +66,11 @@ def analise_resultado_acumulado_jogadores(request):
         
         
                 
-        grafico = static(f'analises/{analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))}')
+        desafios_df = analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))
         
-        return JsonResponse({'grafico': grafico})
+        # Trocar NaNs por None, para ser codificado em JSON
+        desafios_df = desafios_df.where(pd.notnull(desafios_df), None)
+        
+        return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
+                             'jogador': desafios_df.index.tolist()})
     

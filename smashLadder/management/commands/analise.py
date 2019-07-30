@@ -128,22 +128,7 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
     
     resultado_pares_df = resultado_pares_df.pivot(index='nick_desafiante', columns='nick_desafiado', values='resultado')
      
-    plt.rcParams.update({'font.size': 10, 'figure.figsize': (12, 14)})
-    plt.figure()
-     
-    plt.pcolor(resultado_pares_df)
-    plt.yticks(np.arange(0.5, len(resultado_pares_df.index), 1), resultado_pares_df.index)
-    plt.xticks(np.arange(0.5, len(resultado_pares_df.columns), 1), resultado_pares_df.columns, rotation='vertical')
-    plt.xlabel('Oponente enfrentado')
-    plt.title('Média de jogos ganhos ao enfrentar oponente')
-
-    color_bar = plt.colorbar(orientation='horizontal', label='Média de jogos ganhos')          
-    cbytick_obj = plt.getp(color_bar.ax.axes, 'yticklabels')               
-    plt.setp(cbytick_obj)
-    
-    nome_formatado = salvar_imagem(nome_arquivo, plt)
-    
-    return nome_formatado
+    return resultado_pares_df
 
 def analisar_resultados_por_posicao(df):
     """Gera imagem para resultado de desafios por posição de desafiante/desafiado"""
@@ -348,7 +333,7 @@ def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
     caminho = CAMINHO_ANALISES + nome_formatado
     
     plot_ctrl.savefig(caminho, bbox_inches='tight')
-    plot_ctrl.close()
+    plot_ctrl.close('all')
     
     return nome_formatado
     
