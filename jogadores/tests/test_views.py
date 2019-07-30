@@ -582,5 +582,118 @@ class ViewDetalharPersonagemTestCase(TestCase):
         self.assertTrue(hasattr(response.context['personagem'], 'top_5_ganhadores'))
         self.assertEqual(response.context['personagem'].top_5_ganhadores[0], {'luta__ganhador': self.jogador_1, 'qtd_vitorias': 3})
         
+class ViewAdicionarPedidoFeriasTestCase(TestCase):
+    """Testes para a view de adicionar pedido de férias"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewAdicionarPedidoFeriasTestCase, cls).setUpTestData()
+        criar_jogadores_teste(['sena'])
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
         
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de adicionar pedido de férias sem logar"""
+        response = self.client.get(reverse('jogadores:adicionar_pedido_ferias'))
+        url_esperada = settings.LOGIN_URL + '?next=' + reverse('jogadores:adicionar_pedido_ferias')
+        self.assertRedirects(response, url_esperada)
+        self.assertEqual(response.status_code, 302)
         
+    def test_acesso_logado(self):
+        """Testa acesso a tela de adicionar pedido de férias logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('jogadores:adicionar_pedido_ferias'))
+        self.assertEqual(response.status_code, 200)
+        
+    def test_adicionar_pedido_valido(self):
+        """Testa caso em que o pedido de férias pode ser realizado"""
+        data_inicio =  timezone.localdate()
+        data_fim = data_inicio + datetime.timedelta(days=15)
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('jogadores:adicionar_pedido_ferias'), {'data_inicio': data_inicio, 'data_fim': data_fim)
+        
+        self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
+        self.assertTrue(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
+        
+    def test_adicionar_pedido_invalido(self):
+        data_inicio =  timezone.localdate()
+        data_fim = data_inicio + datetime.timedelta(days=31)
+        """Testa caso em que o pedido de férias não pode ser realizado"""
+        # No caso, adicionar pedido para período maior que o permitido
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        
+        response = self.client.post(reverse('jogadores:adicionar_pedido_ferias'), {'data_inicio': data_inicio, 'data_fim': data_fim)
+        self.assertEqual(response.status_code, 200)
+        
+         # Verificar erro na mensagem
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), RegistroFerias.MENSAGEM_ERRO_PERIODO_FERIAS_ACIMA_LIMITE)
+        
+        self.assertFalse(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
+        
+class ViewValidarPedidoFeriasTestCase(TestCase):
+    """Testes para a view de validar pedido de férias"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewValidarPedidoFeriasTestCase, cls).setUpTestData()
+        criar_jogadores_teste(['sena', 'teets',])
+        cls.jogador_1 = Jogador.objects.get(nick='sena')
+        cls.jogador_2 = Jogador.objects.get(nick='teets')
+        
+        cls.pedido = PedidoFerias.objects.create(jogador=cls.jogador_1, data_inicio=timezone.localtime() - datetime.timedelta(days=10),
+            data_fim=timezone.localtime() + datetime.timedelta(days=10))
+        
+    def test_acesso_deslogado(self):
+        """Testa acesso a tela de validar pedido de férias sem logar"""
+        response = self.client.get(reverse('jogadores:validar_pedido_ferias'))
+        url_esperada = settings.LOGIN_URL + '?next=' + reverse('jogadores:validar_pedido_ferias')
+        self.assertRedirects(response, url_esperada)
+        self.assertEqual(response.status_code, 302)
+        
+    def test_acesso_logado(self):
+        """Testa acesso a tela de validar pedido de férias logado"""
+        self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('jogadores:validar_pedido_ferias'))
+        self.assertEqual(response.status_code, 403)
+        
+    def test_acesso_logado_admin(self):
+        """Testa acesso a tela de validar pedido de férias logado como admin"""
+        self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('jogadores:validar_pedido_ferias'))
+        self.assertEqual(response.status_code, 200)
+        
+    def test_validar_pedido_sucesso(self):
+        """Testa validar um pedido com sucesso"""
+        self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('jogadores:validar_pedido_ferias'), {'salvar': 1})
+        
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), RegistroFerias.MENSAGEM_SUCESSO_VALIDACAO_FERIAS)
+        
+        self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
+        self.assertFalse(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
+        self.assertTrue(RegistroFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
+        
+    def test_validar_pedido_erro(self):
+        """Testa validar um pedido com erro, pois jogador já possui desafio cadastrado no período"""
+        # Adicionar desafio no período pedido
+        self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('jogadores:validar_pedido_ferias'), {'salvar': 1})
+        self.assertEqual(response.status_code, 200)
+        
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), RegistroFerias.MENSAGEM_ERRO_DESAFIO_DURANTE_FERIAS)
+
+    def test_cancelar_pedido(self):
+        """Testa cancelar pedido de férias, apagando registro do pedido"""
+        self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('jogadores:validar_pedido_ferias'), {'cancelar': 1})
+        
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), RegistroFerias.MENSAGEM_SUCESSO_CANCELAMENTO_FERIAS)
+        
+        self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
+        self.assertFalse(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
+        self.assertFalse(RegistroFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim).exists())
