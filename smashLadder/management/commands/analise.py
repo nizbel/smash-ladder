@@ -111,8 +111,7 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
     resultado_pares_df['resultado'] = (resultado_pares_df['score_desafiante'] - resultado_pares_df['score_desafiado']) / resultado_pares_df['qtd_desafios']
     
     # Remover colunas não utilizadas
-    resultado_pares_df = resultado_pares_df.drop(['score_desafiante', 'posicao_desafiante', 'qtd_desafios',
-                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa'], axis=1)
+    resultado_pares_df = resultado_pares_df.drop(['score_desafiante', 'qtd_desafios', 'score_desafiado'], axis=1)
     
     # Remover índices
     resultado_pares_df = resultado_pares_df.reset_index([0,1])
@@ -337,3 +336,45 @@ def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
     
     return nome_formatado
     
+def analisar_resultado_acumulado_para_um_jogador(df, mes_ano=None, nick_jogador):
+    """Gera dados de resultados de desafio acumulados para um jogador até mês/ano"""
+    if not mes_ano:
+        data_atual = timezone.localtime()
+        mes_ano = (data_atual.month, data_atual.year)
+
+    resultado_pares_df = df.copy(True)
+     
+    # Adicionar coluna para contar qtd de desafios entre pares
+    resultado_pares_df['qtd_desafios'] = 1
+    
+    # Organizar pares de forma que o desafiante seja sempre o menor nome
+    resultado_pares_df['min'] = resultado_pares_df[['nick_desafiante', 'nick_desafiado']].min(axis=1)
+    
+    inverter_idx = resultado_pares_df['nick_desafiante'] != resultado_pares_df['min']
+    resultado_pares_df.loc[inverter_idx, ['nick_desafiante', 'nick_desafiado', 'score_desafiante', 'score_desafiado']] = resultado_pares_df.loc[inverter_idx, [
+        'nick_desafiado', 'nick_desafiante', 'score_desafiado', 'score_desafiante']].values
+    
+    # Agrupar registros de desafio entre mesmo par
+    resultado_pares_df = resultado_pares_df.groupby(['nick_desafiante', 'nick_desafiado']).sum()
+    
+    # Calcular resultado de partidas entre mesmo par
+    resultado_pares_df['resultado'] = (resultado_pares_df['score_desafiante'] - resultado_pares_df['score_desafiado']) / resultado_pares_df['qtd_desafios']
+    
+    # Remover colunas não utilizadas
+    resultado_pares_df = resultado_pares_df.drop(['score_desafiante', 'qtd_desafios', 'score_desafiado'], axis=1)
+    
+    # Remover índices
+    resultado_pares_df = resultado_pares_df.reset_index([0,1])
+    
+    # Adicionar pares alternos
+    aux_df = resultado_pares_df.copy(True)
+    aux_df[['nick_desafiante', 'nick_desafiado']] = aux_df[['nick_desafiado', 'nick_desafiante']].values
+    aux_df['resultado'] *= -1
+    
+    resultado_pares_df = resultado_pares_df.append(aux_df, sort=True, ignore_index=True)
+    
+    del(aux_df)
+    
+    resultado_pares_df = resultado_pares_df.pivot(index='nick_desafiante', columns='nick_desafiado', values='resultado')
+     
+    return resultado_pares_df
