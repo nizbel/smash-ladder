@@ -47,7 +47,7 @@
 		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
 	  			</div>
 	  			
-	  			<div id="grafAcumJogadores" />
+	  			<div id="grafAcumJogadores"></div>
 			</div>
 		</div>
 	</div>
@@ -71,10 +71,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
 
 <script type="text/javascript">
-var max_mes = 7;
+var dataAtual = new Date();
+var mes = dataAtual.getMonth() + 1;
+var ano = dataAtual.getYear() + 1900;
+
+var max_mes = mes;
 var min_mes = 4;
-var mes = 7;
-var ano = 2019;
+
+var max_ano = ano;
+var min_ano = 2019;
 
 function alterar_mes_ano() {
 	$('#mes').html(mes);
@@ -85,28 +90,24 @@ $(document).ready(function(){
 	alterar_mes_ano();
 	
 	$('#prox_acumulado').click(function() {
-		if (mes < max_mes) {
-			$('#' + ano + '-' + mes).hide();
+		if ((ano == max_ano && mes < max_mes) || (ano < max_ano)) {
 			mes += 1;
 			if (mes == 13) {
 				ano += 1;
 				mes = 1;
 			}
-			$('#' + ano + '-' + mes).show();
 			alterar_mes_ano();
 			plotGraficoAcumuladoEntreJogadores();
 		}
 	});
 	
 	$('#ant_acumulado').click(function() {
-		if (mes > min_mes) {
-			$('#' + ano + '-' + mes).hide();
+		if ((ano == min_ano && mes > min_mes) || (ano > min_ano)) {
 			mes -= 1;
 			if (mes == 0) {
 				ano -= 1;
 				mes = 12;
 			}
-			$('#' + ano + '-' + mes).show();
 			alterar_mes_ano();
 			plotGraficoAcumuladoEntreJogadores();
 		}
@@ -135,7 +136,8 @@ function plotGraficoAcumuladoEntreJogadores() {
                         '<br>Resultado: <b>%{z:.2f}</b>',
 			  	hoverinfo: 'text',
 			  	name: '',
-				type: 'heatmap'
+				type: 'heatmap',
+				reversescale: true
 			  }
 			];
 			

@@ -23,8 +23,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('contas/', include('django.contrib.auth.urls')),
     path('', views.home, name='inicio'),
-    path('analises/', views.analises, name='analises'),
-    path('analises/resultado-acumulado-jogadores/', views.analise_resultado_acumulado_jogadores, name='analise_result_acum_jogadores'),
+    path('analises/geral/', views.analises, name='analises'),
+    path('analises/geral/resultado-acumulado-jogadores/', views.analise_resultado_acumulado_jogadores, name='analise_result_acum_jogadores'),
+    path('analises/jogador/', views.analises_por_jogador, name='analises_por_jogador'),
+    path('analises/jogador/resultado-acumulado-jogador/', views.analise_resultado_acumulado_para_um_jogador, name='analise_result_acum_jogador'),
     
     path('jogadores/', include('jogadores.urls.urls_jogadores')),
     path('ladder/', include('ladder.urls')),

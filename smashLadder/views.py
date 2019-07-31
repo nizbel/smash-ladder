@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """Views gerais"""
 from django.db.models.expressions import F
+from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.templatetags.static import static
 from django.utils import timezone
 
+from jogadores.models import Jogador
 from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder
 import pandas as pd
 from smashLadder.management.commands.analise import analisar, \
     gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
-    CAMINHO_ANALISES
+    CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador
 from smashLadder.utils import mes_ano_prox
 
 
@@ -30,7 +32,7 @@ def home(request):
                                                   'top_10_ladder': top_10_ladder})
 
 def analises(request):
-    """Mostrar an�lises dos dados de desafios"""
+    """Mostrar análises dos dados de desafios"""
     imagens = analisar()
     for imagem in imagens:
         imagens[imagem] = 'analises/' + imagens[imagem]
@@ -70,13 +72,18 @@ def analise_resultado_acumulado_jogadores(request):
         
         return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
                              'jogador': desafios_df.index.tolist()})
+        
+def analises_por_jogador(request):
+    """Mostrar análises dos dados de desafios por jogador"""
+    jogadores = Jogador.objects.all()
+    return render(request, 'analises_por_jogador.html', {'jogadores': jogadores})
                              
 def analise_resultado_acumulado_para_um_jogador(request):
     """Retorna dados sobre acumulado de resultados de desafios de um jogador"""
     if request.is_ajax():
         ano = int(request.GET.get('ano'))
         mes = int(request.GET.get('mes'))
-        jogador_id = int(request.GET.get('jogador_id')
+        jogador_id = int(request.GET.get('jogador_id'))
         
         # Verificar se jogador existe
         jogador = get_object_or_404(Jogador, id=jogador_id)
@@ -97,16 +104,16 @@ def analise_resultado_acumulado_para_um_jogador(request):
         
         desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
                                         .filter(desafiante__in=jogadores_validos, desafiado__in=jogadores_validos)
-                                        .filter(Q(desafiante__id=jogador_id) | Q(desafiado__id=jogador_id))
+                                        .filter(Q(desafiante=jogador) | Q(desafiado=jogador))
                                         .annotate(nick_desafiante=F('desafiante__nick')).annotate(nick_desafiado=F('desafiado__nick')).values(
                                             'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
                                                     'score_desafiado').order_by('data_hora')))
         
-        desafios_df = analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': []})
         
-        # Trocar NaNs por None, para ser codificado em JSON
-        desafios_df = desafios_df.where(pd.notnull(desafios_df), None)
+        desafios_df = analisar_resultado_acumulado_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
         
-        return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
-                             'jogador': desafios_df.index.tolist()})
+        return JsonResponse({'resultado_desafios': desafios_df['resultado'].tolist(), 'jogador_enfrentado': desafios_df['nick_desafiado'].tolist()})
     
