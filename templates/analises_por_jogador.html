@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Análises por jogador{% endblock %}
+
+{% block page_header %}Análises por jogador{% endblock %}
+
+{% block extra_header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 text-center mb-3">
+		<h4>Recomendável ver em dispositivos com telas maiores</h4>
+	</div>
+	
+	<div class="col-12 col-md-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultado acumulado de desafios para um jogador
+		  	</div>
+		  	<div class="card-body col-12" id="cardGrafAcumUmJogador">
+	  			<div class="col-12 text-center mb-3">
+			        <label>Jogador</label>
+			        <select id="jogador" class="form-control">
+			        	{% for jogador in jogadores %}
+			        	<option value="{{ jogador.id }}">{{ jogador.nick }}</option>
+			        	{% endfor %}
+		        	</select>
+	  			</div>
+		  		<div class="col-12 text-center mb-0">
+		  			<h4><span id="mes"></span> / <span id="ano"></span></h4>
+		  		</div>
+		  		<div class="col-12 text-center mb-3">
+		  			<input class="btn btn-lg btn-dark mt-4" id="play" type="button" value="Ver evolução">
+		  			<input class="btn btn-lg btn-dark mt-4" id="ant_acumulado" type="button" value="Anterior">
+		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
+	  			</div>
+	  			
+	  			<div class="col-12 col-md-6" id="grafAcumUmJogador"></div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+
+<script type="text/javascript">
+var dataAtual = new Date();
+var mes = dataAtual.getMonth() + 1;
+var ano = dataAtual.getYear() + 1900;
+
+var max_mes = mes;
+var min_mes = 4;
+
+var max_ano = ano;
+var min_ano = 2019;
+
+var jogador_id = $('#jogador').val();
+
+function alterar_mes_ano() {
+	$('#mes').html(mes);
+	$('#ano').html(ano);
+}
+
+$(document).ready(function(){
+	$('select').select2();
+	alterar_mes_ano();
+	
+	$('#prox_acumulado').click(function() {
+		if ((ano == max_ano && mes < max_mes) || (ano < max_ano)) {
+			mes += 1;
+			if (mes == 13) {
+				ano += 1;
+				mes = 1;
+			}
+			alterar_mes_ano();
+			plotGraficoAcumuladoUmJogador();
+		}
+	});
+	
+	$('#ant_acumulado').click(function() {
+		if ((ano == min_ano && mes > min_mes) || (ano > min_ano)) {
+			mes -= 1;
+			if (mes == 0) {
+				ano -= 1;
+				mes = 12;
+			}
+			alterar_mes_ano();
+			plotGraficoAcumuladoUmJogador();
+		}
+	});
+	
+	$('#jogador').change(function() {
+		jogador_id = $(this).val();
+		plotGraficoAcumuladoUmJogador();
+	});
+	
+	$('#play').click(function() {
+		ano = min_ano;
+		mes = min_mes;
+		alterar_mes_ano();
+		
+		playGraficoAcumuladoUmJogador();
+	});
+	
+	plotGraficoAcumuladoUmJogador();
+});
+
+function playGraficoAcumuladoUmJogador() {
+	plotGraficoAcumuladoUmJogador();
+	
+	if (ano < max_ano || (ano == max_ano && mes < max_mes)) {
+
+		mes += 1;
+		if (mes == 13) {
+			ano += 1;
+			mes = 1;
+		}
+		
+		setTimeout(function() {
+			alterar_mes_ano();
+			playGraficoAcumuladoUmJogador();
+			}, 1000);
+	}
+}
+
+function plotGraficoAcumuladoUmJogador() {
+{% comment %}
+	$('#cardGrafAcumUmJogador').block({ 
+        message: '<h4>...</h4>', 
+        css: { border: '3px solid #000' } 
+    });
+{% endcomment %}
+    
+	ajax("{% url 'analise_result_acum_jogador' %}", 
+		'GET', 
+		{ano: ano, mes: mes, jogador_id: jogador_id}, 
+		function(resultado) {
+			var colors = [];
+			for (var i = 0; i < resultado.resultado_desafios.length; i++) {
+				if (resultado.resultado_desafios[i] < 0) {
+					colors.push('red');
+				} else {
+					colors.push('blue');
+				}
+			}
+			
+			var data = [
+			  {
+				x: resultado.resultado_desafios,
+				y: resultado.jogador_enfrentado,
+				hovertemplate: '<br>Oponente: <b>%{y}</b>' +
+                        '<br>Resultado: <b>%{x:.2f}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				orientation: 'h',
+				marker: {
+					color: colors
+				}
+			  }
+			];
+
+			var layout = {
+			  height: 200 + 30 * resultado.resultado_desafios.length,
+			  xaxis: {
+			  	title: 'Média de resultados',
+			  	range: [-3, 3]
+		  	  }
+			};
+			
+			Plotly.newPlot('grafAcumUmJogador', data, layout);
+			
+{% comment %}
+			$('#cardGrafAcumUmJogador').unblock(); 
+{% endcomment %}
+        }
+    );
+}
+
+{% comment %}
+function animarGraficoAcumuladoUmJogador() {
+	ajax("{% url 'analise_result_acum_jogador' %}", 
+		'GET', 
+		{ano: ano, mes: mes, jogador_id: 2}, 
+		function(resultado) {
+			var data = [
+			  {
+				x: resultado.resultado_desafios,
+				y: resultado.jogador_enfrentado,
+				hovertemplate: '<br>Oponente: <b>%{y}</b>' +
+                        '<br>Resultado: <b>%{x:.2f}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				orientation: 'h'
+			  }
+			];
+			
+			var layout = {
+			  xaxis: {
+			  	title: 'Média de resultados'
+		  	  }
+			};
+			
+			Plotly.animate('grafAcumUmJogador', {
+			    data: data,
+    			traces: [0],
+			    layout: layout
+			  }, {
+			    transition: {
+			      duration: 500,
+			      easing: 'cubic-in-out'
+			    },
+			    frame: {
+			      duration: 500
+			    }
+			});
+        }
+    );
+}
+{% endcomment %}
+
+</script>
+{% endblock %}

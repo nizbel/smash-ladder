@@ -93,14 +93,21 @@
 					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a></li>
 		        			</ul>
 		        		</li>
+		        		
 			      		<li class="nav-item {% if request.resolver_match.url_name == 'detalhar_regras_ladder' %}active{% endif %}">
 			        		<a class="nav-link" href="{% url 'ladder:detalhar_regras_ladder' %}">Regras</a>
 			      		</li>
 			      		
-			      		
-			      		<li class="nav-item {% if request.resolver_match.url_name == 'analises' %}active{% endif %}">
-			        		<a class="nav-link" href="{% url 'analises' %}">Análises</a>
-			      		</li>
+			      		<li class="nav-item dropdown {% if 'analises' in request.resolver_match.url_name %}active{% endif %}">
+			        		<a class="nav-link dropdown-toggle" href="#" id="analisesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			          			Análises
+			        		</a>
+			        		<div class="dropdown-menu" aria-labelledby="analisesDropdown">
+	  							<a class="dropdown-item" href="{% url 'analises' %}">Geral</a>
+	  							<a class="dropdown-item" href="{% url 'analises_por_jogador' %}">Por jogador</a>
+	  							
+		        			</div>
+		        		</li>
 			    	</ul>
 			    	
 				    <div class="my-2 my-lg-0">

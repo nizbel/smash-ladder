@@ -336,7 +336,7 @@ def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
     
     return nome_formatado
     
-def analisar_resultado_acumulado_para_um_jogador(df, mes_ano=None, nick_jogador):
+def analisar_resultado_acumulado_para_um_jogador(df, nick_jogador, mes_ano=None):
     """Gera dados de resultados de desafio acumulados para um jogador até mês/ano"""
     if not mes_ano:
         data_atual = timezone.localtime()
@@ -366,15 +366,12 @@ def analisar_resultado_acumulado_para_um_jogador(df, mes_ano=None, nick_jogador)
     # Remover índices
     resultado_pares_df = resultado_pares_df.reset_index([0,1])
     
-    # Adicionar pares alternos
-    aux_df = resultado_pares_df.copy(True)
-    aux_df[['nick_desafiante', 'nick_desafiado']] = aux_df[['nick_desafiado', 'nick_desafiante']].values
-    aux_df['resultado'] *= -1
+    # Colocar jogador como coluna desafiante sempre
+    desafiado_idx = resultado_pares_df['nick_desafiado'] == nick_jogador
+    resultado_pares_df.loc[desafiado_idx, ['resultado']] = resultado_pares_df.loc[desafiado_idx, ['resultado']] * -1
+    resultado_pares_df.loc[desafiado_idx, ['nick_desafiante', 'nick_desafiado']] = resultado_pares_df.loc[desafiado_idx, ['nick_desafiado', 'nick_desafiante']].values
     
-    resultado_pares_df = resultado_pares_df.append(aux_df, sort=True, ignore_index=True)
     
-    del(aux_df)
+    resultado_pares_df = resultado_pares_df.drop(['nick_desafiante'], axis=1)
     
-    resultado_pares_df = resultado_pares_df.pivot(index='nick_desafiante', columns='nick_desafiado', values='resultado')
-     
     return resultado_pares_df
