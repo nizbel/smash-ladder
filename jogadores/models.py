@@ -199,3 +199,23 @@ class RegistroFerias(models.Model):
         verbose_name_plural = 'registros de férias'
         unique_together = (('jogador', 'data_inicio'), ('jogador', 'data_fim'))
         
+class DestaqueJogador(models.Model):
+    JOGADOR_MAIOR_SEQUENCIA_VITORIAS = 1
+    JOGADOR_MAIS_PARTIDAS = 2
+    JOGADOR_MAIS_DEFESAS_POSICAO = 3
+    JOGADOR_MAIS_3_0 = 4
+    JOGADOR_MAIS_SUBIU_POSICOES = 5
+    # Jogador com mais vitórias, com pelo menos 4 desafios
+    JOGADOR_MELHOR_RESULTADO = 6
+    # Jogador que subiu mais posições com um coringa
+    JOGADOR_CORINGA_MAIS_POSICOES = 7
+    
+    jogador = models.ForeignKey('Jogador', on_delete=models.CASCADE)
+    mes = models.SmallIntegerField(u'Mês da Ladder')
+    ano = models.SmallIntegerField(u'Ano da Ladder')
+    tipo_destaque = models.SmallIntegerField(u'Tipo de destaque')
+    quantidade = models.IntegerField(u'Quantidade')
+    
+    class Meta:
+        verbose_name_plural = 'destaques'
+        
