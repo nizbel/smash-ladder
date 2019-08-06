@@ -373,6 +373,33 @@ def listar_desafiaveis(request):
     
     data['desafiaveis'] = [{'id':desafiavel.id, 'nick': desafiavel.nick} for desafiavel in desafiaveis]
     return JsonResponse(data)
+    
+def listar_personagens_jogador(request):
+    """Retorna lista com o ID do main do jogador, seguido de IDs de personagens ordenados por utilização"""
+    data = {}
+    if not request.POST:
+        data['mensagem_erro'] = 'Requisição deve ser POST'
+        return JsonResponse(data)
+        
+    jogador_id = request.POST.get('jogador_id')
+    if Jogador.objects.filter(id=jogador_id).exists():
+        jogador = Jogador.objects.get(id=jogador_id)
+    else:
+        data['mensagem_erro'] = 'Id de jogador informado inexistente'
+        return JsonResponse(data)
+    
+    personagens = list()
+    
+    # Adicionar main
+    if jogador.main:
+        personagens.append(jogador.main_id)
+        
+    # Adicionar personages utilizados
+    personagens.extend(JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False).values('personagem').order_by('personagem').annotate(qtd_lutas=Count('personagem')) \
+        .order_by('qtd_lutas').values_list('personagem'))
+    
+    data['personagens'] = personagens
+    return JsonResponse(data)
 
 @login_required
 def buscar_qtd_feedbacks_jogador(request):
@@ -383,7 +410,7 @@ def buscar_qtd_feedbacks_jogador(request):
         return JsonResponse(data)
     
     data['qtd_feedbacks'] = Feedback.objects.filter(avaliado__user__id=request.user.id).count()
-    print(data)
+
     return JsonResponse(data)
 
 def listar_personagens(request):
