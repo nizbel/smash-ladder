@@ -29,5 +29,6 @@ urlpatterns = [
     # JSON
     path(r'buscar-quantidade-feedbacks', views.buscar_qtd_feedbacks_jogador, name='buscar_qtd_feedbacks'),
     path(r'listar-desafiaveis/', views.listar_desafiaveis, name='listar_desafiaveis'),
+    path(r'listar-personagens-jogador/', views.listar_personagens_jogador, name='listar_personagens_jogador'),
     
 ]
