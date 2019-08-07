@@ -234,14 +234,22 @@ function buscarPersonagensJogador(elemento_jogador) {
 			$("select[id$='" + fim_id + "']").select2({
 				sorter: function(data) {
 				    return data.sort(function(a, b) {
-				    	a.prioridade = $.inArray(parseInt(a.id), resultado.personagens);
-				    	if (a.prioridade == -1) {
-				    		a.prioridade = 1000;
-			    		}
-				    	b.prioridade = $.inArray(parseInt(b.id), resultado.personagens);
-				    	if (b.prioridade == -1) {
-				    		b.prioridade = 1000;
-			    		}
+						if (a.id == "") {
+							a.prioridade = 0;
+						} else {
+				    		a.prioridade = $.inArray(parseInt(a.id), resultado.personagens);
+							if (a.prioridade == -1) {
+								a.prioridade = 1000;
+							}
+						}
+						if (b.id == "") {
+							b.prioridade = 0;
+						} else {
+							b.prioridade = $.inArray(parseInt(b.id), resultado.personagens);
+							if (b.prioridade == -1) {
+								b.prioridade = 1000;
+							}
+						}
 				    	
 				        return (a.prioridade != b.prioridade ? a.prioridade - b.prioridade : a.text.localeCompare(b.text));
 				    });
