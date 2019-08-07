@@ -63,7 +63,7 @@ def analisar():
 #                                                 .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
 #                                                                         output_field=IntegerField())) \
 #                                                 .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
-#     
+#      
 #     imgs['vitorias_contra_personagem'] = analisar_vitorias_contra_personagens(desafios_jogadores_personagens_df)
     
     # ANÁLISE ESPECÍFICA
@@ -294,30 +294,33 @@ def analisar_vitorias_por_personagem(df):
     
     return nome_formatado
 
-# def analisar_vitorias_contra_personagens(df):
-#     """Gera imagem para vitórias contra cada personagem"""
-#     nome_arquivo = 'vitorias_contra_personagem'
-#     vitorias_contra_personagem_df = df.copy(True)
-#     
-#     idx_ganhador = vitorias_contra_personagem_df['vitoria'] == 1
-#     vitorias_contra_personagem_df.loc[idx_ganhador, ['personagem__nome']] = ''
-#     
-#     idx_perdedor = vitorias_contra_personagem_df['vitoria'] == 0
-#     vitorias_contra_personagem_df.loc[idx_perdedor, ['jogador__nick']] = ''
-#     
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.groupby('luta')['jogador__nick', 'personagem__nome'].apply(lambda x: x.sum()) \
-#     
-#     vitorias_contra_personagem_df['Qtd. lutas'] = 1
-#     
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.groupby(['jogador__nick', 'personagem__nome']).sum()
-#     
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.reset_index([0,1])
-#     
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.pivot(index='jogador__nick', columns='personagem__nome', values='Qtd. lutas')
-#                                        
+def analisar_vitorias_contra_personagens_para_um_jogador(df, nick_jogador, mes_ano=None):
+    """Gera imagem para vitórias contra cada personagem para um jogador até mês/ano"""
+    vitorias_contra_personagem_df = df.copy(True)
+     
+    idx_jogador = vitorias_contra_personagem_df['jogador__nick'] == nick_jogador
+    vitorias_contra_personagem_df.loc[idx_jogador, ['personagem__nome']] = ''
+     
+    idx_oponente = vitorias_contra_personagem_df['jogador__nick'] != nick_jogador
+    vitorias_contra_personagem_df.loc[idx_oponente, ['jogador__nick']] = ''
+    vitorias_contra_personagem_df.loc[idx_oponente, ['vitoria']] = 0
+     
+    vitorias_contra_personagem_df = vitorias_contra_personagem_df.groupby('luta')['personagem__nome', 'vitoria'].apply(lambda x: x.sum())
+     
+    vitorias_contra_personagem_df['quantidade_lutas'] = 1
+     
+    vitorias_contra_personagem_df = vitorias_contra_personagem_df.groupby(['personagem__nome']).sum()
+    
+    vitorias_contra_personagem_df['percentual_vitorias'] = 100 * vitorias_contra_personagem_df['vitoria'] / vitorias_contra_personagem_df['quantidade_lutas']
+    
+    vitorias_contra_personagem_df = vitorias_contra_personagem_df.drop('vitoria', axis=1)
+    
+#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.reset_index([0])
 #     print(vitorias_contra_personagem_df)
-#     
-#     return nome_arquivo
+#      
+#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.pivot(index='personagem__nome', values=['Qtd. lutas', 'vitoria'])
+                                        
+    return vitorias_contra_personagem_df
 
 def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
     """Salva imagem no formato especificado"""

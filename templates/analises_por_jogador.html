@@ -14,30 +14,45 @@
 		<h4>Recomendável ver em dispositivos com telas maiores</h4>
 	</div>
 	
-	<div class="col-12 col-md-12 my-2">
+	<div class="col-12 text-center mb-3">
+        <label>Jogador</label>
+        <select id="jogador" class="form-control">
+        	{% for jogador in jogadores %}
+        	<option value="{{ jogador.id }}">{{ jogador.nick }}</option>
+        	{% endfor %}
+    	</select>
+	</div>
+	
+	<div class="col-12 col-md-6 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
-		    	Resultado acumulado de desafios para um jogador
+		    	Resultado acumulado de desafios
 		  	</div>
 		  	<div class="card-body col-12" id="cardGrafAcumUmJogador">
-	  			<div class="col-12 text-center mb-3">
-			        <label>Jogador</label>
-			        <select id="jogador" class="form-control">
-			        	{% for jogador in jogadores %}
-			        	<option value="{{ jogador.id }}">{{ jogador.nick }}</option>
-			        	{% endfor %}
-		        	</select>
-	  			</div>
-		  		<div class="col-12 text-center mb-0">
-		  			<h4><span id="mes"></span> / <span id="ano"></span></h4>
-		  		</div>
 		  		<div class="col-12 text-center mb-3">
-		  			<input class="btn btn-lg btn-dark mt-4" id="play" type="button" value="Ver evolução">
-		  			<input class="btn btn-lg btn-dark mt-4" id="ant_acumulado" type="button" value="Anterior">
-		  			<input class="btn btn-lg btn-dark mt-4" id="prox_acumulado" type="button" value="Próximo">
+		  			<input class="btn btn-lg btn-dark mt-4" id="playGrafAcumUmJogador" type="button" value="Ver evolução">
+		  			<input class="btn btn-lg btn-dark mt-4" id="antGrafAcumUmJogador" type="button" value="Anterior">
+		  			<input class="btn btn-lg btn-dark mt-4" id="proxGrafAcumUmJogador" type="button" value="Próximo">
 	  			</div>
 	  			
-	  			<div class="col-12 col-md-6" id="grafAcumUmJogador"></div>
+  				<div id="grafAcumUmJogador"></div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-6 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultado acumulado contra personagens
+		  	</div>
+		  	<div class="card-body col-12" id="cardGrafJogadorContraPersonagens">
+		  		<div class="col-12 text-center mb-3">
+		  			<input class="btn btn-lg btn-dark mt-4" id="playGrafJogadorContraPersonagens" type="button" value="Ver evolução">
+		  			<input class="btn btn-lg btn-dark mt-4" id="antGrafJogadorContraPersonagens" type="button" value="Anterior">
+		  			<input class="btn btn-lg btn-dark mt-4" id="proxGrafJogadorContraPersonagens" type="button" value="Próximo">
+	  			</div>
+	  			
+  				<div id="grafJogadorContraPersonagens"></div>
 			</div>
 		</div>
 	</div>
@@ -50,136 +65,185 @@
 
 <script type="text/javascript">
 var dataAtual = new Date();
-var mes = dataAtual.getMonth() + 1;
-var ano = dataAtual.getYear() + 1900;
 
-var max_mes = mes;
+var mesGrafAcumUmJogador = dataAtual.getMonth() + 1;
+var anoGrafAcumUmJogador = dataAtual.getYear() + 1900;
+var resultadosGrafAcumUmJogador = []; 
+
+var mesGrafJogadorContraPersonagens = dataAtual.getMonth() + 1;
+var anoGrafJogadorContraPersonagens = dataAtual.getYear() + 1900;
+var resultadosGrafJogadorContraPersonagens = []; 
+
+var max_mes = dataAtual.getMonth() + 1;
 var min_mes = 4;
 
-var max_ano = ano;
+var max_ano = dataAtual.getYear() + 1900;
 var min_ano = 2019;
 
 var jogador_id = $('#jogador').val();
 
-function alterar_mes_ano() {
-	$('#mes').html(mes);
-	$('#ano').html(ano);
-}
-
 $(document).ready(function(){
 	$('select').select2();
-	alterar_mes_ano();
-	
-	$('#prox_acumulado').click(function() {
-		if ((ano == max_ano && mes < max_mes) || (ano < max_ano)) {
-			mes += 1;
-			if (mes == 13) {
-				ano += 1;
-				mes = 1;
-			}
-			alterar_mes_ano();
-			plotGraficoAcumuladoUmJogador();
-		}
-	});
-	
-	$('#ant_acumulado').click(function() {
-		if ((ano == min_ano && mes > min_mes) || (ano > min_ano)) {
-			mes -= 1;
-			if (mes == 0) {
-				ano -= 1;
-				mes = 12;
-			}
-			alterar_mes_ano();
-			plotGraficoAcumuladoUmJogador();
-		}
-	});
 	
 	$('#jogador').change(function() {
 		jogador_id = $(this).val();
-		plotGraficoAcumuladoUmJogador();
+		
+		// Limpar dados guardados
+		resultadosGrafAcumUmJogador = []; 
+		resultadosGrafJogadorContraPersonagens = []; 
+		
+		buscarDadosGraficoAcumuladoUmJogador();
+		buscarDadosGraficoJogadorContraPersonagens();
 	});
 	
-	$('#play').click(function() {
-		ano = min_ano;
-		mes = min_mes;
-		alterar_mes_ano();
+	// Gráfico acumulado de resultados de desafios
+	$('#proxGrafAcumUmJogador').click(function() {
+		if ((anoGrafAcumUmJogador == max_ano && mesGrafAcumUmJogador < max_mes) || (anoGrafAcumUmJogador < max_ano)) {
+			mesGrafAcumUmJogador += 1;
+			if (mesGrafAcumUmJogador == 13) {
+				anoGrafAcumUmJogador += 1;
+				mesGrafAcumUmJogador = 1;
+			}
+			buscarDadosGraficoAcumuladoUmJogador();
+		}
+	});
+	
+	$('#antGrafAcumUmJogador').click(function() {
+		if ((anoGrafAcumUmJogador == min_ano && mesGrafAcumUmJogador > min_mes) || (anoGrafAcumUmJogador > min_ano)) {
+			mesGrafAcumUmJogador -= 1;
+			if (mesGrafAcumUmJogador == 0) {
+				anoGrafAcumUmJogador -= 1;
+				mesGrafAcumUmJogador = 12;
+			}
+			buscarDadosGraficoAcumuladoUmJogador();
+		}
+	});
+	
+	$('#playGrafAcumUmJogador').click(function() {
+		anoGrafAcumUmJogador = min_ano;
+		mesGrafAcumUmJogador = min_mes;
 		
 		playGraficoAcumuladoUmJogador();
 	});
 	
-	plotGraficoAcumuladoUmJogador();
+	// Gráfico acumulado de resultados de lutas contra personagens
+	$('#proxGrafJogadorContraPersonagens').click(function() {
+		if ((anoGrafJogadorContraPersonagens == max_ano && mesGrafJogadorContraPersonagens < max_mes) || (anoGrafJogadorContraPersonagens < max_ano)) {
+			mesGrafJogadorContraPersonagens += 1;
+			if (mesGrafJogadorContraPersonagens == 13) {
+				anoGrafJogadorContraPersonagens += 1;
+				mesGrafJogadorContraPersonagens = 1;
+			}
+			buscarDadosGraficoJogadorContraPersonagens();
+		}
+	});
+	
+	$('#antGrafJogadorContraPersonagens').click(function() {
+		if ((anoGrafJogadorContraPersonagens == min_ano && mesGrafJogadorContraPersonagens > min_mes) || (anoGrafJogadorContraPersonagens > min_ano)) {
+			mesGrafJogadorContraPersonagens -= 1;
+			if (mesGrafJogadorContraPersonagens == 0) {
+				anoGrafJogadorContraPersonagens -= 1;
+				mesGrafJogadorContraPersonagens = 12;
+			}
+			buscarDadosGraficoJogadorContraPersonagens();
+		}
+	});
+	
+	$('#playGrafJogadorContraPersonagens').click(function() {
+		anoGrafJogadorContraPersonagens = min_ano;
+		mesGrafJogadorContraPersonagens = min_mes;
+		
+		playGraficoJogadorContraPersonagens();
+	});
+	
+	buscarDadosGraficoAcumuladoUmJogador();
+	buscarDadosGraficoJogadorContraPersonagens();
 });
 
 function playGraficoAcumuladoUmJogador() {
-	plotGraficoAcumuladoUmJogador();
+	buscarDadosGraficoAcumuladoUmJogador();
 	
-	if (ano < max_ano || (ano == max_ano && mes < max_mes)) {
-
-		mes += 1;
-		if (mes == 13) {
-			ano += 1;
-			mes = 1;
-		}
-		
+	if (anoGrafAcumUmJogador < max_ano || (anoGrafAcumUmJogador == max_ano && mesGrafAcumUmJogador < max_mes)) {
 		setTimeout(function() {
-			alterar_mes_ano();
+			mesGrafAcumUmJogador += 1;
+			if (mesGrafAcumUmJogador == 13) {
+				anoGrafAcumUmJogador += 1;
+				mesGrafAcumUmJogador = 1;
+			}
 			playGraficoAcumuladoUmJogador();
-			}, 1000);
+			
+			}, 1200);
 	}
 }
 
-function plotGraficoAcumuladoUmJogador() {
-{% comment %}
+function buscarDadosGraficoAcumuladoUmJogador() {
+	// Verificar se dados requeridos já não foram guardados
+    for (var indiceResultado = 0; indiceResultado < resultadosGrafAcumUmJogador.length; indiceResultado++) {
+    	if (resultadosGrafAcumUmJogador[indiceResultado].mes == mesGrafAcumUmJogador && resultadosGrafAcumUmJogador[indiceResultado].ano == anoGrafAcumUmJogador) {
+    		plotGraficoAcumuladoUmJogador(resultadosGrafAcumUmJogador[indiceResultado].dados);
+    		return;
+    	}
+    }
+	
 	$('#cardGrafAcumUmJogador').block({ 
-        message: '<h4>...</h4>', 
-        css: { border: '3px solid #000' } 
+        message: ''
     });
-{% endcomment %}
     
 	ajax("{% url 'analise_result_acum_jogador' %}", 
 		'GET', 
-		{ano: ano, mes: mes, jogador_id: jogador_id}, 
+		{ano: anoGrafAcumUmJogador, mes: mesGrafAcumUmJogador, jogador_id: jogador_id}, 
 		function(resultado) {
-			var colors = [];
-			for (var i = 0; i < resultado.resultado_desafios.length; i++) {
-				if (resultado.resultado_desafios[i] < 0) {
-					colors.push('red');
-				} else {
-					colors.push('blue');
-				}
-			}
+			plotGraficoAcumuladoUmJogador(resultado);
 			
-			var data = [
-			  {
-				x: resultado.resultado_desafios,
-				y: resultado.jogador_enfrentado,
-				hovertemplate: '<br>Oponente: <b>%{y}</b>' +
-                        '<br>Resultado: <b>%{x:.2f}</b>',
-			  	hoverinfo: 'text',
-			  	name: '',
-				type: 'bar',
-				orientation: 'h',
-				marker: {
-					color: colors
-				}
-			  }
-			];
-
-			var layout = {
-			  height: 200 + 30 * resultado.resultado_desafios.length,
-			  xaxis: {
-			  	title: 'Média de resultados',
-			  	range: [-3, 3]
-		  	  }
-			};
+			// Guardar dados
+			resultadosGrafAcumUmJogador.push({mes: mesGrafAcumUmJogador, ano: anoGrafAcumUmJogador, dados: resultado});
 			
-			Plotly.newPlot('grafAcumUmJogador', data, layout);
-			
-{% comment %}
 			$('#cardGrafAcumUmJogador').unblock(); 
-{% endcomment %}
         }
     );
+}
+
+function plotGraficoAcumuladoUmJogador(dados) {
+	var colors = [];
+	for (var i = 0; i < dados.resultado_desafios.length; i++) {
+		if (dados.resultado_desafios[i] < 0) {
+			colors.push('red');
+		} else {
+			colors.push('blue');
+		}
+	}
+	
+	var data = [
+	  {
+		x: dados.resultado_desafios,
+		y: dados.jogador_enfrentado,
+		hovertemplate: '<br>Oponente: <b>%{y}</b>' +
+                '<br>Média de resultados: <b>%{x:.2f}</b>',
+	  	hoverinfo: 'text',
+	  	name: '',
+		type: 'bar',
+		orientation: 'h',
+		marker: {
+			color: colors
+		}
+	  }
+	];
+
+	var layout = {
+	  title: {
+		text: mesGrafAcumUmJogador + '/' + anoGrafAcumUmJogador
+	  },
+	  font: {
+	  	size: 16
+	  },
+	  height: 200 + 30 * dados.resultado_desafios.length,
+	  xaxis: {
+	  	title: 'Média de resultados',
+	  	range: [-3, 3]
+  	  }
+	};
+	
+	Plotly.newPlot('grafAcumUmJogador', data, layout);
 }
 
 {% comment %}
@@ -225,5 +289,88 @@ function animarGraficoAcumuladoUmJogador() {
 }
 {% endcomment %}
 
+function playGraficoJogadorContraPersonagens() {
+	buscarDadosGraficoJogadorContraPersonagens();
+	
+	if (anoGrafJogadorContraPersonagens < max_ano || (anoGrafJogadorContraPersonagens == max_ano && mesGrafJogadorContraPersonagens < max_mes)) {
+		setTimeout(function() {
+			mesGrafJogadorContraPersonagens += 1;
+			if (mesGrafJogadorContraPersonagens == 13) {
+				anoGrafJogadorContraPersonagens += 1;
+				mesGrafJogadorContraPersonagens = 1;
+			}
+			playGraficoJogadorContraPersonagens();
+			
+			}, 1200);
+	}
+}
+
+function buscarDadosGraficoJogadorContraPersonagens() {
+	// Verificar se dados requeridos já não foram guardados
+    for (var indiceResultado = 0; indiceResultado < resultadosGrafJogadorContraPersonagens.length; indiceResultado++) {
+    	if (resultadosGrafJogadorContraPersonagens[indiceResultado].mes == mesGrafJogadorContraPersonagens && resultadosGrafJogadorContraPersonagens[indiceResultado].ano == anoGrafJogadorContraPersonagens) {
+    		plotGraficoJogadorContraPersonagens(resultadosGrafJogadorContraPersonagens[indiceResultado].dados);
+    		return;
+    	}
+    }
+	
+	$('#cardGrafJogadorContraPersonagens').block({ 
+        message: ''
+    });
+	ajax("{% url 'analise_result_jogador_contra_personagens' %}", 
+		'GET', 
+		{ano: anoGrafJogadorContraPersonagens, mes: mesGrafJogadorContraPersonagens, jogador_id: jogador_id}, 
+		function(resultado) {
+			plotGraficoJogadorContraPersonagens(resultado);
+			
+			// Guardar dados
+			resultadosGrafJogadorContraPersonagens.push({mes: mesGrafJogadorContraPersonagens, ano: anoGrafJogadorContraPersonagens, dados: resultado});
+			
+			$('#cardGrafJogadorContraPersonagens').unblock();
+        }
+    );
+}
+
+function plotGraficoJogadorContraPersonagens(dados) {
+	var colors = [];
+	for (var i = 0; i < dados.percentual_vitorias.length; i++) {
+		if (dados.percentual_vitorias[i] < 50) {
+			colors.push('red');
+		} else {
+			colors.push('blue');
+		}
+	}
+	
+	var data = [
+	  {
+		x: dados.percentual_vitorias,
+		y: dados.personagem,
+		hovertemplate: '<br>Oponente: <b>%{y}</b>' +
+                '<br>Vitórias: <b>%{x:.2f}%</b>',
+	  	hoverinfo: 'text',
+	  	name: '',
+		type: 'bar',
+		orientation: 'h',
+		marker: {
+			color: colors
+		}
+	  }
+	];
+
+	var layout = {
+	  title: {
+		text: mesGrafJogadorContraPersonagens + '/' + anoGrafJogadorContraPersonagens
+	  },
+	  font: {
+	  	size: 16
+	  },
+	  height: 200 + 30 * dados.percentual_vitorias.length,
+	  xaxis: {
+	  	title: 'Percentual de vitórias contra personagem'
+  	  }
+	};
+	
+	Plotly.newPlot('grafJogadorContraPersonagens', data, layout);
+}
 </script>
 {% endblock %}
