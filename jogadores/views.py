@@ -393,12 +393,14 @@ def listar_personagens_jogador(request):
     # Adicionar main
     if jogador.main:
         personagens.append(jogador.main_id)
-        
+    
     # Adicionar personages utilizados
-    personagens.extend(JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False).values('personagem').order_by('personagem').annotate(qtd_lutas=Count('personagem')) \
-        .order_by('qtd_lutas').values_list('personagem'))
+    personagens.extend(JogadorLuta.objects.exclude(personagem_id=jogador.main_id).filter(jogador=jogador, personagem__isnull=False).values('personagem') \
+                       .order_by('personagem').annotate(qtd_lutas=Count('personagem')) \
+        .order_by('-qtd_lutas').values_list('personagem', flat=True))
     
     data['personagens'] = personagens
+    
     return JsonResponse(data)
 
 @login_required

@@ -47,8 +47,6 @@ Editar desafio
 <script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
 
 <script type="text/javascript">
-var token = '{{csrf_token}}';
-
 $(document).ready(function(){
 	$('select').select2();
 	
@@ -67,8 +65,12 @@ $(document).ready(function(){
 	});
 	
 	$("select[id='id_desafiante']").on('select2:select', function (e) {
+	  	recarregarParticipantes();
+	  	
 	  	// Buscar desafiaveis ao alterar desafiante
 	  	buscarDesafiaveis();
+	  	
+	  	buscarPersonagensJogador($(this));
 	});
 	
 	$('#id_desafio_coringa').change(function(){
@@ -77,6 +79,8 @@ $(document).ready(function(){
 	
 	$("select[id='id_desafiado']").on('select2:select', function (e) {
 	  	recarregarParticipantes();
+	  	
+	  	buscarPersonagensJogador($(this));
 	});
 	
 	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
@@ -94,6 +98,7 @@ $(document).ready(function(){
 		} else {
 			$('input[type=submit]').attr('disabled', false);
 			$(this).parent().find('.text-danger').remove();
+			buscarDesafiaveis();
 		}
 	});
 	
@@ -139,6 +144,8 @@ $(document).ready(function(){
 		}
 	});
 	
+	buscarPersonagensJogador($("select[id='id_desafiante']"));
+	buscarPersonagensJogador($("select[id='id_desafiado']"));
 });
 
 function recarregarParticipantes() {
@@ -168,15 +175,10 @@ function buscarDesafiaveis() {
 		return;
 	}
 	
-	$.ajax({
-        url : "{% url 'jogadores:listar_desafiaveis' %}",
-        type : "POST",
-        data : {jogador_id: $("select[id='id_desafiante']").val(), data_hora: $('#id_data_hora').val(), coringa: $('#id_desafio_coringa:checked').length},
-        dataType: 'json',
-        headers: { "X-CSRFToken": token },
-
-        // handle a successful response
-        success : function(resultado) {
+	ajax("{% url 'jogadores:listar_desafiaveis' %}", 
+		'POST', 
+		{jogador_id: $("select[id='id_desafiante']").val(), data_hora: $('#id_data_hora').val(), coringa: $('#id_desafio_coringa:checked').length}, 
+		function(resultado) {
         	// Verifica mensagem de erro
         	if (resultado.mensagem_erro) {
         		$("select[id='id_desafiante']").parent().find('.text-danger').remove();
@@ -203,15 +205,55 @@ function buscarDesafiaveis() {
             	}
             }
             $("select[id='id_desafiado']").trigger('change');
-            
-  			recarregarParticipantes();
-        },
-
-        // handle a non-successful response
-        error : function(xhr,errmsg,err) {
-            console.log(xhr.status + ": " + xhr.responseText);
         }
-    });
+    );
+}
+
+function buscarPersonagensJogador(elemento_jogador) {
+	// Apenas buscar se ID estiver preenchido
+	if (!elemento_jogador.val()) {
+		return;
+	}
+	
+	ajax("{% url 'jogadores:listar_personagens_jogador' %}", 
+		'POST', 
+		{jogador_id: elemento_jogador.val()}, 
+		function(resultado) {
+        	// Verifica mensagem de erro
+        	if (resultado.mensagem_erro) {
+        		elemento_jogador.parent().find('.text-danger').remove();
+        		elemento_jogador.parent().append('<div class="text-danger">' + resultado.mensagem_erro + '</div>');
+        		return;
+        	} else {
+				elemento_jogador.parent().find('.text-danger').remove();
+			}
+			
+			var fim_id = '';
+			// Verificar se desafiante ou desafiado
+			if (elemento_jogador.attr('id') == 'id_desafiante') {
+				fim_id = 'personagem_desafiante';
+			} else {
+				fim_id = 'personagem_desafiado';
+			}
+			
+			$("select[id$='" + fim_id + "']").select2({
+				sorter: function(data) {
+				    return data.sort(function(a, b) {
+				    	a.prioridade = $.inArray(parseInt(a.id), resultado.personagens);
+				    	if (a.prioridade == -1) {
+				    		a.prioridade = 1000;
+			    		}
+				    	b.prioridade = $.inArray(parseInt(b.id), resultado.personagens);
+				    	if (b.prioridade == -1) {
+				    		b.prioridade = 1000;
+			    		}
+				    	
+				        return (a.prioridade != b.prioridade ? a.prioridade - b.prioridade : a.text.localeCompare(b.text));
+				    });
+			    }
+			});
+        }
+    );
 }
 </script>
 {% endblock %}
