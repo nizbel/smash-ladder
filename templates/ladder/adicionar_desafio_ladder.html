@@ -78,6 +78,7 @@ $(document).ready(function(){
 		} else {
 			$('input[type=submit]').attr('disabled', false);
 			$(this).parent().find('.text-danger').remove();
+			buscarDesafiaveis();
 		}
 	});
 	
@@ -184,6 +185,67 @@ function buscarDesafiaveis() {
             $("select[id='id_desafiado']").trigger('change');
             
   			recarregarParticipantes();
+        }
+    );
+}
+
+function buscarPersonagensJogador(elemento_jogador) {
+	// Apenas buscar se ID estiver preenchido
+	if (!elemento_jogador.val()) {
+		return;
+	}
+	
+	ajax("{% url 'jogadores:listar_personagens_jogador' %}", 
+		'POST', 
+		{jogador_id: jogador_id}, 
+		function(resultado) {
+        	// Verifica mensagem de erro
+        	if (resultado.mensagem_erro) {
+        		elemento_jogador.parent().find('.text-danger').remove();
+        		elemento_jogador.parent().append('<div class="text-danger">' + resultado.mensagem_erro + '</div>');
+        		return;
+        	} else {
+				elemento_jogador.parent().find('.text-danger').remove();
+			}
+        	
+			var fim_id = '';
+			// Verificar se desafiante ou desafiado
+			if (elemento_jogador.id == 'id_desafiante') {
+				fim_id = 'personagem_desafiannte';
+			} else {
+				fim_id = 'personagem_desafiado';
+			}
+			
+			// TODO Remover opções adicionadas por ordenação prévia
+			$("select[id$='" + fim_id + "'] option.personagem-ordenado").remove();
+			
+			// TODO Mostrar opções escondidas previamente
+			$("select[id$='" + fim_id + "'] option:hidden").show();
+			
+			// TODO Buscar na primeira listagem todas as opções selecionadas
+			var opcoes = [];
+			
+			var opcoes_primeiro_elemento = $("select[id$='" + fim_id + "']")[0].options;
+			for (var indice_retornado = 0; indice_retornado < resultado.personagens.length; indice_retornado++) {
+				for (var indice_opcao = 0; indice_opcao < opcoes_primeiro_elemento.length; indice_opcao++) {
+					if (resultado.personagens[i] == opcoes_primeiro_elemento[indice_opcao].val()) {
+						options.push([resultado.personagens[i].id, opcoes_primeiro_elemento[indice_opcao].text]);
+						break;
+					}
+				}
+			}
+			
+			// TODO Para cada elemento, marcar as opções para esconder
+			$("select[id$='" + fim_id + "'] option").each(function() {
+				if ($.inArray($(this).id, resultado.personagens) > -1) {
+					$(this).hide();
+				}
+			});
+			
+			// TODO Para cada personagem retornado, readicionar ordenadamente
+			for (var i = 0; i < opcoes.length; i++) {
+				$("select[id$='" + fim_id + "']").prepend("<option value='" + opcoes[i][0]"' class='personagem-ordenado'>" + opcoes[i][1] + "</option>");
+			}
         }
     );
 }
