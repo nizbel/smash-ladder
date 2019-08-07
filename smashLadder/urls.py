@@ -27,6 +27,8 @@ urlpatterns = [
     path('analises/geral/resultado-acumulado-jogadores/', views.analise_resultado_acumulado_jogadores, name='analise_result_acum_jogadores'),
     path('analises/jogador/', views.analises_por_jogador, name='analises_por_jogador'),
     path('analises/jogador/resultado-acumulado-jogador/', views.analise_resultado_acumulado_para_um_jogador, name='analise_result_acum_jogador'),
+    path('analises/jogador/resultado-contra-personagens-jogador/', views.analise_resultado_acumulado_contra_personagens_para_um_jogador, 
+         name='analise_result_jogador_contra_personagens'),
     
     path('jogadores/', include('jogadores.urls.urls_jogadores')),
     path('ladder/', include('ladder.urls')),

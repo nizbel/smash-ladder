@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views gerais"""
-from django.db.models.expressions import F
+from django.db.models.expressions import F, Case, When, Value
+from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
 from django.shortcuts import render, get_object_or_404
@@ -8,11 +9,13 @@ from django.templatetags.static import static
 from django.utils import timezone
 
 from jogadores.models import Jogador
-from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder
+from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder, \
+    JogadorLuta
 import pandas as pd
 from smashLadder.management.commands.analise import analisar, \
     gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
-    CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador
+    CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador, \
+    analisar_vitorias_contra_personagens_para_um_jogador
 from smashLadder.utils import mes_ano_prox
 
 
@@ -116,4 +119,49 @@ def analise_resultado_acumulado_para_um_jogador(request):
         desafios_df = analisar_resultado_acumulado_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
         
         return JsonResponse({'resultado_desafios': desafios_df['resultado'].tolist(), 'jogador_enfrentado': desafios_df['nick_desafiado'].tolist()})
+
+
+def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
+    """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
+    if request.is_ajax():
+        ano = int(request.GET.get('ano'))
+        mes = int(request.GET.get('mes'))
+        jogador_id = int(request.GET.get('jogador_id'))
+        
+        # Verificar se jogador existe
+        jogador = get_object_or_404(Jogador, id=jogador_id)
+        
+        data_atual = timezone.localdate()
+        if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
+            ano = data_atual.year
+            mes = data_atual.month
+        
+        # Definir mes/ano final para resultados de desafios
+        (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
+        
+        # Filtrar jogadores validos para mes/ano
+        if (ano, mes) == (data_atual.year, data_atual.month):
+            jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
+        else:
+            jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
+        
+        desafios_validados = DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone()))
+        
+        desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, luta__lutaladder__desafio_ladder__in=desafios_validados) \
+                                        .filter(luta__lutaladder__desafio_ladder__desafiante__in=jogadores_validos, 
+                                                luta__lutaladder__desafio_ladder__desafiado__in=jogadores_validos)
+                                        .filter(Q(luta__lutaladder__desafio_ladder__desafiante=jogador) | Q(luta__lutaladder__desafio_ladder__desafiado=jogador))
+                                        .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
+                                                               output_field=IntegerField())) \
+                                        .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
+        
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
+        
+        desafios_df = analisar_vitorias_contra_personagens_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
+        
+        return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
+                             'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
+                             'personagem': desafios_df.index.tolist()})
     
