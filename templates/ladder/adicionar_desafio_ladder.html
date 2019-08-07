@@ -9,6 +9,15 @@ Adicionar desafio
 
 {% block extra_header %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+
+{% comment %}
+Hackzinho para evitar mostrar opção desabilitada
+{% endcomment %}
+<style>
+.select2-results__option[aria-disabled=true] {
+    display: none;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -51,8 +60,12 @@ $(document).ready(function(){
 	});
 	
 	$("select[id='id_desafiante']").on('select2:select', function (e) {
+	  	recarregarParticipantes();
+	  	
 	  	// Buscar desafiaveis ao alterar desafiante
 	  	buscarDesafiaveis();
+	  	
+	  	buscarPersonagensJogador($(this));
 	});
 	
 	$('#id_desafio_coringa').change(function(){
@@ -61,6 +74,8 @@ $(document).ready(function(){
 	
 	$("select[id='id_desafiado']").on('select2:select', function (e) {
 	  	recarregarParticipantes();
+	  	
+	  	buscarPersonagensJogador($(this));
 	});
 	
 	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
@@ -124,6 +139,8 @@ $(document).ready(function(){
 		}
 	});
 	
+	buscarPersonagensJogador($("select[id='id_desafiante']"));
+	buscarPersonagensJogador($("select[id='id_desafiado']"));
 });
 
 function recarregarParticipantes() {
@@ -183,8 +200,6 @@ function buscarDesafiaveis() {
             	}
             }
             $("select[id='id_desafiado']").trigger('change');
-            
-  			recarregarParticipantes();
         }
     );
 }
@@ -197,7 +212,7 @@ function buscarPersonagensJogador(elemento_jogador) {
 	
 	ajax("{% url 'jogadores:listar_personagens_jogador' %}", 
 		'POST', 
-		{jogador_id: jogador_id}, 
+		{jogador_id: elemento_jogador.val()}, 
 		function(resultado) {
         	// Verifica mensagem de erro
         	if (resultado.mensagem_erro) {
@@ -207,45 +222,31 @@ function buscarPersonagensJogador(elemento_jogador) {
         	} else {
 				elemento_jogador.parent().find('.text-danger').remove();
 			}
-        	
+			
 			var fim_id = '';
 			// Verificar se desafiante ou desafiado
-			if (elemento_jogador.id == 'id_desafiante') {
-				fim_id = 'personagem_desafiannte';
+			if (elemento_jogador.attr('id') == 'id_desafiante') {
+				fim_id = 'personagem_desafiante';
 			} else {
 				fim_id = 'personagem_desafiado';
 			}
 			
-			// TODO Remover opções adicionadas por ordenação prévia
-			$("select[id$='" + fim_id + "'] option.personagem-ordenado").remove();
-			
-			// TODO Mostrar opções escondidas previamente
-			$("select[id$='" + fim_id + "'] option:hidden").show();
-			
-			// TODO Buscar na primeira listagem todas as opções selecionadas
-			var opcoes = [];
-			
-			var opcoes_primeiro_elemento = $("select[id$='" + fim_id + "']")[0].options;
-			for (var indice_retornado = 0; indice_retornado < resultado.personagens.length; indice_retornado++) {
-				for (var indice_opcao = 0; indice_opcao < opcoes_primeiro_elemento.length; indice_opcao++) {
-					if (resultado.personagens[i] == opcoes_primeiro_elemento[indice_opcao].val()) {
-						options.push([resultado.personagens[i].id, opcoes_primeiro_elemento[indice_opcao].text]);
-						break;
-					}
-				}
-			}
-			
-			// TODO Para cada elemento, marcar as opções para esconder
-			$("select[id$='" + fim_id + "'] option").each(function() {
-				if ($.inArray($(this).id, resultado.personagens) > -1) {
-					$(this).hide();
-				}
+			$("select[id$='" + fim_id + "']").select2({
+				sorter: function(data) {
+				    return data.sort(function(a, b) {
+				    	a.prioridade = $.inArray(parseInt(a.id), resultado.personagens);
+				    	if (a.prioridade == -1) {
+				    		a.prioridade = 1000;
+			    		}
+				    	b.prioridade = $.inArray(parseInt(b.id), resultado.personagens);
+				    	if (b.prioridade == -1) {
+				    		b.prioridade = 1000;
+			    		}
+				    	
+				        return (a.prioridade != b.prioridade ? a.prioridade - b.prioridade : a.text.localeCompare(b.text));
+				    });
+			    }
 			});
-			
-			// TODO Para cada personagem retornado, readicionar ordenadamente
-			for (var i = 0; i < opcoes.length; i++) {
-				$("select[id$='" + fim_id + "']").prepend("<option value='" + opcoes[i][0]"' class='personagem-ordenado'>" + opcoes[i][1] + "</option>");
-			}
         }
     );
 }
