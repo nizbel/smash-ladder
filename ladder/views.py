@@ -624,11 +624,16 @@ def validar_desafio_ladder(request, desafio_id):
                         desafiante.save()
                         
                     messages.success(request, MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER)
-                    if desafio_ladder.is_historico():
-                        mes, ano = desafio_ladder.mes_ano_ladder
-                        return redirect(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': ano, 'mes': mes}))
+                    
+                    # Se houver mais desafios a validar, voltar para tela de validação
+                    if DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).exists():
+                        return redirect(reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
                     else:
-                        return redirect(reverse('ladder:detalhar_ladder_atual'))
+                        if desafio_ladder.is_historico():
+                            mes, ano = desafio_ladder.mes_ano_ladder
+                            return redirect(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': ano, 'mes': mes}))
+                        else:
+                            return redirect(reverse('ladder:detalhar_ladder_atual'))
             
             except Exception as e:
                 messages.error(request, str(e))
