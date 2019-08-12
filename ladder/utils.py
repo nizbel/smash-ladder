@@ -1147,6 +1147,9 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
     
     # Montar lista com desafiáveis
     desafiaveis = list()
+    # TODO Buscar limite de range dependendo se jogador tiver permissão para aumento de range
+    limite_range = (PermissaoAumentoRange.AUMENTO_RANGE + DesafioLadder.LIMITE_POSICOES_DESAFIO) \
+        if tem_permissao() else DesafioLadder.LIMITE_POSICOES_DESAFIO
     for desafiavel in [posicao_ladder.jogador for posicao_ladder in \
                        ladder_para_alterar if posicao_ladder.posicao < posicao_jogador]:
         if not desafiavel.de_ferias_na_data(data_hora.date()):
@@ -1155,7 +1158,7 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
             else:
                 desafiaveis.append(desafiavel)
             
-        if not coringa and len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+        if not coringa and len(desafiaveis) == limite_range:
             break
         
     return desafiaveis
