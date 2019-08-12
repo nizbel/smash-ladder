@@ -265,8 +265,12 @@ class PermissaoAumentoRange(models.Model):
     PERIODO_VALIDADE = 2
     AUMENTO_RANGE = 3
     
-    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido')
-    admin = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='responsavel')
+    MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE = 'Permissão de aumento de range concedida com sucesso'
+    MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN = 'Usuário não pode conceder permissão a si mesmo'
+    MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA = 'Jogador já possui permissão válida'    
+    
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido_aumento_range')
+    admin_permissor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permissor_aumento_range')
     data_hora = DateTimeFieldTz(u'Data e hora da permissão')
     
     def is_valida(self, data_hora=None):
