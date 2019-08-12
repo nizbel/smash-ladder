@@ -302,11 +302,43 @@ def detalhar_ladder_historico(request, ano, mes):
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
     # Buscar anos e meses para listagem
-    
     lista_ladders = HistoricoLadder.objects.all().order_by('-ano', '-mes') \
                          .values('mes', 'ano').distinct()
     
     return render(request, 'ladder/listar_ladder_historico.html', {'lista_ladders': lista_ladders})
+
+@login_required
+def add_permissao_aumento_range(request):
+    """Adicionar permissão de aumento de range"""
+    # Verificar se usuário é admin
+    # Admins podem ver tudo
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+        
+    if request.POST:
+        form_permissao_aumento_range = PermissaoAumentoRangeForm(request.POST, initial={'admin_permissor': request.user.jogador.id})
+        form_permissao_aumento_range.fields['admin'].disabled = True
+        
+        if form_permissao_aumento_range.is_valid():
+            try:
+                with transaction.atomic():
+                    permissao = form_permissao_aumento_range.save(commit=False)
+                    permissao.save()
+                    
+                    messages.success(request, PermissaoAumentoRange.MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE)
+                    return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': permissao.jogador.user.username}))
+                    
+            except Exception as e:
+                    messages.error(request, e)
+        
+        else:
+            for erro in form_desafio_ladder.non_field_errors():
+                messages.error(request, erro)
+    else:
+        form_permissao_aumento_range = PermissaoAumentoRangeForm(initial={'admin_permissor': request.user.jogador.id})
+        form_permissao_aumento_range.fields['admin_permissor'].disabled = True
+        
+    return render(request, 'ladder/adicionar_permissao_aumento_range.html', {'form_permissao_aumento_range': form_permissao_aumento_range})
 
 def detalhar_luta(request, luta_id):
     """Detalhar uma luta"""
