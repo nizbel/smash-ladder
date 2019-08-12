@@ -587,17 +587,26 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
             desafiaveis = list()
             ladder.sort(key=lambda x: x.posicao, reverse=True)
+            
+            # TODO verificar se desafiante possui permissão de aumento de range
+            limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
+                if desafio_ladder.desafiante.possui_permissao_aumento_range() else DesafioLadder.LIMITE_POSICOES_DESAFIO
+            
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
                 if not jogador_posicao.jogador.de_ferias_na_data(desafio_ladder.data_hora.date()):
                     desafiaveis.append(jogador_posicao.jogador)
                     
                     # Verifica se quantidade de desafiáveis já supre o limite de posições acima
-                    if len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+                    if len(desafiaveis) == limite_range:
                         break
             
             # Desafiado é desafiável?
             if desafiado not in desafiaveis:
-                raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
+                # TODO verificar se desafiante possui permissão de aumento de range
+                if desafio_ladder.desafiante.possui_permissao_aumento_range():
+                    raise ValueError(DesafioLadder.MENSAGEM_ERRO)
+                else:
+                    raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
         
 def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
     """Valida lutas em um formset para adicioná-las a desafio de ladder"""
