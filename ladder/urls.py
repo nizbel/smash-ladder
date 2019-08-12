@@ -26,6 +26,7 @@ urlpatterns = [
     path(r'atual/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_historico'),
     path(r'remover-jogador/', views.remover_jogador_ladder, name='remover_jogador_ladder'),
+    path(r'permissao-aumento-range/adicionar/', views.add_permissao_aumento_range, name='add_permissao_aumento_range'),
     
     # Desafios de ladder
     path(r'desafio/adicionar/', views.add_desafio_ladder, name='adicionar_desafio_ladder'),
