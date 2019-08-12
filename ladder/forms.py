@@ -181,3 +181,41 @@ class RemocaoJogadorForm(ModelForm):
         cleaned_data['posicao_jogador'] = posicao_jogador
         
         return cleaned_data
+        
+class PermissaoAumentoRangeForm(ModelForm):
+    """Formulário para permissão de aumento de range"""
+    
+    class Meta:
+        model = PermissaoAumentoRange
+        fields = ('jogador', 'admin')
+        widgets = {'admin': forms.HiddenInput()}
+        
+    def __init__(self,*args,**kwargs):
+        super(PermissaoAumentoRangeForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+    
+    def clean_admin(self):
+        admin = self.cleaned_data['admin']
+        if not admin.admin:
+            raise ValidationError('Usuário deve ser admin para permitir aumento de range')
+            
+        return admin
+    
+    def clean(self):
+        horario_atual = timezone.localtime()
+        
+        cleaned_data = super().clean()
+        admin = cleaned_data.get('admin')
+        cleaned_data['data_hora'] = horario_atual
+        jogador = cleaned_data.get('jogador')
+        
+        if PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
+                horario_atual]).exists():
+            for permissao in PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
+                    horario_atual]):
+                if permissao.is_valida():
+                    raise ValidationError('Jogador já possui permissão de aumento de range válida')
+            
+        return cleaned_data
+
