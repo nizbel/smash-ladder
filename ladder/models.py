@@ -259,3 +259,19 @@ class ResultadoDecaimentoJogador(models.Model):
     class Meta():
         unique_together = ('decaimento', 'jogador')
     
+class PermissaoAumentoRange(models.Model):
+    """Registro de permissão para aumentar range de desafio caso os desafiáveis não estejam presentes"""
+    # Período de validade da permissão, em horas
+    PERIODO_VALIDADE = 2
+    AUMENTO_RANGE = 3
+    
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido')
+    admin = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='responsavel')
+    data_hora = DateTimeFieldTz(u'Data e hora da permissão')
+    
+    def is_valida(self, data_hora=None):
+        """Define se permissão é válida na data/hora"""
+        if not data_hora:
+            data_hora = timezone.localtime()
+        return self.data_hora + datetime.timedelta(hours=self.PERIODO_VALIDADE) <= data_hora
+        
