@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from jogadores.models import Personagem, Stage
 from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
-    RemocaoJogador
+    RemocaoJogador, PermissaoAumentoRange
 from ladder.utils import verificar_posicoes_desafiante_desafiado
 from smashLadder.utils import preparar_classes_form
 
@@ -187,35 +187,32 @@ class PermissaoAumentoRangeForm(ModelForm):
     
     class Meta:
         model = PermissaoAumentoRange
-        fields = ('jogador', 'admin')
-        widgets = {'admin': forms.HiddenInput()}
+        fields = ('jogador', 'admin_permissor', 'data_hora')
+        widgets = {'admin_permissor': forms.HiddenInput(),
+                   'data_hora': forms.HiddenInput()}
         
     def __init__(self,*args,**kwargs):
         super(PermissaoAumentoRangeForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
     
-    def clean_admin(self):
-        admin = self.cleaned_data['admin']
-        if not admin.admin:
+    def clean_admin_permissor(self):
+        admin_permissor = self.cleaned_data['admin_permissor']
+        if not admin_permissor.admin:
             raise ValidationError('Usuário deve ser admin para permitir aumento de range')
             
-        return admin
+        return admin_permissor
     
     def clean(self):
-        horario_atual = timezone.localtime()
-        
         cleaned_data = super().clean()
-        admin = cleaned_data.get('admin')
-        cleaned_data['data_hora'] = horario_atual
+        admin_permissor = cleaned_data.get('admin_permissor')
+        horario_atual = cleaned_data.get('data_hora')
         jogador = cleaned_data.get('jogador')
         
         if PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
                 horario_atual]).exists():
             for permissao in PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
                     horario_atual]):
-                if permissao.is_valida():
+                if permissao.is_valida(horario_atual):
                     raise ValidationError('Jogador já possui permissão de aumento de range válida')
             
-        return cleaned_data
-

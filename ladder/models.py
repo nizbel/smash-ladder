@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Modelos usados para ladder"""
+import datetime
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -268,6 +270,8 @@ class PermissaoAumentoRange(models.Model):
     MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE = 'Permissão de aumento de range concedida com sucesso'
     MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN = 'Usuário não pode conceder permissão a si mesmo'
     MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA = 'Jogador já possui permissão válida'    
+    MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de ' \
+        '{AUMENTO_RANGE + DesafioLadder.LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
     
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido_aumento_range')
     admin_permissor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permissor_aumento_range')
@@ -277,5 +281,10 @@ class PermissaoAumentoRange(models.Model):
         """Define se permissão é válida na data/hora"""
         if not data_hora:
             data_hora = timezone.localtime()
-        return self.data_hora + datetime.timedelta(hours=self.PERIODO_VALIDADE) <= data_hora
+        valida = (self.data_hora + datetime.timedelta(hours=self.PERIODO_VALIDADE) >= data_hora)
+        if valida:
+            valida = (not DesafioLadder.validados.filter(desafiante=self.jogador, data_hora__gte=self.data_hora, 
+                                                                    data_hora__lt=data_hora).exists())
+            
+        return valida
         
