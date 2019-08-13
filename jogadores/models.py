@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Modelos usados para guardar jogadores"""
+import datetime
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.aggregates import Sum
@@ -9,7 +11,7 @@ from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
     HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador, \
-    ResultadoRemocaoJogador
+    ResultadoRemocaoJogador, PermissaoAumentoRange
 from smashLadder.utils import DateTimeFieldTz, mes_ano_ant
 
 
@@ -150,6 +152,21 @@ class Jogador(models.Model):
         
         # Novos entrantes começam na posição 0
         return 0
+    
+    def possui_permissao_aumento_range(self, data_hora=None):
+        """Verifica se jogador possui permissão de aumento de range válida na data/hora"""
+        if not data_hora:
+            data_hora = timezone.localtime()
+        # Buscar última permissão antes da data/hora e verificar se é válida
+        data_hora_inicial = data_hora - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE)
+        if PermissaoAumentoRange.objects.filter(jogador=self, data_hora__gte=data_hora_inicial, 
+                                                data_hora__lt=data_hora).exists():
+            ultima_permissao = PermissaoAumentoRange.objects.filter(jogador=self, data_hora__gte=data_hora_inicial, 
+                                                                    data_hora__lt=data_hora).order_by('-data_hora')[0]
+        
+            return ultima_permissao.is_valida(data_hora)
+        return False
+        
 
 class Personagem(models.Model):
     """Personagens disponíveis no jogo"""

@@ -18,12 +18,12 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from jogadores.models import RegistroFerias, Jogador
-from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm,\
-    RemocaoJogadorForm
+from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
+    RemocaoJogadorForm, PermissaoAumentoRangeForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador,\
-    ResultadoDesafioLadder
-from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
+    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador, \
+    ResultadoDesafioLadder, PermissaoAumentoRange
+from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder, \
     remover_jogador
 from smashLadder.utils import mes_ano_ant
 
@@ -316,8 +316,10 @@ def add_permissao_aumento_range(request):
         raise PermissionDenied
         
     if request.POST:
-        form_permissao_aumento_range = PermissaoAumentoRangeForm(request.POST, initial={'admin_permissor': request.user.jogador.id})
-        form_permissao_aumento_range.fields['admin'].disabled = True
+        form_permissao_aumento_range = PermissaoAumentoRangeForm(request.POST, initial={'admin_permissor': request.user.jogador.id,
+                                                                                        'data_hora': timezone.localtime()})
+        form_permissao_aumento_range.fields['admin_permissor'].disabled = True
+        form_permissao_aumento_range.fields['data_hora'].disabled = True
         
         if form_permissao_aumento_range.is_valid():
             try:
@@ -329,14 +331,15 @@ def add_permissao_aumento_range(request):
                     return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': permissao.jogador.user.username}))
                     
             except Exception as e:
-                    messages.error(request, e)
+                messages.error(request, e)
         
         else:
-            for erro in form_desafio_ladder.non_field_errors():
+            for erro in form_permissao_aumento_range.non_field_errors():
                 messages.error(request, erro)
     else:
         form_permissao_aumento_range = PermissaoAumentoRangeForm(initial={'admin_permissor': request.user.jogador.id})
         form_permissao_aumento_range.fields['admin_permissor'].disabled = True
+        form_permissao_aumento_range.fields['data_hora'].disabled = True
         
     return render(request, 'ladder/adicionar_permissao_aumento_range.html', {'form_permissao_aumento_range': form_permissao_aumento_range})
 

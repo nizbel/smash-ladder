@@ -14,7 +14,7 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
-    ResultadoRemocaoJogador
+    ResultadoRemocaoJogador, PermissaoAumentoRange
 from smashLadder.utils import mes_ano_ant
 
 
@@ -590,7 +590,9 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             
             # TODO verificar se desafiante possui permissão de aumento de range
             limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
-                if desafio_ladder.desafiante.possui_permissao_aumento_range() else DesafioLadder.LIMITE_POSICOES_DESAFIO
+                if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
+                
+            print('Limite range', limite_range)
             
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
                 if not jogador_posicao.jogador.de_ferias_na_data(desafio_ladder.data_hora.date()):
@@ -603,8 +605,8 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             # Desafiado é desafiável?
             if desafiado not in desafiaveis:
                 # TODO verificar se desafiante possui permissão de aumento de range
-                if desafio_ladder.desafiante.possui_permissao_aumento_range():
-                    raise ValueError(DesafioLadder.MENSAGEM_ERRO)
+                if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora):
+                    raise ValueError(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
                 else:
                     raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
         
@@ -1156,6 +1158,11 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
     
     # Montar lista com desafiáveis
     desafiaveis = list()
+    
+    # Avaliar limite de range
+    limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
+                if jogador.possui_permissao_aumento_range(data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
+    
     for desafiavel in [posicao_ladder.jogador for posicao_ladder in \
                        ladder_para_alterar if posicao_ladder.posicao < posicao_jogador]:
         if not desafiavel.de_ferias_na_data(data_hora.date()):
@@ -1164,7 +1171,7 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
             else:
                 desafiaveis.append(desafiavel)
             
-        if not coringa and len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+        if not coringa and len(desafiaveis) == limite_range:
             break
         
     return desafiaveis
