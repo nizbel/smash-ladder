@@ -311,7 +311,6 @@ def listar_ladder_historico(request):
 def add_permissao_aumento_range(request):
     """Adicionar permissão de aumento de range"""
     # Verificar se usuário é admin
-    # Admins podem ver tudo
     if not request.user.jogador.admin:
         raise PermissionDenied
         
@@ -342,6 +341,39 @@ def add_permissao_aumento_range(request):
         form_permissao_aumento_range.fields['data_hora'].disabled = True
         
     return render(request, 'ladder/adicionar_permissao_aumento_range.html', {'form_permissao_aumento_range': form_permissao_aumento_range})
+
+@login_required
+def remover_permissao_aumento_range(request, permissao_id=None):
+    """Remover permissão de aumento de range"""
+    # Verificar se usuário é admin
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+    
+    print(request.POST)
+    # Se for enviada uma permissão, mostrar tela para decidir remover
+    if permissao_id:
+        # Carregar permissão
+        permissao = get_object_or_404(PermissaoAumentoRange.objects.select_related('jogador', 'admin_permissor'))
+        
+        if request.POST:
+            try:
+                with transaction.atomic():
+                    if permissao.is_valida():
+                        permissao.delete()
+                        messages.success(request, PermissaoAumentoRange.MENSAGEM_SUCESSO_REMOCAO_PERMISSAO)
+                    else:
+                        raise ValueError(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIO_UTILIZANDO_PERMISSAO)
+                    
+            except Exception as e:
+                messages.error(request, e)
+        else:
+            print('nao post')
+            
+            
+    permissoes = PermissaoAumentoRange.objects.filter(data_hora__gte=timezone.localtime() \
+                                                      - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE))
+    permissoes = [permissao for permissao in permissoes if permissao.is_valida()]
+    return render(request, 'ladder/remover_permissao_aumento_range.html', {'permissoes': permissoes})
 
 def detalhar_luta(request, luta_id):
     """Detalhar uma luta"""
