@@ -592,8 +592,6 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
                 
-            print('Limite range', limite_range)
-            
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
                 if not jogador_posicao.jogador.de_ferias_na_data(desafio_ladder.data_hora.date()):
                     desafiaveis.append(jogador_posicao.jogador)
