@@ -272,6 +272,8 @@ class PermissaoAumentoRange(models.Model):
     MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA = 'Jogador já possui permissão válida'    
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de ' \
         f'{AUMENTO_RANGE + DesafioLadder.LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
+    MENSAGEM_SUCESSO_REMOCAO_PERMISSAO = 'Permissão de aumento de range removida com sucesso'
+    MENSAGEM_ERRO_DESAFIO_UTILIZANDO_PERMISSAO = 'Já existe um desafio válido utilizando a permissão'
     
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido_aumento_range')
     admin_permissor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permissor_aumento_range')
