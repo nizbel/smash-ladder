@@ -353,7 +353,7 @@ def remover_permissao_aumento_range(request, permissao_id=None):
     # Se for enviada uma permissão, mostrar tela para decidir remover
     if permissao_id:
         # Carregar permissão
-        permissao = get_object_or_404(PermissaoAumentoRange.objects.select_related('jogador', 'admin_permissor'))
+        permissao = get_object_or_404(PermissaoAumentoRange.objects.select_related('jogador', 'admin_permissor'), pk=permissao_id)
         
         if request.POST:
             try:
@@ -371,7 +371,8 @@ def remover_permissao_aumento_range(request, permissao_id=None):
             
             
     permissoes = PermissaoAumentoRange.objects.filter(data_hora__gte=timezone.localtime() \
-                                                      - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE))
+                                                      - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE)) \
+                                                      .select_related('admin_permissor', 'jogador')
     permissoes = [permissao for permissao in permissoes if permissao.is_valida()]
     return render(request, 'ladder/remover_permissao_aumento_range.html', {'permissoes': permissoes})
 

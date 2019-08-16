@@ -10,18 +10,19 @@
 	  	<div class="card-body">
 	  		<div class="row d-flex">
 		  		<div class="col-5 text-left d-flex flex-column">
-			    	<h5 class="card-title mb-0">{{ permissao.jogador.nick }}</h5>
+			    	<h5 class="card-title">{{ permissao.jogador.nick }}</h5>
 		    	</div>
 	    	</div>
 	    	
 		    <h6 class="card-subtitle mb-2 text-muted">{{ permissao.data_hora|date:'d/m/Y H:i' }}</h6>
 		    
             <p class="card-text">Admin permissor: <b>{{ permissao.admin_permissor.nick }}</b></p>
-		    <a class="card-link" on-click="$('#form-{{ permissao.id }}').show(); $(this).hide();">Remover</a>
-            <form id="form-{{ permissao.id }}" class="col-12 hidden" action="{% url 'ladder:remover_permissao_aumento_range' permissao.id %}" method="post">
+		    <a class="card-link" onclick="$('#form-{{ permissao.id }}').show(); $(this).hide();" href="javascript:;">Remover</a>
+            <form id="form-{{ permissao.id }}" class="pl-0 col-12" style="display: none" action="{% url 'ladder:remover_permissao_aumento_range' permissao.id %}" 
+            method="post">
 	            {% csrf_token %}
                 <input type="hidden" value="{{ permissao.id }}" name="permissao_id" />
-	  	        <input class="btn btn-lg btn-dark mt-4" type="submit" name="confirmar" value="Confirmar" />
+	  	        <input class="btn btn-lg btn-dark mt-4" type="submit" name="confirmar" value="Confirmar remoção" />
 	        </form>
 	  	</div>
 	</div>
