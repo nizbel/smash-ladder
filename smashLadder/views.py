@@ -15,7 +15,8 @@ import pandas as pd
 from smashLadder.management.commands.analise import analisar, \
     gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
     CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador, \
-    analisar_vitorias_contra_personagens_para_um_jogador
+    analisar_vitorias_contra_personagens_para_um_jogador, \
+    analisar_resultados_por_posicao
 from smashLadder.utils import mes_ano_prox
 
 
@@ -165,3 +166,24 @@ def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
                              'personagem': desafios_df.index.tolist()})
     
+def analise_resultado_por_posicao(request):
+    """Retorna dados sobre resultados por posição"""
+    if request.is_ajax():
+        
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
+                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
+                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
+                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
+        
+        desafios_df = analisar_resultados_por_posicao(desafios_df)
+        
+        return JsonResponse({'posicao_desafiante': desafios_df['posicao_desafiante'].tolist(), 
+                             'posicao_desafiado': desafios_df['posicao_desafiado'].tolist(),
+                             'qtd_desafios': desafios_df['qtd_desafios'].tolist(),
+                             'resultado': desafios_df['resultado'].tolist()})
+        
+def analise_resultado_por_diferenca_posicao(request):
+    pass
+        
+def analise_vitorias_por_personagem(request):
+    pass        

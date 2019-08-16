@@ -349,7 +349,6 @@ def remover_permissao_aumento_range(request, permissao_id=None):
     if not request.user.jogador.admin:
         raise PermissionDenied
     
-    print(request.POST)
     # Se for enviada uma permissão, mostrar tela para decidir remover
     if permissao_id:
         # Carregar permissão
@@ -366,9 +365,6 @@ def remover_permissao_aumento_range(request, permissao_id=None):
                     
             except Exception as e:
                 messages.error(request, e)
-        else:
-            print('nao post')
-            
             
     permissoes = PermissaoAumentoRange.objects.filter(data_hora__gte=timezone.localtime() \
                                                       - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE)) \
