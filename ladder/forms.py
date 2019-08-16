@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from jogadores.models import Personagem, Stage
 from ladder.models import DesafioLadder, PosicaoLadder, HistoricoLadder, Luta, \
-    RemocaoJogador
+    RemocaoJogador, PermissaoAumentoRange
 from ladder.utils import verificar_posicoes_desafiante_desafiado
 from smashLadder.utils import preparar_classes_form
 
@@ -181,3 +181,42 @@ class RemocaoJogadorForm(ModelForm):
         cleaned_data['posicao_jogador'] = posicao_jogador
         
         return cleaned_data
+        
+class PermissaoAumentoRangeForm(ModelForm):
+    """Formulário para permissão de aumento de range"""
+    
+    class Meta:
+        model = PermissaoAumentoRange
+        fields = ('jogador', 'admin_permissor', 'data_hora')
+        widgets = {'admin_permissor': forms.HiddenInput(),
+                   'data_hora': forms.HiddenInput()}
+        
+    def __init__(self,*args,**kwargs):
+        super(PermissaoAumentoRangeForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+    
+    def clean_admin_permissor(self):
+        admin_permissor = self.cleaned_data['admin_permissor']
+        if not admin_permissor.admin:
+            raise ValidationError('Usuário deve ser admin para permitir aumento de range')
+            
+        return admin_permissor
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        admin_permissor = cleaned_data.get('admin_permissor')
+        horario_atual = cleaned_data.get('data_hora')
+        jogador = cleaned_data.get('jogador')
+        
+        # Admin não pode se dar permissão
+        if admin_permissor == jogador:
+            raise ValidationError(PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN)
+        
+        if PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
+                horario_atual]).exists():
+            for permissao in PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
+                    horario_atual]):
+                if permissao.is_valida(horario_atual):
+                    raise ValidationError(PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA)
+            

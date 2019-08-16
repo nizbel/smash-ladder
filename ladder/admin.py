@@ -3,7 +3,8 @@
 from django.contrib import admin
 
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
-    Luta, LutaLadder, InicioLadder, RemocaoJogador, DecaimentoJogador
+    Luta, LutaLadder, InicioLadder, RemocaoJogador, DecaimentoJogador, \
+    PermissaoAumentoRange
 
 
 class HistoricoLadderAdmin(admin.ModelAdmin):
@@ -56,3 +57,9 @@ class DecaimentoJogadorAdmin(admin.ModelAdmin):
     search_fields = ['jogador__nick']
     
 admin.site.register(DecaimentoJogador, DecaimentoJogadorAdmin)
+
+class PermissaoAumentoRangeAdmin(admin.ModelAdmin):
+    list_display = ('data_hora', 'jogador', 'admin_permissor')
+    search_fields = ['jogador__nick']
+    
+admin.site.register(PermissaoAumentoRange, PermissaoAumentoRangeAdmin)
