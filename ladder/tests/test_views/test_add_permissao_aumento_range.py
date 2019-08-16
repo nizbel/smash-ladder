@@ -1,3 +1,14 @@
+from django.contrib.messages.api import get_messages
+from django.test.testcases import TestCase
+from django.urls.base import reverse
+from django.utils import timezone
+
+from jogadores.models import Jogador
+from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE
+from ladder.models import PermissaoAumentoRange
+from smashLadder import settings
+
+
 class ViewAddPermissaoAumentoRange(TestCase):
     """Testes para a view de adicionar permissão de aumento de range"""
     @classmethod
@@ -32,14 +43,14 @@ class ViewAddPermissaoAumentoRange(TestCase):
         response = self.client.post(reverse('ladder:add_permissao_aumento_range'), {'jogador': self.jogador_1.id})
         self.assertEqual(response.status_code, 302)
         
-        messages = list(response.context['messages'])
+        messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), PermissaoAumentoRange.MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE)
         
         self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
         
         # Verificar criação de permissão
-        self.assertEqual(PermissaoAumentoRange.objects.filter(admin=self.jogador_2, jogador=self.jogador_1).count(), 1)
+        self.assertEqual(PermissaoAumentoRange.objects.filter(admin_permissor=self.jogador_2, jogador=self.jogador_1).count(), 1)
         
     def test_erro_adicionar_permissao_admin_permitindo_si_mesmo(self):
         """Testa erro ao adicionar permissão a si mesmo"""
@@ -52,13 +63,13 @@ class ViewAddPermissaoAumentoRange(TestCase):
         self.assertEqual(str(messages[0]), PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN)
         
         # Verificar criação de permissão
-        self.assertEqual(PermissaoAumentoRange.objects.filter(admin=self.jogador_2, jogador=self.jogador_2).count(), 0)
+        self.assertEqual(PermissaoAumentoRange.objects.filter(admin_permissor=self.jogador_2, jogador=self.jogador_2).count(), 0)
     
     def test_erro_adicionar_permissao_jogador_ja_possui_permissao(self):
         """Testa erro ao adicionar permissão para jogador que já possui permissão válida"""
         # Criar permissão
-        PermissaoAumentoRange.objects.create(admin=self.jogador_2, jogador=self.jogador_1, data_hora=timezone.localtime())
-        self.assertEqual(PermissaoAumentoRange.objects.filter(admin=self.jogador_2, jogador=self.jogador_1).count(), 1)
+        PermissaoAumentoRange.objects.create(admin_permissor=self.jogador_2, jogador=self.jogador_1, data_hora=timezone.localtime())
+        self.assertEqual(PermissaoAumentoRange.objects.filter(admin_permissor=self.jogador_2, jogador=self.jogador_1).count(), 1)
         
         self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
         response = self.client.post(reverse('ladder:add_permissao_aumento_range'), {'jogador': self.jogador_1.id})
@@ -69,5 +80,5 @@ class ViewAddPermissaoAumentoRange(TestCase):
         self.assertEqual(str(messages[0]), PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA)
         
         # Verificar criação de permissão
-        self.assertEqual(PermissaoAumentoRange.objects.filter(admin=self.jogador_2, jogador=self.jogador_1).count(), 1)    
+        self.assertEqual(PermissaoAumentoRange.objects.filter(admin_permissor=self.jogador_2, jogador=self.jogador_1).count(), 1)    
         

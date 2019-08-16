@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -10,7 +9,8 @@ from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_jogador_teste, criar_stage_teste, criar_personagens_teste
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
     RemocaoJogadorForm
-from ladder.models import DesafioLadder, HistoricoLadder, Luta, RemocaoJogador
+from ladder.models import DesafioLadder, HistoricoLadder, Luta, RemocaoJogador, \
+    PermissaoAumentoRange
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste
@@ -177,7 +177,7 @@ class DesafioLadderFormTestCase(TestCase):
         hora_atual = timezone.now()
         
         # Adicionando aumento de range
-        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_7, admin=self.teets, data_hora=(hora_atual - datetime.timedelta(hours=1)))
+        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_7, admin_permissor=self.teets, data_hora=(hora_atual - datetime.timedelta(hours=1)))
         
         form = DesafioLadderForm({'desafiante': self.jogador_pos_7.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
@@ -192,7 +192,7 @@ class DesafioLadderFormTestCase(TestCase):
         self.assertEqual(desafio_ladder.desafiado, self.teets)
         self.assertEqual(desafio_ladder.score_desafiante, 3)
         self.assertEqual(desafio_ladder.score_desafiado, 2)
-        self.assertEqual(desafio_ladder.desafio_coringa, True)
+        self.assertEqual(desafio_ladder.desafio_coringa, False)
         self.assertEqual(desafio_ladder.data_hora, hora_atual)
         self.assertEqual(desafio_ladder.adicionado_por, self.teets)
         self.assertEqual(desafio_ladder.admin_validador, None)
@@ -202,13 +202,12 @@ class DesafioLadderFormTestCase(TestCase):
         hora_atual = timezone.now()
         
         # Adicionando aumento de range
-        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_8, admin=self.teets, data_hora=(hora_atual - datetime.timedelta(hours=1)))
+        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_8, admin_permissor=self.teets, data_hora=(hora_atual - datetime.timedelta(hours=1)))
         
         form = DesafioLadderForm({'desafiante': self.jogador_pos_8.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 
                                       'desafio_coringa': False, 'data_hora': hora_atual, 'adicionado_por': self.teets.id})
         self.assertFalse(form.is_valid())
-        self.assertIn(f'Desafiante está mais de {DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE} ' \
-            'posições abaixo do desafiado', form.errors['__all__'])
+        self.assertIn(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO, form.errors['__all__'])
         self.assertTrue(len(form.errors) == 1)
         
     def test_form_sucesso_desafiante_mais_que_qtd_abaixo_aumento_range_invalido(self):
@@ -216,7 +215,7 @@ class DesafioLadderFormTestCase(TestCase):
         hora_atual = timezone.now()
         
         # Adicionando aumento de range
-        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_7, admin=self.teets, 
+        PermissaoAumentoRange.objects.create(jogador=self.jogador_pos_7, admin_permissor=self.teets, 
             data_hora=(hora_atual - datetime.timedelta(hours=(PermissaoAumentoRange.PERIODO_VALIDADE + 1))))
         
         form = DesafioLadderForm({'desafiante': self.jogador_pos_7.id, 'desafiado': self.teets.id, 'score_desafiante': 3, 'score_desafiado': 2, 

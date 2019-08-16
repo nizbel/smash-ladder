@@ -209,10 +209,14 @@ class PermissaoAumentoRangeForm(ModelForm):
         horario_atual = cleaned_data.get('data_hora')
         jogador = cleaned_data.get('jogador')
         
+        # Admin não pode se dar permissão
+        if admin_permissor == jogador:
+            raise ValidationError(PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN)
+        
         if PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
                 horario_atual]).exists():
             for permissao in PermissaoAumentoRange.objects.filter(jogador=jogador, data_hora__range=[horario_atual - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE), 
                     horario_atual]):
                 if permissao.is_valida(horario_atual):
-                    raise ValidationError('Jogador já possui permissão de aumento de range válida')
+                    raise ValidationError(PermissaoAumentoRange.MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA)
             
