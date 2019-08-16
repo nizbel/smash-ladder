@@ -43,7 +43,7 @@ def analisar():
     
     imgs = {}
        
-    imgs['result_por_posicao'] = analisar_resultados_por_posicao(desafios_df)
+#     imgs['result_por_posicao'] = analisar_resultados_por_posicao(desafios_df)
        
     imgs_resultados_dif_posicao = analisar_resultados_por_dif_de_posicao(desafios_df)
     imgs['result_dif_posicao'] = imgs_resultados_dif_posicao[0]
@@ -149,21 +149,10 @@ def analisar_resultados_por_posicao(df):
      
     resultados_posicao_df = resultados_posicao_df.reset_index(level=[0,1])
     
-    plt.rcParams.update({'font.size': 10, 'figure.figsize': (12, 8)})
-    plt.figure()
-    
     max_qtd_desafios = int(resultados_posicao_df['qtd_desafios'].max())
-    xticks = list(range(2, resultados_posicao_df['posicao_desafiante'].max(), round(float(resultados_posicao_df['posicao_desafiante'].max())/20)))
-    yticks = list(range(1, resultados_posicao_df['posicao_desafiado'].max(), round(float(resultados_posicao_df['posicao_desafiado'].max())/20)))
-    scatter = resultados_posicao_df.plot.scatter(x='posicao_desafiante', y='posicao_desafiado', c='resultado', cmap='viridis', 
-                                       s=resultados_posicao_df['qtd_desafios'] / max_qtd_desafios * 100, xticks=xticks, yticks=yticks)
+    resultados_posicao_df['qtd_desafios'] = resultados_posicao_df['qtd_desafios'] / max_qtd_desafios * 25
     
-    plt.xlabel('Posição do desafiante')
-    plt.ylabel('Posição do desafiado')
-
-    nome_formatado = salvar_imagem(nome_arquivo, plt)
-    
-    return nome_formatado
+    return resultados_posicao_df
     
 def analisar_resultados_por_dif_de_posicao(df):
     """Gera imagens para resultados de desafios com base na diferença de posição"""

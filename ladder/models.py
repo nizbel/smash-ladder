@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Modelos usados para ladder"""
+import datetime
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -259,3 +261,32 @@ class ResultadoDecaimentoJogador(models.Model):
     class Meta():
         unique_together = ('decaimento', 'jogador')
     
+class PermissaoAumentoRange(models.Model):
+    """Registro de permissão para aumentar range de desafio caso os desafiáveis não estejam presentes"""
+    # Período de validade da permissão, em horas
+    PERIODO_VALIDADE = 2
+    AUMENTO_RANGE = 3
+    
+    MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE = 'Permissão de aumento de range concedida com sucesso'
+    MENSAGEM_ERRO_JOGADOR_IGUAL_ADMIN = 'Usuário não pode conceder permissão a si mesmo'
+    MENSAGEM_ERRO_JOGADOR_JA_POSSUI_PERMISSAO_VALIDA = 'Jogador já possui permissão válida'    
+    MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de ' \
+        f'{AUMENTO_RANGE + DesafioLadder.LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
+    MENSAGEM_SUCESSO_REMOCAO_PERMISSAO = 'Permissão de aumento de range removida com sucesso'
+    MENSAGEM_ERRO_DESAFIO_UTILIZANDO_PERMISSAO = 'Já existe um desafio válido utilizando a permissão'
+    
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permitido_aumento_range')
+    admin_permissor = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, related_name='permissor_aumento_range')
+    data_hora = DateTimeFieldTz(u'Data e hora da permissão')
+    
+    def is_valida(self, data_hora=None):
+        """Define se permissão é válida na data/hora"""
+        if not data_hora:
+            data_hora = timezone.localtime()
+        valida = (self.data_hora + datetime.timedelta(hours=self.PERIODO_VALIDADE) >= data_hora)
+        if valida:
+            valida = (not DesafioLadder.validados.filter(desafiante=self.jogador, data_hora__gte=self.data_hora, 
+                                                                    data_hora__lt=data_hora).exists())
+            
+        return valida
+        

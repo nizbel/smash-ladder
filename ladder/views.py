@@ -18,12 +18,12 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from jogadores.models import RegistroFerias, Jogador
-from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm,\
-    RemocaoJogadorForm
+from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
+    RemocaoJogadorForm, PermissaoAumentoRangeForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador,\
-    ResultadoDesafioLadder
-from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder,\
+    DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador, \
+    ResultadoDesafioLadder, PermissaoAumentoRange
+from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder, \
     remover_jogador
 from smashLadder.utils import mes_ano_ant
 
@@ -302,11 +302,75 @@ def detalhar_ladder_historico(request, ano, mes):
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
     # Buscar anos e meses para listagem
-    
     lista_ladders = HistoricoLadder.objects.all().order_by('-ano', '-mes') \
                          .values('mes', 'ano').distinct()
     
     return render(request, 'ladder/listar_ladder_historico.html', {'lista_ladders': lista_ladders})
+
+@login_required
+def add_permissao_aumento_range(request):
+    """Adicionar permissão de aumento de range"""
+    # Verificar se usuário é admin
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+        
+    if request.POST:
+        form_permissao_aumento_range = PermissaoAumentoRangeForm(request.POST, initial={'admin_permissor': request.user.jogador.id,
+                                                                                        'data_hora': timezone.localtime()})
+        form_permissao_aumento_range.fields['admin_permissor'].disabled = True
+        form_permissao_aumento_range.fields['data_hora'].disabled = True
+        
+        if form_permissao_aumento_range.is_valid():
+            try:
+                with transaction.atomic():
+                    permissao = form_permissao_aumento_range.save(commit=False)
+                    permissao.save()
+                    
+                    messages.success(request, PermissaoAumentoRange.MENSAGEM_SUCESSO_PERMISSAO_AUMENTO_RANGE)
+                    return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': permissao.jogador.user.username}))
+                    
+            except Exception as e:
+                messages.error(request, e)
+        
+        else:
+            for erro in form_permissao_aumento_range.non_field_errors():
+                messages.error(request, erro)
+    else:
+        form_permissao_aumento_range = PermissaoAumentoRangeForm(initial={'admin_permissor': request.user.jogador.id})
+        form_permissao_aumento_range.fields['admin_permissor'].disabled = True
+        form_permissao_aumento_range.fields['data_hora'].disabled = True
+        
+    return render(request, 'ladder/adicionar_permissao_aumento_range.html', {'form_permissao_aumento_range': form_permissao_aumento_range})
+
+@login_required
+def remover_permissao_aumento_range(request, permissao_id=None):
+    """Remover permissão de aumento de range"""
+    # Verificar se usuário é admin
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+    
+    # Se for enviada uma permissão, mostrar tela para decidir remover
+    if permissao_id:
+        # Carregar permissão
+        permissao = get_object_or_404(PermissaoAumentoRange.objects.select_related('jogador', 'admin_permissor'), pk=permissao_id)
+        
+        if request.POST:
+            try:
+                with transaction.atomic():
+                    if permissao.is_valida():
+                        permissao.delete()
+                        messages.success(request, PermissaoAumentoRange.MENSAGEM_SUCESSO_REMOCAO_PERMISSAO)
+                    else:
+                        raise ValueError(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIO_UTILIZANDO_PERMISSAO)
+                    
+            except Exception as e:
+                messages.error(request, e)
+            
+    permissoes = PermissaoAumentoRange.objects.filter(data_hora__gte=timezone.localtime() \
+                                                      - datetime.timedelta(hours=PermissaoAumentoRange.PERIODO_VALIDADE)) \
+                                                      .select_related('admin_permissor', 'jogador')
+    permissoes = [permissao for permissao in permissoes if permissao.is_valida()]
+    return render(request, 'ladder/remover_permissao_aumento_range.html', {'permissoes': permissoes})
 
 def detalhar_luta(request, luta_id):
     """Detalhar uma luta"""
@@ -624,11 +688,16 @@ def validar_desafio_ladder(request, desafio_id):
                         desafiante.save()
                         
                     messages.success(request, MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER)
-                    if desafio_ladder.is_historico():
-                        mes, ano = desafio_ladder.mes_ano_ladder
-                        return redirect(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': ano, 'mes': mes}))
+                    
+                    # Se houver mais desafios a validar, voltar para tela de validação
+                    if DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).exists():
+                        return redirect(reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
                     else:
-                        return redirect(reverse('ladder:detalhar_ladder_atual'))
+                        if desafio_ladder.is_historico():
+                            mes, ano = desafio_ladder.mes_ano_ladder
+                            return redirect(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': ano, 'mes': mes}))
+                        else:
+                            return redirect(reverse('ladder:detalhar_ladder_atual'))
             
             except Exception as e:
                 messages.error(request, str(e))

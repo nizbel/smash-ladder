@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from urllib.parse import urlsplit, urljoin
+
 from django.contrib.messages.api import get_messages
 from django.test.testcases import TestCase
 from django.urls.base import reverse
@@ -54,10 +56,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         
         cls.desafio_ladder_simples_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, 
                                                                                     horario_historico.replace(hour=6), False, cls.sena)
-#         cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 1, 3, 
-#                                                                            horario_atual.replace(day=5), False, cls.sena)
-#         cls.desafio_ladder_completo_historico = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, 
-#                                                                                      horario_historico.replace(day=5), False, cls.sena)
         cls.desafio_ladder_coringa_derrota = criar_desafio_ladder_simples_teste(cls.mad, cls.teets, 2, 3, 
                                                                           horario_atual.replace(hour=10), True, cls.mad)
         cls.desafio_ladder_coringa_vitoria = criar_desafio_ladder_simples_teste(cls.mad, cls.teets, 3, 1, 
@@ -114,7 +112,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -152,8 +149,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples_historico.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder_simples_historico.data_hora.year,
-                                                                                           'mes': self.desafio_ladder_simples_historico.data_hora.month}))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -191,7 +186,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
                                             kwargs={'desafio_id': self.desafio_ladder_coringa_vitoria.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -218,37 +212,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         
         # A ladder deve possuir a mesma quantidade de jogadores
         self.assertEqual(len(situacao_ladder_antes), len(situacao_ladder_apos))
-        
-#     def test_erro_validar_desafio_ordem_incorreta(self):
-#         """Testa validação de um desafio em ordem incorreta"""
-#         # Verificar posições na ladder
-#         self.desafio_ladder_simples
-#         situacao_ladder = PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao')
-#         self.assertIn((self.teets.id, 1), situacao_ladder)
-#         self.assertIn((self.saraiva.id, 2), situacao_ladder)
-#         self.assertIn((self.sena.id, 3), situacao_ladder)
-#         self.assertIn((self.mad.id, 4), situacao_ladder)
-#         
-#         # Adicionar desafio de ladder anterior ao desafio_ladder_simples
-#         criar_desafio_ladder_simples_teste(self.sena, self.teets, 3, 1, timezone.now() - datetime.timedelta(days=1), False, self.sena)
-#         
-#         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
-#         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples.id}),
-#                                    {'salvar': 1})
-#         self.assertEqual(response.status_code, 200)
-#         
-#         # Ver erro no messages
-#         messages = list(response.context['messages'])
-#         self.assertEqual(len(messages), 1)
-#         self.assertEqual(str(messages[0]), 'Validação altera a ladder incorretamente, verifique se há outro desafio pendente')
-#         
-#         # Desafio deve se manter sem validador
-#         self.desafio_ladder_simples = DesafioLadder.objects.get(id=self.desafio_ladder_simples.id)
-#         self.assertEqual(self.desafio_ladder_simples.admin_validador, None)
-#         
-#         # Garantir que a ladder não foi alterada
-#         self.assertEqual(situacao_ladder, 
-#                          PosicaoLadder.objects.all().order_by('posicao').values_list('jogador', 'posicao'))
         
     def test_erro_acesso_validacao_desafio_ja_validado(self):
         """Testa ver a tela de validação para um desafio já validado"""
@@ -300,8 +263,8 @@ class ViewValidarDesafioLadderTestCase(TestCase):
                                             kwargs={'desafio_id': self.desafio_ladder_coringa_derrota.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
+#         self.assertre
+#         self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -311,6 +274,9 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         # Desafio simples deve ter validador
         self.desafio_ladder_coringa_derrota = DesafioLadder.objects.get(id=self.desafio_ladder_coringa_derrota.id)
         self.assertEqual(self.desafio_ladder_coringa_derrota.admin_validador, self.teets)
+        
+        # Carregar GET do redirecionamento para limpar messages
+        self.client.get(response.url)
         
         # Tentar validar desafio coringa, deve dar erro pois usuário já usou um coringa
         response = self.client.post(reverse('ladder:validar_desafio_ladder', 
@@ -337,7 +303,7 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novo_entrante.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
+#         self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -375,7 +341,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novo_entrante.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -413,7 +378,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novo_entrante.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -447,7 +411,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novos_entrantes.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -487,7 +450,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novos_entrantes.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
         
         # Ver confirmação no messages
         messages = list(get_messages(response.wsgi_request))
@@ -520,8 +482,6 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples_historico.id}),
                                    {'salvar': 1})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder_simples_historico.data_hora.year,
-                                                                                           'mes': self.desafio_ladder_simples_historico.data_hora.month}))
         
         # Verificar ladder atual após alteração
         ladder_atual_depois = list(PosicaoLadder.objects.all().order_by('posicao'))
@@ -542,4 +502,37 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         for ladder_historico, ladder_atual in zip(HistoricoLadder.objects.all().order_by('posicao'), ladder_atual_depois):
             self.assertEqual(ladder_historico.posicao, ladder_atual.posicao)
             self.assertEqual(ladder_historico.jogador, ladder_atual.jogador)
+        
+    def test_validar_desafio_com_outros_desafios_pendentes(self):
+        """Testa se após validar um desafio, retorna para a tela de pendências de validação caso haja outros a validar"""
+        self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples.id}),
+                                   {'salvar': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ladder:listar_desafios_ladder_pendentes_validacao'))
+
+    
+    def test_validar_desafio_atual_sem_pendentes(self):
+        """Testa se após validar um desafio, retorna para a tela de pendências de validação caso haja outros a validar"""
+        # Remover outros desafios pendentes
+        DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).exclude(id=self.desafio_ladder_novos_entrantes.id).delete()
+        
+        self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_novos_entrantes.id}),
+                                   {'salvar': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_atual'))
+    
+    
+    def test_validar_desafio_historico_sem_pendentes(self):
+        """Testa se após validar um desafio, retorna para a tela de pendências de validação caso haja outros a validar"""
+        # Remover outros desafios pendentes
+        DesafioLadder.objects.filter(admin_validador__isnull=True, cancelamentodesafioladder__isnull=True).exclude(id=self.desafio_ladder_simples_historico.id).delete()
+        
+        self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('ladder:validar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder_simples_historico.id}),
+                                   {'salvar': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder_simples_historico.data_hora.year,
+                                                                                           'mes': self.desafio_ladder_simples_historico.data_hora.month}))
         

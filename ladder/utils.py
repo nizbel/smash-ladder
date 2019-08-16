@@ -14,7 +14,7 @@ from jogadores.models import RegistroFerias, Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
-    ResultadoRemocaoJogador
+    ResultadoRemocaoJogador, PermissaoAumentoRange
 from smashLadder.utils import mes_ano_ant
 
 
@@ -587,17 +587,26 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             # Verificar quais jogadores são desafiáveis devido a possibilidade de férias
             desafiaveis = list()
             ladder.sort(key=lambda x: x.posicao, reverse=True)
+            
+            # TODO verificar se desafiante possui permissão de aumento de range
+            limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
+                if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
+                
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
                 if not jogador_posicao.jogador.de_ferias_na_data(desafio_ladder.data_hora.date()):
                     desafiaveis.append(jogador_posicao.jogador)
                     
                     # Verifica se quantidade de desafiáveis já supre o limite de posições acima
-                    if len(desafiaveis) == DesafioLadder.LIMITE_POSICOES_DESAFIO:
+                    if len(desafiaveis) == limite_range:
                         break
             
             # Desafiado é desafiável?
             if desafiado not in desafiaveis:
-                raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
+                # TODO verificar se desafiante possui permissão de aumento de range
+                if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora):
+                    raise ValueError(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
+                else:
+                    raise ValueError(DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
         
 def validar_e_salvar_lutas_ladder(desafio_ladder, formset_lutas):
     """Valida lutas em um formset para adicioná-las a desafio de ladder"""
@@ -950,7 +959,6 @@ def processar_remocao(remocao):
     # Verifica se é ladder atual ou histórico
     data_atual = timezone.localdate()
     if remocao.data.month == data_atual.month and remocao.data.year == data_atual.year:
-#         mes, ano = desafio_ladder.mes_ano_ladder
         ladder_para_alterar = PosicaoLadder.objects
     else:
         ladder_para_alterar = HistoricoLadder.objects.filter(ano=remocao.data.year, mes=remocao.data.month)
@@ -1024,8 +1032,6 @@ def avaliar_decaimento(jogador):
                                                     tzinfo=timezone.get_current_timezone())
                 
                 posicao_inicial = jogador.posicao_em(data_decaimento)
-#                 posicao_final = min(posicao_inicial + DecaimentoJogador.QTD_POSICOES_DECAIMENTO, 
-#                                     PosicaoLadder.objects.all().order_by('-posicao').values_list('posicao', flat=True)[0])
                 decaimento = DecaimentoJogador(jogador=jogador, data=data_decaimento, posicao_inicial=posicao_inicial, 
                                                qtd_periodos_inatividade=decaimento_atual)
                 decaimento.save()
@@ -1139,17 +1145,14 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
             break
     else:
         posicao_jogador = ladder_para_alterar[0].posicao + 1
-#     # Definir posição do jogador
-#     if ladder_para_alterar.filter(jogador=jogador).exists():
-#         posicao_jogador = ladder_para_alterar.get(jogador=jogador).posicao
-#     else:
-#         posicao_jogador = ladder_para_alterar.all().aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'] + 1
     
     # Montar lista com desafiáveis
     desafiaveis = list()
-    # TODO Buscar limite de range dependendo se jogador tiver permissão para aumento de range
-    limite_range = (PermissaoAumentoRange.AUMENTO_RANGE + DesafioLadder.LIMITE_POSICOES_DESAFIO) \
-        if tem_permissao() else DesafioLadder.LIMITE_POSICOES_DESAFIO
+    
+    # Avaliar limite de range
+    limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
+                if jogador.possui_permissao_aumento_range(data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
+                
     for desafiavel in [posicao_ladder.jogador for posicao_ladder in \
                        ladder_para_alterar if posicao_ladder.posicao < posicao_jogador]:
         if not desafiavel.de_ferias_na_data(data_hora.date()):

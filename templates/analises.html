@@ -27,8 +27,8 @@
 		  	<div class="card-header bg-cinza-2">
 		    	Quantidade/Resultado de desafios por posição
 		  	</div>
-		  	<div class="card-body col-12">
-				<img src="{% static imagens.result_por_posicao %}" width="100%">
+		  	<div class="card-body col-12" id="cardGrafResultadosPorPosicao">
+		  		<div id="grafResultadosPorPosicao"></div>
 			</div>
 		</div>
 	</div>	
@@ -114,12 +114,12 @@ $(document).ready(function(){
 	});
 	
 	plotGraficoAcumuladoEntreJogadores();
+	plotGraficoResultadosPorPosicao();
 });
 
 function plotGraficoAcumuladoEntreJogadores() {
 	$('#cardGrafAcumJogadores').block({ 
-        message: '<h4>...</h4>', 
-        css: { border: '3px solid #000' } 
+        message: ''
     });
     
 	ajax("{% url 'analise_result_acum_jogadores' %}", 
@@ -150,6 +150,54 @@ function plotGraficoAcumuladoEntreJogadores() {
 			
 			Plotly.newPlot('grafAcumJogadores', data, layout);
 			$('#cardGrafAcumJogadores').unblock(); 
+        }
+    );
+}
+
+function plotGraficoResultadosPorPosicao() {
+	$('#cardGrafResultadosPorPosicao').block({ 
+        message: ''
+    });
+    
+	ajax("{% url 'analise_resultado_por_posicao' %}", 
+		'GET', 
+		{ano: ano, mes: mes}, 
+		function(resultado) {
+			var data = [
+			  {
+			  	marker: {
+					size: resultado.qtd_desafios,
+					color: resultado.resultado,
+					sizemin: 5,
+					colorscale: 'RdBu',
+					showscale: true,
+					reversescale: true
+				},
+				x: resultado.posicao_desafiante,
+				y: resultado.posicao_desafiado,
+				hovertemplate: 'Desafiante: <b>%{x}</b>' +
+                        '<br>Desafiado: <b>%{y}</b>' +
+                        '<br>Média: <b>%{marker.color:.2f}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
+				mode: 'markers',
+				type: 'scatter'
+			  }
+			];
+			
+			var layout = {
+			  hovermode: 'closest',
+			  height: 10 * resultado.posicao_desafiado.length,
+			  xaxis: {
+			  	title: 'Posição do desafiante'
+			  },
+			  yaxis: {
+			  	title: 'Posição do desafiado'
+			  }
+			};
+			
+			Plotly.newPlot('grafResultadosPorPosicao', data, layout);
+			$('#cardGrafResultadosPorPosicao').unblock(); 
         }
     );
 }
