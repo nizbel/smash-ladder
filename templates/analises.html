@@ -16,8 +16,8 @@
 		  	<div class="card-header bg-cinza-2">
 		    	Vitórias por personagem
 		  	</div>
-		  	<div class="card-body col-12">
-				<img src="{% static imagens.vitorias_por_personagem %}" width="100%">
+		  	<div class="card-body col-12" id="cardGrafVitoriasPorPersonagem">
+		  		<div id="grafVitoriasPorPersonagem"></div>
 			</div>
 		</div>
 	</div>
@@ -115,6 +115,7 @@ $(document).ready(function(){
 	
 	plotGraficoAcumuladoEntreJogadores();
 	plotGraficoResultadosPorPosicao();
+	plotGraficoVitoriasPorPersonagem();
 });
 
 function plotGraficoAcumuladoEntreJogadores() {
@@ -161,7 +162,7 @@ function plotGraficoResultadosPorPosicao() {
     
 	ajax("{% url 'analise_resultado_por_posicao' %}", 
 		'GET', 
-		{ano: ano, mes: mes}, 
+		{}, 
 		function(resultado) {
 			var data = [
 			  {
@@ -198,6 +199,59 @@ function plotGraficoResultadosPorPosicao() {
 			
 			Plotly.newPlot('grafResultadosPorPosicao', data, layout);
 			$('#cardGrafResultadosPorPosicao').unblock(); 
+        }
+    );
+}
+
+function plotGraficoVitoriasPorPersonagem() {
+	$('#cardGrafVitoriasPorPersonagem').block({ 
+        message: ''
+    });
+    
+	ajax("{% url 'analise_vitorias_por_personagem' %}", 
+		'GET', 
+		{}, 
+		function(resultado) {
+			var data = [
+			  {
+			    opacity: 0.7,
+				x: resultado.personagem,
+				y: resultado.qtd_lutas,
+				hovertemplate: 'Lutas: <b>%{y}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				yaxys: 'y'
+			  },
+			  {
+			    opacity: 0.7,
+				x: resultado.personagem,
+				y: resultado.perc_vitorias,
+				hovertemplate: '% Vitórias: <b>%{y:.2f}</b>',
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+  				yaxis: 'y2'
+			  }
+			];
+			
+			var layout = {
+			  showlegend: false,
+			  xaxis: {
+			  	title: 'Personagem'
+			  },
+			  yaxis: {
+			  	title: 'Qtd. lutas'
+			  },
+			  yaxis2: {
+			  	title: '% Vitórias',
+			  	overlaying: 'y',
+			  	side: 'right'
+			  }
+			};
+			
+			Plotly.newPlot('grafVitoriasPorPersonagem', data, layout);
+			$('#cardGrafVitoriasPorPersonagem').unblock(); 
         }
     );
 }

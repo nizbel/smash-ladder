@@ -16,7 +16,7 @@ from smashLadder.management.commands.analise import analisar, \
     gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
     CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
-    analisar_resultados_por_posicao
+    analisar_resultados_por_posicao, analisar_vitorias_por_personagem
 from smashLadder.utils import mes_ano_prox
 
 
@@ -186,4 +186,19 @@ def analise_resultado_por_diferenca_posicao(request):
     pass
         
 def analise_vitorias_por_personagem(request):
-    pass        
+    """Retorna dados sobre vitórias por personagem"""
+    if request.is_ajax():
+        
+        desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
+                                                                           luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
+                                                                           luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
+                                                .annotate(nome_personagem=F('personagem__nome')) \
+                                                .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
+                                                                        output_field=IntegerField())) \
+                                                .values('nome_personagem', 'vitoria')))
+        
+        desafios_personagens_df = analisar_vitorias_por_personagem(desafios_personagens_df)
+        
+        return JsonResponse({'qtd_lutas': desafios_personagens_df['qtd_lutas'].tolist(), 
+                             'perc_vitorias': desafios_personagens_df['perc_vitorias'].tolist(),
+                             'personagem': desafios_personagens_df.index.tolist()})  
