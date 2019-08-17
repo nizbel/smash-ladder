@@ -57,7 +57,7 @@ def analisar():
                                                                         output_field=IntegerField())) \
                                                 .values('nome_personagem', 'vitoria')))
       
-    imgs['vitorias_por_personagem'] = analisar_vitorias_por_personagem(desafios_personagens_df)
+#     imgs['vitorias_por_personagem'] = analisar_vitorias_por_personagem(desafios_personagens_df)
     
 #     desafios_jogadores_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False) \
 #                                                 .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
@@ -240,22 +240,22 @@ def gerar_acumulados_anteriores():
         
 def analisar_vitorias_por_personagem(df):
     """Gera imagem para quantidade de vitórias por personagem"""
-    nome_arquivo = 'vitorias_por_personagem'
-    
-    # Retornar imagem já existente
-    for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if f'{nome_arquivo}_' in img and '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-                return img
+#     nome_arquivo = 'vitorias_por_personagem'
+#     
+#     # Retornar imagem já existente
+#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
+#         if f'{nome_arquivo}_' in img and '-' in img:
+#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
+#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
+#                 return img
             
     vitorias_por_personagem_df = df.copy(True)
 
-    vitorias_por_personagem_df['Qtd. lutas'] = 1    
+    vitorias_por_personagem_df['qtd_lutas'] = 1    
     
     vitorias_por_personagem_df = vitorias_por_personagem_df.groupby('nome_personagem').sum()
     
-    vitorias_por_personagem_df['% Vitórias'] = 100 * vitorias_por_personagem_df['vitoria'] / vitorias_por_personagem_df['Qtd. lutas']
+    vitorias_por_personagem_df['perc_vitorias'] = 100 * vitorias_por_personagem_df['vitoria'] / vitorias_por_personagem_df['qtd_lutas']
     
     vitorias_por_personagem_df = vitorias_por_personagem_df.drop('vitoria', axis=1)
 
@@ -264,24 +264,7 @@ def analisar_vitorias_por_personagem(df):
     cols = cols[-1:] + cols[:-1]
     vitorias_por_personagem_df = vitorias_por_personagem_df[cols]
     
-    vitorias_por_personagem_df = vitorias_por_personagem_df.loc[vitorias_por_personagem_df['Qtd. lutas'] >= 10]
-    
-    plt.rcParams.update({'font.size': 10, 'figure.figsize': (14, 7)})
-    plt.figure()
-    
-    ax = vitorias_por_personagem_df.plot.bar(secondary_y='% Vitórias')
-    
-    ax.set_xlabel('Personagem (com 10 lutas ou mais)')
-    ax.grid('on', which='major', axis='y', linestyle=':', alpha=0.5)
-
-    # Alterar eixo da direita
-    ax.right_ax.set_yticks(list(range(10, 101, 10)))
-    ax.right_ax.set_yticklabels([f'{n}%' for n in list(range(10, 101, 10))])
-    ax.right_ax.grid('on', which='major', axis='y', linestyle='--', c='b', alpha=0.2)
-    
-    nome_formatado = salvar_imagem(nome_arquivo, plt)
-    
-    return nome_formatado
+    return vitorias_por_personagem_df
 
 def analisar_vitorias_contra_personagens_para_um_jogador(df, nick_jogador, mes_ano=None):
     """Gera imagem para vitórias contra cada personagem para um jogador até mês/ano"""
