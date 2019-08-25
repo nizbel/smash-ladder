@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 from urllib.parse import urlsplit, urljoin
 
 from django.contrib.messages.api import get_messages
@@ -9,12 +10,15 @@ from django.utils import timezone
 from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_personagens_teste, criar_stage_teste, criar_jogador_teste, SENHA_TESTE
-from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder
+from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder, \
+    RemocaoJogador
 from ladder.tests.utils_teste import criar_ladder_teste, \
-    criar_ladder_historico_teste, criar_desafio_ladder_simples_teste
+    criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
+    validar_desafio_ladder_teste
 from ladder.views import MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER
 from smashLadder import settings
 from smashLadder.utils import mes_ano_ant
+from ladder.utils import remover_jogador
 
 
 class ViewValidarDesafioLadderTestCase(TestCase):
@@ -535,4 +539,33 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.desafio_ladder_simples_historico.data_hora.year,
                                                                                            'mes': self.desafio_ladder_simples_historico.data_hora.month}))
+        
+    def test_validar_desafio_novo_entrante_com_saidas_e_entradas_jogadores(self):
+        """Testa se valida desafio de novo entrante, com uma entrada e saídas desde último desafio de novo entrante"""
+        horario_atual = timezone.now().replace(day=15)
+
+        # Remover jogadores na ladder histórico
+        remocao_1 = RemocaoJogador.objects.create(jogador=self.mad, data=horario_atual.replace(day=1), 
+                                      admin_removedor=self.teets, posicao_jogador=4, remocao_por_inatividade=True)
+        remover_jogador(remocao_1)
+        remocao_2 = RemocaoJogador.objects.create(jogador=self.saraiva, data=horario_atual.replace(day=2), 
+                                      admin_removedor=self.teets, posicao_jogador=2, remocao_por_inatividade=True)
+        remover_jogador(remocao_2)
+        remocao_3 = RemocaoJogador.objects.create(jogador=self.sena, data=horario_atual.replace(day=3), 
+                                      admin_removedor=self.teets, posicao_jogador=2, remocao_por_inatividade=True)
+        remover_jogador(remocao_3)
+        
+        # Validar desafio de novo entrante
+        novo_entrante_1 = criar_jogador_teste('new3')
+        desafio_ladder_novo_entrante_1 = criar_desafio_ladder_simples_teste(novo_entrante_1, self.teets, 1, 3, 
+                                                                          horario_atual.replace(hour=10), True, self.tiovsky)
+        validar_desafio_ladder_teste(desafio_ladder_novo_entrante_1, self.teets)
+        
+        # Adicionar outro novo entrante
+        novo_entrante_2 = criar_jogador_teste('new4')
+        desafio_ladder_novo_entrante_2 = criar_desafio_ladder_simples_teste(novo_entrante_2, self.teets, 1, 3, 
+                                                                          horario_atual.replace(hour=11), True, self.tiovsky)
+        validar_desafio_ladder_teste(desafio_ladder_novo_entrante_2, self.teets)
+        
+        self.assertEqual(PosicaoLadder.objects.get(jogador=novo_entrante_2).posicao, 9)
         

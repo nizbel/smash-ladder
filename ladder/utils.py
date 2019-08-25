@@ -837,12 +837,7 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
     desafios_validos.sort(key=lambda x: (x.posicao_desafiado, x.posicao_desafiante))
     
     # Definir ultima ladder
-    mes = desafio_ladder.data_hora.month
-    ano = desafio_ladder.data_hora.year
-    mes -= 1
-    if mes == 0:
-        mes = 12
-        ano -= 1
+    mes, ano = mes_ano_ant(desafio_ladder.data_hora.month, desafio_ladder.data_hora.year)
     if HistoricoLadder.objects.filter(ano=ano, mes=mes).exists():
         ultima_ladder = HistoricoLadder.objects.filter(ano=ano, mes=mes)
     else:
@@ -854,7 +849,7 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
                                                                    data_hora__year=desafio_ladder.data_hora.year) \
         .aggregate(ultima_posicao=Max('posicao_desafiante'))['ultima_posicao'] or 0, 
         ultima_ladder.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'] or 0) + 1
-        
+    
     # Considerar jogadores que saíram da ladder
     if DesafioLadder.validados.filter(posicao_desafiante=ultima_posicao_disponivel-1, data_hora__month=desafio_ladder.data_hora.month,
                                       data_hora__year=desafio_ladder.data_hora.year,
@@ -868,7 +863,17 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
     else:
         ultima_posicao_disponivel -= RemocaoJogador.objects.filter(data__month=desafio_ladder.data_hora.month,
                                       data__year=desafio_ladder.data_hora.year, data__lt=desafio_ladder.data_hora).count()
-        
+        # Computar entradas no mês, anteriores ao desafio
+        if DesafioLadder.validados.filter(data_hora__month=desafio_ladder.data_hora.month,
+                                      data_hora__year=desafio_ladder.data_hora.year, data_hora__lt=desafio_ladder.data_hora) \
+                                      .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True), desafiado__in=ultima_ladder.values_list('jogador', flat=True)).exists():
+            ultima_posicao_disponivel += DesafioLadder.validados.filter(data_hora__month=desafio_ladder.data_hora.month,
+                                          data_hora__year=desafio_ladder.data_hora.year, data_hora__lt=desafio_ladder.data_hora) \
+                                          .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True)).count()
+            ultima_posicao_disponivel += DesafioLadder.validados.filter(data_hora__month=desafio_ladder.data_hora.month,
+                                          data_hora__year=desafio_ladder.data_hora.year, data_hora__lt=desafio_ladder.data_hora) \
+                                          .exclude(desafiado__in=ultima_ladder.values_list('jogador', flat=True)).count()
+    
     # Percorrer todos os desafios na data/hora, ordenados por inserção, incrementando posições para novos entrantes
     for desafio in desafios_validos:
         if desafio.desafiado == jogador:
