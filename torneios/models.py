@@ -3,11 +3,17 @@
 from django.db import models
         
 class Torneio(models.Model):
+    PERIODO_TORNEIO_RECENTE = 60
+    
     data = models.DateField('Data do torneio')
     nome = models.CharField('Nome do torneio', max_length=100)
     url = models.URLField('URL do torneio')
     adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    id_challonge = models.IntegerField('Código de identificação no torneio')
     
+    class Meta:
+        unique_together = (('url',), ('id_challonge',), ('nome', 'data'))
+        
     def __str__(self):
         return self.nome
     
@@ -22,7 +28,7 @@ class Round(models.Model):
     def __str__(self):
         if self.nome:
             return self.nome
-        return self.indice
+        return f'{self.indice}'
     
 class Partida(models.Model):
     jogador_1 = models.ForeignKey('JogadorTorneio', on_delete=models.CASCADE, related_name='jogador_1')
@@ -47,7 +53,7 @@ class JogadorTorneio(models.Model):
     torneio = models.ForeignKey('Torneio', on_delete=models.CASCADE)
     posicao_final = models.SmallIntegerField('Resultado no torneio')
     valido = models.BooleanField('Jogador válido?', default=True)
-    id_no_torneio = models.IntegerField('Código de identificação no torneio')
+    id_challonge = models.IntegerField('Código de identificação no torneio')
     
     class Meta:
         unique_together = (('nome', 'torneio', 'time'), ('jogador', 'torneio'))
