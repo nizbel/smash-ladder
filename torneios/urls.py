@@ -19,12 +19,16 @@ from torneios import views
 
 app_name='torneios'
 urlpatterns = [
+    # Torneios
+    path(r'criar/', views.criar_torneio, name='criar_torneio'),
     path(r'detalhar/<int:torneio_id>/', views.detalhar_torneio, name='detalhar_torneio'),
     path(r'listar/', views.listar_torneios, name='listar_torneios'),
     
+    # Partidas
     path(r'detalhar/<int:torneio_id>/partida/<int:partida_id>/', views.detalhar_partida, name='detalhar_partida'),
     path(r'detalhar/<int:torneio_id>/partidas/', views.listar_partidas, name='listar_partidas'),
     
+    # Jogadores
     path(r'detalhar/<int:torneio_id>/jogador/<int:jogador_id>/', views.detalhar_jogador, name='detalhar_jogador_torneio'),
     path(r'detalhar/<int:torneio_id>/jogador/<int:jogador_id>/editar', views.editar_jogador, name='editar_jogador_torneio'),
     path(r'detalhar/<int:torneio_id>/jogadores/', views.listar_jogadores, name='listar_jogadores_torneio'),
