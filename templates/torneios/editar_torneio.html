@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}- Criar torneio{% endblock %}
+{% block title %}- Editar {{ torneio.nome }}{% endblock %}
 
 {% block page_header %}
-Criar torneio
+Editar {{ torneio.nome }}
 {% endblock %}
 
 {% block extra_header %}
@@ -12,12 +12,15 @@ Criar torneio
 {% endblock %}
 
 {% block content %}
-	<form class="col-12" action="{% url 'torneios:criar_torneio' %}" method="post">
+	{% for form_jogador in forms_jogador %}
+	<form class="col-12 col-md-6 border-bottom mb-3" action="{% url 'torneios:editar_torneio' torneio.id %}" method="post">
+		<h5>{{ form_jogador.instance.seed }} - {{ form_jogador.instance.nome }}</h5>
 	    {% csrf_token %}
-    	{% include "form.html" with form=form_criar_torneio %}
+    	{% include "form_2_colunas.html" with form=form_jogador %}
     	
-	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
+	  	<input class="col-12 col-md-2 btn btn-lg btn-dark mb-3" type="submit" value="Salvar">
 	</form>
+	{% endfor %}
 {% endblock %}
 
 {% block extra_scripts %}

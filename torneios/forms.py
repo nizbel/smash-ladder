@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Formulários para classes de torneio"""
 from django import forms
+from django.core.exceptions import ValidationError
 
 from smashLadder.utils import preparar_classes_form
-from torneios.models import Torneio
-from django.core.exceptions import ValidationError
+from torneios.models import Torneio, JogadorTorneio, Round, Time
 
 
 class CriarTorneioForm(forms.Form):
@@ -42,5 +42,36 @@ class CriarTorneioForm(forms.Form):
         if Torneio.objects.filter(url=url).exists():
             raise ValidationError(Torneio.MENSAGEM_ERRO_URL_TORNEIO_JA_EXISTENTE)
         
-            
+class JogadorTorneioForm(forms.ModelForm):
+    """Formulário para jogador de um torneio"""
+    class Meta:
+        model = JogadorTorneio
+        fields = ('nome', 'time', 'valido', 'jogador')
+        
+    def __init__(self,*args,**kwargs):
+        super(JogadorTorneioForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+    
+class RoundForm(forms.ModelForm):
+    """Formulário para round de um torneio"""
+    class Meta:
+        model = Round
+        fields = ('nome',)
+        
+    def __init__(self,*args,**kwargs):
+        super(RoundForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+        
+class TimeForm(forms.ModelForm):
+    """Formulário para time"""
+    class Meta:
+        model = Time
+        fields = ('nome',)
+    
+    def __init__(self,*args,**kwargs):
+        super(TimeForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
         

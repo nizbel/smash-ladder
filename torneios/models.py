@@ -20,10 +20,10 @@ class Torneio(models.Model):
     nome = models.CharField('Nome do torneio', max_length=100)
     url = models.URLField('URL do torneio')
     adicionado_por = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
-    id_challonge = models.IntegerField('Código de identificação no torneio')
+    id_site = models.IntegerField('Código de identificação no site')
     
     class Meta:
-        unique_together = (('url',), ('id_challonge',), ('nome', 'data'))
+        unique_together = (('url',), ('id_site',), ('nome', 'data'))
         
     def __str__(self):
         return self.nome
@@ -64,10 +64,12 @@ class JogadorTorneio(models.Model):
     torneio = models.ForeignKey('Torneio', on_delete=models.CASCADE)
     posicao_final = models.SmallIntegerField('Resultado no torneio')
     valido = models.BooleanField('Jogador válido?', default=True)
-    id_challonge = models.IntegerField('Código de identificação no torneio')
+    id_site = models.IntegerField('Código de identificação no site')
+    seed = models.SmallIntegerField('Seed')
     
     class Meta:
-        unique_together = (('nome', 'torneio', 'time'), ('jogador', 'torneio'))
+        unique_together = (('nome', 'torneio', 'time'), ('jogador', 'torneio'), ('seed', 'torneio'), 
+                           ('id_site', 'torneio'))
         
     def __str__(self):
         return self.nome
