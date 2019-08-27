@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """Views para torneios"""
+import traceback
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls.base import reverse
 
-from torneios.forms import CriarTorneioForm
+from torneios.forms import CriarTorneioForm, JogadorTorneioForm
 from torneios.models import Torneio, Partida, JogadorTorneio
 from torneios.utils import buscar_torneio_challonge, gerar_torneio_challonge, \
     buscar_jogadores_challonge, gerar_jogadores_challonge, \
-    buscar_partidas_challonge, gerar_partidas_challonge
+    buscar_partidas_challonge, gerar_partidas_challonge, logar_challonge,\
+    vincular_automaticamente_jogadores_torneio_a_ladder
 
 
 @login_required
@@ -36,9 +40,13 @@ def criar_torneio(request):
                         if Torneio.SITE_CHALLONGE_URL in identificador_torneio:
                             identificador_torneio = identificador_torneio.split('/')[-1]
                         
+                        # Logar
+                        logar_challonge()
+                        
                         # Buscar torneio
                         dados_torneio = buscar_torneio_challonge(identificador_torneio)
                         torneio = gerar_torneio_challonge(dados_torneio)
+                        torneio.adicionado_por = request.user.jogador
                         torneio.save()
                         
                         # Buscar jogadores
@@ -47,7 +55,7 @@ def criar_torneio(request):
                         for time in times:
                             time.save()
                         for jogador in jogadores:
-                            if jogador.time.id:
+                            if jogador.time:
                                 jogador.time_id = jogador.time.id
                             jogador.save()
                         
@@ -62,6 +70,10 @@ def criar_torneio(request):
                         for vitoria_por_ausencia in vitorias_por_ausencia:
                             vitoria_por_ausencia.partida_id = vitoria_por_ausencia.partida.id
                             vitoria_por_ausencia.save()
+                        
+                        vincular_automaticamente_jogadores_torneio_a_ladder(torneio)
+                        
+                        return redirect(reverse('torneios:editar_torneio', kwargs={'torneio_id': torneio.id}))
                         
                 except Exception as e:
                     messages.error(request, str(e))
@@ -93,13 +105,14 @@ def editar_torneio(request, torneio_id):
     # Precisa ser admin para gerar um torneio
     if not request.user.jogador.admin:
         raise PermissionDenied
+    
     torneio = get_object_or_404(Torneio, id=torneio_id)
     
-    dados_torneio = {}
+    forms_jogador = list()
+    for jogador in JogadorTorneio.objects.filter(torneio=torneio).order_by('seed'):
+        forms_jogador.append(JogadorTorneioForm(instance=jogador))
     
-    dados_torneio['top_3'] = JogadorTorneio.objects.filter(torneio=torneio, posicao_final__lte=3).order_by('posicao_final')
-    
-    return render(request, 'torneios/detalhar_torneio.html', {'torneio': torneio, 'dados_torneio': dados_torneio})
+    return render(request, 'torneios/editar_torneio.html', {'torneio': torneio, 'forms_jogador': forms_jogador, 'forms_time': [], 'forms_round': []})
 
 def listar_torneios(request):
     """Lista torneios cadastrados"""

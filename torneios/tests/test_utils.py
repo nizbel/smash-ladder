@@ -49,7 +49,7 @@ class GerarTorneioChallongeTestCase(TestCase):
         self.assertEqual(torneio.nome, self.dados_torneio['name'])
         self.assertEqual(torneio.data, self.dados_torneio['started-at'].date())
         self.assertEqual(torneio.url, self.dados_torneio['full-challonge-url'])
-        self.assertEqual(torneio.id_challonge, self.dados_torneio['id'])
+        self.assertEqual(torneio.id_site, self.dados_torneio['id'])
         # Admin adicionador não é preenchido agora
         self.assertFalse(hasattr(torneio, 'adicionado_por'))
         
@@ -70,6 +70,7 @@ class BuscarJogadoresTorneioChallongeTestCase(TestCase):
             self.assertIn('id', dados_jogador)
             self.assertIn('final-rank', dados_jogador)
             self.assertIn('name', dados_jogador)
+            self.assertIn('seed', dados_jogador)
 
 class GerarJogadoresTorneioChallongeTestCase(TestCase):
     """Testes para gerar jogadores com base nos dados do Challonge"""
@@ -95,7 +96,8 @@ class GerarJogadoresTorneioChallongeTestCase(TestCase):
             self.assertTrue(hasattr(jogador, 'torneio'))
             self.assertTrue(hasattr(jogador, 'posicao_final'))
             self.assertTrue(hasattr(jogador, 'valido'))
-            self.assertTrue(hasattr(jogador, 'id_challonge'))
+            self.assertTrue(hasattr(jogador, 'id_site'))
+            self.assertTrue(hasattr(jogador, 'seed'))
             # Testar se preencheu time
             if jogador.nome == 'Teets':
                 self.assertEqual(jogador.time.nome, 'CdL')
@@ -204,7 +206,8 @@ class VincularAutomaticamenteJogadorTorneioAJogadorLadder(TestCase):
         JogadorTorneio.objects.filter(nome='bløwer').update(jogador=self.blower)
         
         # Gerar segundo torneio
-        torneio_2 = criar_torneio_teste('Torneio 2', self.torneio.data + datetime.timedelta(days=Torneio.PERIODO_TORNEIO_RECENTE - 1))
+        torneio_2 = criar_torneio_teste('Torneio 2', self.torneio.data + datetime.timedelta(days=Torneio.PERIODO_TORNEIO_RECENTE - 1),
+                                        url='teste_2')
         criar_jogadores_torneio_teste(torneio_2)
         
         vincular_automaticamente_jogadores_torneio_a_ladder(torneio_2)
@@ -229,7 +232,8 @@ class VincularAutomaticamenteJogadorTorneioAJogadorLadder(TestCase):
         JogadorTorneio.objects.filter(nome='bløwer').update(jogador=self.blower)
         
         # Outro torneio está a uma diferença maior do que é considerado recente
-        torneio_2 = criar_torneio_teste('Torneio 2', self.torneio.data + datetime.timedelta(days=Torneio.PERIODO_TORNEIO_RECENTE + 1))
+        torneio_2 = criar_torneio_teste('Torneio 2', self.torneio.data + datetime.timedelta(days=Torneio.PERIODO_TORNEIO_RECENTE + 1),
+                                        url='teste_2')
         criar_jogadores_torneio_teste(torneio_2)
         
         vincular_automaticamente_jogadores_torneio_a_ladder(torneio_2)

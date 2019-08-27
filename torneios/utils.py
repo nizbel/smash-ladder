@@ -23,7 +23,7 @@ def buscar_torneio_challonge(identificador_torneio):
 def gerar_torneio_challonge(dados_torneio):
     """Gera um torneio com base em dados do Challonge"""
     torneio = Torneio(nome=dados_torneio['name'], data=timezone.localtime(dados_torneio['started-at']).date(),
-                                  url=dados_torneio['full-challonge-url'], id_challonge=dados_torneio['id'])
+                                  url=dados_torneio['full-challonge-url'], id_site=dados_torneio['id'])
                 
     return torneio
 
@@ -53,7 +53,7 @@ def gerar_jogadores_challonge(dados_jogadores, torneio, delimitador_time='|'):
             time = None
             nome = dados_jogador['name'].strip()
         jogador = JogadorTorneio(nome=nome, posicao_final=dados_jogador['final-rank'], torneio=torneio,
-                                 time=time, id_challonge=dados_jogador['id'])
+                                 time=time, id_site=dados_jogador['id'], seed=dados_jogador['seed'])
         jogadores.append(jogador)
                 
     return (jogadores, times)
@@ -80,9 +80,9 @@ def gerar_partidas_challonge(dados_partidas, torneio):
             round_torneio = Round(torneio=torneio, indice=dados_partida['round'])
             rounds.append(round_torneio)
             
-        ganhador = JogadorTorneio.objects.get(id_challonge=dados_partida['winner-id'])
-        jogador_1 = JogadorTorneio.objects.get(id_challonge=dados_partida['player1-id'])
-        jogador_2 = JogadorTorneio.objects.get(id_challonge=dados_partida['player2-id'])
+        ganhador = JogadorTorneio.objects.get(id_site=dados_partida['winner-id'])
+        jogador_1 = JogadorTorneio.objects.get(id_site=dados_partida['player1-id'])
+        jogador_2 = JogadorTorneio.objects.get(id_site=dados_partida['player2-id'])
         
         score_1 = int(dados_partida['scores-csv'][: dados_partida['scores-csv'][1:].find('-') + 1])
         score_2 = int(dados_partida['scores-csv'][dados_partida['scores-csv'][1:].find('-') + 2 :])

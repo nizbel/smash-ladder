@@ -68,8 +68,9 @@ class ViewCriarTorneioTestCase(TestCase):
         response = self.client.post(reverse('torneios:criar_torneio'), {'identificador_torneio': 'atevalhalla2', 'site': Torneio.SITE_CHALLONGE_ID, 'delimitador_time': '|'})
         self.assertEqual(response.status_code, 200)
         
-        self.assertIn(Torneio.MENSAGEM_ERRO_URL_TORNEIO_JA_EXISTENTE, response.context['messages'])
-        
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), Torneio.MENSAGEM_ERRO_URL_TORNEIO_JA_EXISTENTE)
 
 class ViewDetalharTorneioTestCase(TestCase):
     """Testes para a view de detalhar torneio"""
