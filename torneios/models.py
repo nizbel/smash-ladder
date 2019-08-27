@@ -5,6 +5,17 @@ from django.db import models
 class Torneio(models.Model):
     PERIODO_TORNEIO_RECENTE = 60
     
+    SITE_CHALLONGE_URL = 'https://challonge.com/'
+    SITE_CHALLONGE_DESCRICAO = 'Challonge'
+    SITE_CHALLONGE_ID = 1
+    
+    MENSAGEM_SUCESSO_CRIACAO_TORNEIO = 'Torneio criado com sucesso'
+    MENSAGEM_SUCESSO_EDICAO_TORNEIO = 'Torneio editado com sucesso'
+    MENSAGEM_ERRO_URL_TORNEIO_JA_EXISTENTE = 'Já existe um torneio com a URL informada'
+    MENSAGEM_ERRO_SITE_INVALIDO = 'Site inválido'
+    
+    OPCOES_SITE = [(SITE_CHALLONGE_ID, SITE_CHALLONGE_DESCRICAO)]
+    
     data = models.DateField('Data do torneio')
     nome = models.CharField('Nome do torneio', max_length=100)
     url = models.URLField('URL do torneio')

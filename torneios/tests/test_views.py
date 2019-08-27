@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from django.contrib.auth.models import User
+from django.contrib.messages.api import get_messages
 from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
@@ -9,7 +9,7 @@ from django.utils import timezone
 from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE
 from smashLadder import settings
-from torneios.models import JogadorTorneio, Partida
+from torneios.models import JogadorTorneio, Partida, Torneio
 from torneios.tests.utils_teste import criar_torneio_teste, \
     criar_jogadores_torneio_teste, criar_partidas_teste
 
@@ -43,6 +43,33 @@ class ViewCriarTorneioTestCase(TestCase):
         self.client.login(username=self.usuario_admin.user.username, password=SENHA_TESTE)
         response = self.client.get(reverse('torneios:criar_torneio'))
         self.assertEqual(response.status_code, 200)
+        
+    def test_criar_torneio_sucesso(self):
+        """Testa a criação de torneio com sucesso"""
+        self.client.login(username=self.usuario_admin.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('torneios:criar_torneio'), {'identificador_torneio': 'atevalhalla2', 'site': Torneio.SITE_CHALLONGE_ID, 'delimitador_time': '|'})
+        self.assertEqual(response.status_code, 302)
+        
+        torneio_criado = Torneio.objects.all()[0]
+        
+        self.assertRedirects(response, reverse('torneios:editar_torneio', kwargs={'torneio_id': torneio_criado.id}))
+        
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), Torneio.MENSAGEM_SUCESSO_CRIACAO_TORNEIO)
+        
+    def test_erro_criar_torneio_url_ja_utilizada(self):
+        """Testa mensagem de erro ao inserir url de torneio que já foi criado"""
+        # Criar torneio
+        criar_torneio_teste(url=f'{Torneio.SITE_CHALLONGE_URL}atevalhalla2')
+        
+        self.client.login(username=self.usuario_admin.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('torneios:criar_torneio'), {'identificador_torneio': 'atevalhalla2', 'site': Torneio.SITE_CHALLONGE_ID, 'delimitador_time': '|'})
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertIn(Torneio.MENSAGEM_ERRO_URL_TORNEIO_JA_EXISTENTE, response.context['messages'])
+        
 
 class ViewDetalharTorneioTestCase(TestCase):
     """Testes para a view de detalhar torneio"""
