@@ -41,14 +41,14 @@ JOGADORES_TORNEIO_TESTE = [
     {'nome': 'Dankid', 'posicao_final': 13, 'id_challonge': 32}
     ]
 
-def criar_torneio_teste(nome='Torneio 1', data=None):
+def criar_torneio_teste(nome='Torneio 1', data=None, url='teste'):
     """Gera um torneio para teste"""
     if data == None:
         data = timezone.localtime()
         
     torneio = Torneio.objects.create(nome=nome, data=data, adicionado_por=Jogador.objects.filter(admin=True)[0], 
                                      id_challonge=(Torneio.objects.aggregate(max_id=Max('id_challonge'))['max_id'] or 1),
-                                     url='teste')
+                                     url=url)
     return torneio
 
 def criar_jogadores_torneio_teste(torneio):
