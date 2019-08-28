@@ -6,14 +6,15 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.http.response import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls.base import reverse
 
-from torneios.forms import CriarTorneioForm, JogadorTorneioForm
-from torneios.models import Torneio, Partida, JogadorTorneio
+from torneios.forms import CriarTorneioForm, JogadorTorneioForm, RoundForm
+from torneios.models import Torneio, Partida, JogadorTorneio, Round
 from torneios.utils import buscar_torneio_challonge, gerar_torneio_challonge, \
     buscar_jogadores_challonge, gerar_jogadores_challonge, \
-    buscar_partidas_challonge, gerar_partidas_challonge, logar_challonge,\
+    buscar_partidas_challonge, gerar_partidas_challonge, logar_challonge, \
     vincular_automaticamente_jogadores_torneio_a_ladder
 
 
@@ -106,13 +107,35 @@ def editar_torneio(request, torneio_id):
     if not request.user.jogador.admin:
         raise PermissionDenied
     
-    torneio = get_object_or_404(Torneio, id=torneio_id)
-    
-    forms_jogador = list()
-    for jogador in JogadorTorneio.objects.filter(torneio=torneio).order_by('seed'):
-        forms_jogador.append(JogadorTorneioForm(instance=jogador))
-    
-    return render(request, 'torneios/editar_torneio.html', {'torneio': torneio, 'forms_jogador': forms_jogador, 'forms_time': [], 'forms_round': []})
+    if request.is_ajax():
+        if request.POST.get('form-jogador'):
+            print(request.POST)
+            form_jogador = JogadorTorneioForm(request.POST, instance=JogadorTorneio.objects.get(id=request.POST.get('form-jogador')))
+            if form_jogador.is_valid():
+                jogador = form_jogador.save(commit=False)
+                
+                jogador.save()
+                
+                return JsonResponse({'mensagem': 'Jogador alterado com sucesso'})
+            else:
+                return JsonResponse({'mensagem': 'erro', 'erro': True})
+    else:
+        torneio = get_object_or_404(Torneio, id=torneio_id)
+        
+        forms_jogador = list()
+        for jogador in JogadorTorneio.objects.filter(torneio=torneio).order_by('seed'):
+            forms_jogador.append(JogadorTorneioForm(instance=jogador))
+        
+        # Adicionar rounds ordenando por número absoluto 
+        forms_round = list()
+        rounds = list()
+        for round_torneio in Round.objects.filter(torneio=torneio):
+            rounds.append(round_torneio)
+            
+        for round_torneio in sorted(rounds, key=lambda x: abs(x.indice)):
+            forms_round.append(RoundForm(instance=round_torneio))
+        
+    return render(request, 'torneios/editar_torneio.html', {'torneio': torneio, 'forms_jogador': forms_jogador, 'forms_round': forms_round})
 
 def listar_torneios(request):
     """Lista torneios cadastrados"""

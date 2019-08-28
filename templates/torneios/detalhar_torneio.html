@@ -1,22 +1,68 @@
 {% extends 'base.html' %}
 
 {% block title %}
-	- Torneios
+	- {{ torneio.nome }}
 {% endblock %}
 
 {% block page_header %}
-	Torneios
+	{{ torneio.nome }}
 {% endblock %}
 
 {% block content %}
-	<div class="card col-12 col-md-3">
-	  	<div class="card-body">
-	    	<h5 class="card-title mb-0">{{ torneio.nome }}</h5>
-	    	
-		    <h6 class="card-subtitle mb-2 text-muted">{{ torneio.data|date:'d/m/Y' }}</h6>
-		    
-		    
-		    <a class="card-link" href="{% url 'torneios:detalhar_torneio' torneio.id %}">Ver detalhes</a>
-	  	</div>
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Nome</h6>
+					    <h6 class="card-title"><strong>{{ torneio.nome }}</strong>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Data</h6>
+					    <h6 class="card-title"><strong>{{ torneio.data|date:'d/m/Y' }}</strong></h6>
+				    </div>
+			    
+			  		<div class="col-6">
+					    <h6 class="card-title">Qtd. jogadores</h6>
+					    <h6 class="card-title"><strong>{{ torneio.qtd_jogadores }}</strong></h6>
+				    </div>
+				    <div class="col-6">
+					    <h6 class="card-title">Adicionado por</h6>
+					    <h6 class="card-title"><strong>{{ torneio.adicionado_por }}</strong></h6>
+				    </div>
+				    
+				    <div class="col-12">
+					    <h6 class="card-title">URL</h6>
+					    <h6 class="card-title">{{ torneio.url }}</h6>
+				    </div>
+			    </div>
+				
+				{% if request.user.jogador.admin %}
+				<a class="card-link" href="{% url 'torneios:editar_torneio' torneio.id %}">Editar</a>
+				{% endif %}
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Jogadores
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for jogador in dados_torneio.top_3 %}
+					<li class="list-group-item">
+						<span>{{ forloop.counter }}: {{ jogador.nome }}</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12">
+				<a class="card-link" href="{% url 'torneios:listar_jogadores_torneio' torneio.id %}">Ver todos</a>
+		  	</div>
+		</div>
 	</div>
 {% endblock %}

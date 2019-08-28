@@ -12,11 +12,23 @@ Editar {{ torneio.nome }}
 {% endblock %}
 
 {% block content %}
+	<ul class="nav nav-pills col-12 mb-3 justify-content-center">
+	  	<li class="nav-item">
+	    	<a class="nav-link active" href="javascript:;">Jogadores</a>
+	  	</li>
+	  	{% comment %}
+	  	<li class="nav-item">
+	    	<a class="nav-link" href="javascript:;">Rounds</a>
+	  	</li>
+	  	{% endcomment %}
+	</ul>
 	{% for form_jogador in forms_jogador %}
-	<form class="col-12 col-md-6 border-bottom mb-3" action="{% url 'torneios:editar_torneio' torneio.id %}" method="post">
+	<form class="col-12 col-md-6 border-bottom mb-3 form-jogador" action="{% url 'torneios:editar_torneio' torneio.id %}" method="post">
 		<h5>{{ form_jogador.instance.seed }} - {{ form_jogador.instance.nome }}</h5>
 	    {% csrf_token %}
     	{% include "form_2_colunas.html" with form=form_jogador %}
+    	
+    	<input type="hidden" name="form-jogador" value="{{ form_jogador.instance.id }}" />
     	
 	  	<input class="col-12 col-md-2 btn btn-lg btn-dark mb-3" type="submit" value="Salvar">
 	</form>
@@ -29,6 +41,20 @@ Editar {{ torneio.nome }}
 <script type="text/javascript">
 $(document).ready(function(){
 	$('select').select2();
+	
+	$('.form-jogador').submit(function(event) {
+		event.preventDefault();
+		ajax("{% url 'torneios:editar_torneio' torneio.id %}", 
+		'POST', 
+		$(this).serialize(), 
+		function(resultado) {
+			if (resultado.erro) {
+				console.log('ERRO', resultado.mensagem);
+			}
+			console.log(resultado.mensagem);
+        }
+    );
+	});
 });
 </script>
 {% endblock %}
