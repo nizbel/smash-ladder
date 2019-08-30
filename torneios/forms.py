@@ -47,11 +47,22 @@ class JogadorTorneioForm(forms.ModelForm):
     class Meta:
         model = JogadorTorneio
         fields = ('nome', 'time', 'valido', 'jogador')
+        labels = {'jogador': 'Jogador da Ladder'}
         
     def __init__(self,*args,**kwargs):
         super(JogadorTorneioForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        jogador = cleaned_data['jogador']
+        
+        # Verifica se outro jogador no mesmo torneio já não está vinculado ao mesmo jogador da ladder
+        if jogador and JogadorTorneio.objects.filter(torneio=self.instance.torneio, jogador=jogador).exclude(id=self.instance.id).exists():
+            jogador_torneio = JogadorTorneio.objects.get(torneio=self.instance.torneio, jogador=jogador)
+            raise ValidationError(f'Jogador da Ladder já está vinculado a {jogador_torneio.seed} - {jogador_torneio.nome}')
     
 class RoundForm(forms.ModelForm):
     """Formulário para round de um torneio"""

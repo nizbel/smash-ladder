@@ -22,6 +22,7 @@ Editar {{ torneio.nome }}
 	  	</li>
 	  	{% endcomment %}
 	</ul>
+	
 	{% for form_jogador in forms_jogador %}
 	<form class="col-12 col-md-6 border-bottom mb-3 form-jogador" action="{% url 'torneios:editar_torneio' torneio.id %}" method="post">
 		<h5>{{ form_jogador.instance.seed }} - {{ form_jogador.instance.nome }}</h5>
@@ -30,6 +31,11 @@ Editar {{ torneio.nome }}
     	
     	<input type="hidden" name="form-jogador" value="{{ form_jogador.instance.id }}" />
     	
+    	<div class="alert alert-primary" id="alert-sucess-{{ form_jogador.instance.id }}" style="display: none;">
+		  	<a href="javascript:;" class="close" onclick="$(this).parent().hide();">&times;</a>
+		  	<span></span>
+		</div>
+		
 	  	<input class="col-12 col-md-2 btn btn-lg btn-dark mb-3" type="submit" value="Salvar">
 	</form>
 	{% endfor %}
@@ -48,10 +54,14 @@ $(document).ready(function(){
 		'POST', 
 		$(this).serialize(), 
 		function(resultado) {
+			$(event.target).find('.alert span').html(resultado.mensagem);
 			if (resultado.erro) {
-				console.log('ERRO', resultado.mensagem);
+				$(event.target).find('.alert').removeClass('alert-primary').addClass('alert-danger');
 			}
-			console.log(resultado.mensagem);
+			else {
+				$(event.target).find('.alert').addClass('alert-primary').removeClass('alert-danger');
+			}
+			$(event.target).find('.alert').show(); 
         }
     );
 	});
