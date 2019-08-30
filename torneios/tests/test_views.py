@@ -91,7 +91,7 @@ class ViewDetalharTorneioTestCase(TestCase):
         self.assertEqual(response.context['torneio'], self.torneio)
         
         # Verificar dados do torneio
-        self.assertIn('dados_torneio', response.context)
+        self.assertTrue(hasattr(response.context['torneio'], 'top_3')
         
         # Garantir que links para edição do torneio e vinculação de jogadores não esteja visível
         self.assertNotContains(response, reverse('torneios:editar_torneio', kwargs={'torneio_id': self.torneio.id}))
@@ -105,7 +105,7 @@ class ViewDetalharTorneioTestCase(TestCase):
         self.assertEqual(response.context['torneio'], self.torneio)
         
         # Verificar dados do torneio
-        self.assertIn('dados_torneio', response.context)
+        self.assertTrue(hasattr(response.context['torneio'], 'top_3')
         
         # Garantir que links para edição do torneio e vinculação de jogadores não esteja visível
         self.assertNotContains(response, reverse('torneios:editar_torneio', kwargs={'torneio_id': self.torneio.id}))
@@ -119,7 +119,7 @@ class ViewDetalharTorneioTestCase(TestCase):
         self.assertEqual(response.context['torneio'], self.torneio)
         
         # Verificar dados do torneio
-        self.assertIn('dados_torneio', response.context)
+        self.assertTrue(hasattr(response.context['torneio'], 'top_3')
         
         # Garantir que links para edição do torneio e vinculação de jogadores não esteja visível
         self.assertContains(response, reverse('torneios:editar_torneio', kwargs={'torneio_id': self.torneio.id}), 1)
@@ -130,10 +130,11 @@ class ViewDetalharTorneioTestCase(TestCase):
         response = self.client.get(reverse('torneios:detalhar_torneio', kwargs={'torneio_id': self.torneio.id}))
         self.assertEqual(response.status_code, 200)
         
-        dados_torneio = response.context['dados_torneio'] 
-        self.assertEqual(len(dados_torneio['top_3']), 3)
+        self.assertTrue(hasattr(response.context['torneio'], 'top_3')
+        top_3 = response.context['dados_torneio'].top_3
+        self.assertEqual(len(top_3), 3)
         for jogador_torneio in JogadorTorneio.objects.filter(posicao_final__lte=3):
-            self.assertIn(jogador_torneio, dados_torneio['top_3'])
+            self.assertIn(jogador_torneio, top_3)
         self.assertContains(response, reverse('torneios:listar_participantes', kwargs={'torneio_id': self.torneio.id}), 1)
         
     def test_mostrar_partidas(self):
@@ -141,6 +142,8 @@ class ViewDetalharTorneioTestCase(TestCase):
         response = self.client.get(reverse('torneios:detalhar_torneio', kwargs={'torneio_id': self.torneio.id}))
         self.assertEqual(response.status_code, 200)
         
+        self.assertTrue(hasattr(response.context['torneio'], 'partidas')
+                        
         self.assertContains(response, reverse('torneios:listar_partidas', kwargs={'torneio_id': self.torneio.id}), 1)
         
 class ViewListarTorneiosTestCase(TestCase):

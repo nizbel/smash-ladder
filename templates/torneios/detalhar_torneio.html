@@ -37,7 +37,7 @@
 				    
 				    <div class="col-12">
 					    <h6 class="card-title">URL</h6>
-					    <h6 class="card-title">{{ torneio.url }}</h6>
+					    <h6 class="card-title"><a href="{{ torneio.url }}">{{ torneio.url }}</a></h6>
 				    </div>
 			    </div>
 				
@@ -54,14 +54,36 @@
 		    	Jogadores
 		  	</div>
 		  	<ul class="list-group list-group-flush">
-			  	{% for jogador in dados_torneio.top_3 %}
+			  	{% for jogador in torneio.top_3 %}
 					<li class="list-group-item">
-						<span>{{ forloop.counter }}: {{ jogador.nome }}</span>
+						<span>{{ forloop.counter }}: <a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador.nome }}</a></span>
 					</li>
 				{% endfor %}
 		  	</ul>
 		  	<div class="card-body col-12">
 				<a class="card-link" href="{% url 'torneios:listar_jogadores_torneio' torneio.id %}">Ver todos</a>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Partidas
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for partida in torneio.partidas %}
+					<li class="list-group-item">
+						<span>
+							<a href="{% url 'torneios:detalhar_partida' torneio.id partida.id %}">
+								{{ partida.jogador_1 }} vs {{ partida.jogador_2 }}
+							</a>
+						</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12">
+				<a class="card-link" href="{% url 'torneios:listar_partidas' torneio.id %}">Ver todos</a>
 		  	</div>
 		</div>
 	</div>

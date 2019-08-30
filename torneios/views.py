@@ -92,13 +92,15 @@ def criar_torneio(request):
     
 def detalhar_torneio(request, torneio_id):
     """Detalha um torneio"""
-    torneio = get_object_or_404(Torneio, id=torneio_id)
+    torneio = get_object_or_404(Torneio.objects.select_related('adicionado_por'), id=torneio_id)
     
-    dados_torneio = {}
+    torneio.top_3 = JogadorTorneio.objects.filter(torneio=torneio, posicao_final__lte=3).order_by('posicao_final')
     
-    dados_torneio['top_3'] = JogadorTorneio.objects.filter(torneio=torneio, posicao_final__lte=3).order_by('posicao_final')
+    torneio.partidas = Partida.objects.filter(round__torneio=torneio).order_by('round').select_related('jogador_1', 'jogador_2', 'round')[:5]
     
-    return render(request, 'torneios/detalhar_torneio.html', {'torneio': torneio, 'dados_torneio': dados_torneio})
+    torneio.qtd_jogadores = JogadorTorneio.objects.filter(torneio=torneio, valido=True).count()
+    
+    return render(request, 'torneios/detalhar_torneio.html', {'torneio': torneio})
 
 @login_required
 def editar_torneio(request, torneio_id):
@@ -109,8 +111,9 @@ def editar_torneio(request, torneio_id):
     
     if request.is_ajax():
         if request.POST.get('form-jogador'):
-            print(request.POST)
-            form_jogador = JogadorTorneioForm(request.POST, instance=JogadorTorneio.objects.get(id=request.POST.get('form-jogador')))
+            instance = JogadorTorneio.objects.get(id=request.POST.get('form-jogador'))
+            form_jogador = JogadorTorneioForm(request.POST, instance=instance,
+                                              prefix=f'{instance.id}')
             if form_jogador.is_valid():
                 jogador = form_jogador.save(commit=False)
                 
@@ -118,13 +121,13 @@ def editar_torneio(request, torneio_id):
                 
                 return JsonResponse({'mensagem': 'Jogador alterado com sucesso'})
             else:
-                return JsonResponse({'mensagem': 'erro', 'erro': True})
+                return JsonResponse({'mensagem': form_jogador.non_field_errors(), 'erro': True})
     else:
         torneio = get_object_or_404(Torneio, id=torneio_id)
         
         forms_jogador = list()
         for jogador in JogadorTorneio.objects.filter(torneio=torneio).order_by('seed'):
-            forms_jogador.append(JogadorTorneioForm(instance=jogador))
+            forms_jogador.append(JogadorTorneioForm(instance=jogador, prefix=f'{jogador.id}'))
         
         # Adicionar rounds ordenando por número absoluto 
         forms_round = list()
@@ -151,7 +154,7 @@ def detalhar_partida(request, torneio_id, partida_id):
 
 def listar_partidas(request, torneio_id):
     """Lista partidas cadastrados"""
-    partidas = Partida.objects.filter(torneio__id=torneio_id)
+    partidas = Partida.objects.filter(round__torneio__id=torneio_id)
     
     return render(request, 'partidas/listar_partidas.html', {'partidas': partidas})
 
