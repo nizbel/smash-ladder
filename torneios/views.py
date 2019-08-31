@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls.base import reverse
@@ -74,6 +75,8 @@ def criar_torneio(request):
                         
                         vincular_automaticamente_jogadores_torneio_a_ladder(torneio)
                         
+                        messages.success(request, Torneio.MENSAGEM_SUCESSO_CRIACAO_TORNEIO)
+                        
                         return redirect(reverse('torneios:editar_torneio', kwargs={'torneio_id': torneio.id}))
                         
                 except Exception as e:
@@ -110,6 +113,7 @@ def editar_torneio(request, torneio_id):
         raise PermissionDenied
     
     if request.is_ajax():
+        # Verificar se foi alterado um jogador
         if request.POST.get('form-jogador'):
             instance = JogadorTorneio.objects.get(id=request.POST.get('form-jogador'))
             form_jogador = JogadorTorneioForm(request.POST, instance=instance,
@@ -122,6 +126,19 @@ def editar_torneio(request, torneio_id):
                 return JsonResponse({'mensagem': 'Jogador alterado com sucesso'})
             else:
                 return JsonResponse({'mensagem': form_jogador.non_field_errors(), 'erro': True})
+            
+        # Verificar se a alteração foi em um round
+        elif request.POST.get('form-round'):
+            instance = Round.objects.get(id=request.POST.get('form-round'))
+            form_round = RoundForm(request.POST, instance=instance, prefix=f'{instance.id}')
+            if form_round.is_valid():
+                round_torneio = form_round.save(commit=False)
+                
+                round_torneio.save()
+                
+                return JsonResponse({'mensagem': 'Round alterado com sucesso'})
+            else:
+                return JsonResponse({'mensagem': form_round.non_field_errors(), 'erro': True})
     else:
         torneio = get_object_or_404(Torneio, id=torneio_id)
         
@@ -154,25 +171,51 @@ def detalhar_partida(request, torneio_id, partida_id):
 
 def listar_partidas(request, torneio_id):
     """Lista partidas cadastrados"""
+    torneio = get_object_or_404(Torneio, id=torneio_id)
     partidas = Partida.objects.filter(round__torneio__id=torneio_id)
     
-    return render(request, 'partidas/listar_partidas.html', {'partidas': partidas})
+    return render(request, 'torneios/listar_partidas.html', {'torneio': torneio, 'partidas': partidas})
 
 def detalhar_jogador(request, torneio_id, jogador_id):
     """Detalha um jogador de um torneio"""
     jogador = get_object_or_404(JogadorTorneio, id=jogador_id)
+    partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio=jogador.torneio)
     
-    return render(request, 'torneios/listar_torneios.html', {'jogador': jogador})
+    return render(request, 'torneios/detalhar_jogador.html', {'jogador': jogador, 'partidas': partidas})
 
 @login_required
 def editar_jogador(request, torneio_id, jogador_id):
     """Detalha um jogador de um torneio"""
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+    
     jogador = get_object_or_404(JogadorTorneio, id=jogador_id)
     
-    return render(request, 'torneios/listar_torneios.html', {'jogador': jogador})
+    if request.POST:
+        form_jogador = JogadorTorneioForm(request.POST, instance=jogador)
+        if form_jogador.is_valid():
+            try:
+                with transaction.atomic():
+                    jogador = form_jogador.save(commit=False)
+                    
+                    jogador.save()
+                    
+                    return redirect(reverse('torneios:detalhar_jogador_torneio', kwargs={'torneio_id': torneio_id,
+                                                                                         'jogador_id': jogador.id}))
+            except Exception as e:
+                messages.error(request, str(e))
+        else:
+            for erro in form_jogador.non_field_errors():
+                messages.error(request, erro)
+            
+    else:
+        form_jogador = JogadorTorneioForm(instance=jogador)
+    
+    return render(request, 'torneios/editar_jogador.html', {'form_jogador': form_jogador})
 
 def listar_jogadores(request, torneio_id):
-    """Lista partidas cadastrados"""
+    """Lista jogadores de um torneio"""
+    torneio = get_object_or_404(Torneio, id=torneio_id)
     jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id)
     
-    return render(request, 'partidas/listar_partidas.html', {'jogadores': jogadores})
+    return render(request, 'torneios/listar_jogadores.html', {'jogadores': jogadores, 'torneio': torneio})

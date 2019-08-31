@@ -31,7 +31,7 @@ urlpatterns = [
     
     # Jogadores
     path(r'detalhar/<int:torneio_id>/jogador/<int:jogador_id>/', views.detalhar_jogador, name='detalhar_jogador_torneio'),
-    path(r'detalhar/<int:torneio_id>/jogador/<int:jogador_id>/editar', views.editar_jogador, name='editar_jogador_torneio'),
+    path(r'editar/<int:torneio_id>/jogador/<int:jogador_id>/', views.editar_jogador, name='editar_jogador_torneio'),
     path(r'detalhar/<int:torneio_id>/jogadores/', views.listar_jogadores, name='listar_jogadores_torneio'),
     
 ]

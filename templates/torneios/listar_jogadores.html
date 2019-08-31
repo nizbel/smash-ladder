@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}- Jogadores de {{ torneio.nome }}{% endblock %}
+
+{% block page_header %}
+Jogadores de {{ torneio.nome }}
+{% endblock %}
+
+{% block content %}	
+	{% for jogador in jogadores %}
+	<div class="card col-6 col-md-1">
+	  	<div class="card-body text-center">
+	  		<p class="card-text"><a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador.nome }}</a></p>
+	  	</div>
+	</div>
+	{% endfor %}
+{% endblock %}

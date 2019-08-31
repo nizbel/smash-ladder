@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- {{ jogador.nome }}
+{% endblock %}
+
+{% block page_header %}
+	{{ jogador.nome }}
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Nome</h6>
+					    <h6 class="card-title"><strong>{{ jogador.nome }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Resultado</h6>
+					    <h6 class="card-title"><strong>{{ jogador.posicao_final }}</strong></h6>
+				    </div>
+				    
+			  		<div class="col-6">
+					    <h6 class="card-title">Qtd. partidas</h6>
+					    <h6 class="card-title"><strong>{{ partidas.count }}</strong></h6>
+				    </div>
+				    <div class="col-6">
+					    <h6 class="card-title">Torneio</h6>
+					    <h6 class="card-title"><a href="{% url 'torneios:detalhar_torneio' jogador.torneio.id %}">
+						    <strong>{{ jogador.torneio.nome }}</strong>
+					    </a></h6>
+				    </div>
+				    
+				    <div class="col-6">
+					    <h6 class="card-title">Vínculo na Ladder</h6>
+					    <h6 class="card-title">
+					    	{% if jogador.jogador %}
+					    	<a href="{% url 'jogadores:detalhar_jogador' jogador.jogador.user.username %}">
+					    		<strong>{{ jogador.jogador.nick }}</strong>
+				    		</a>
+				    		{% else %}
+				    		<strong>Indefinido</strong>
+				    		{% endif %}
+				    	</h6>
+				    </div>
+			    </div>
+			    
+			    {% if request.user.jogador.admin %}
+				<a class="card-link" href="{% url 'torneios:editar_jogador_torneio' jogador.torneio.id jogador.id %}">Editar</a>
+				{% endif %}
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Partidas
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for partida in partidas %}
+					<li class="list-group-item">
+						<span>
+							<a href="{% url 'torneios:detalhar_partida' jogador.torneio.id partida.id %}">
+								{{ partida.jogador_1 }} vs {{ partida.jogador_2 }}
+							</a>
+						</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		</div>
+	</div>
+{% endblock %}
