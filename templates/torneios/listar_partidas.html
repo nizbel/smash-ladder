@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Partidas de {{ torneio.nome }}
+{% endblock %}
+
+{% block page_header %}
+	Partidas de {{ torneio.nome }}
+{% endblock %}
+
+{% block content %}
+	{% for partida in partidas %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	  		<div class="row d-flex">
+		  		<div class="col-5 text-left d-flex flex-column">
+			    	<h5 class="card-title mb-0">{{ partida.jogador_1.nome }}</h5>
+			    	<h6 class="card-title {% if partida.jogador_1 == partida.ganhador %}
+		  				text-success
+		  			{% else %}
+		  				text-danger
+		  			{% endif %}">{{ partida.score_1 }}</h6>
+		    	</div>
+		  		<div class="col-2 text-center">
+			    	<h5 class="card-title">VS</h5>
+		    	</div>
+		  		<div class="col-5 text-right">
+			    	<h5 class="card-title mb-0">{{ partida.jogador_2.nome }}</h5>
+			    	<h6 class="card-title {% if partida.jogador_2 == partida.ganhador %}
+		  				text-success
+		  			{% else %}
+		  				text-danger
+		  			{% endif %}">{{ partida.score_2 }}</h6>
+		    	</div>
+	    	</div>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">Round {{ partida.round.nome }}</h6>
+		    
+		    <a class="card-link" href="{% url 'torneios:detalhar_partida' torneio.id partida.id %}">Ver detalhes</a>
+	  	</div>
+	</div>
+	{% endfor %}
+{% endblock %}

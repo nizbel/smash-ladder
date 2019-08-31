@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Torneios
+{% endblock %}
+
+{% block page_header %}
+	Torneios
+{% endblock %}
+
+{% block content %}
+	{% for torneio in torneios %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ torneio.nome }}</h5>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ torneio.data|date:'d/m/Y' }}</h6>
+		    
+		    
+		    <a class="card-link" href="{% url 'torneios:detalhar_torneio' torneio.id %}">Ver detalhes</a>
+	  	</div>
+	</div>
+	{% endfor %}
+{% endblock %}

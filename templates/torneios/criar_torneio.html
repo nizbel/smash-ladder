@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Criar torneio{% endblock %}
+
+{% block page_header %}
+Criar torneio
+{% endblock %}
+
+{% block extra_header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'torneios:criar_torneio' %}" method="post">
+	    {% csrf_token %}
+    	{% include "form.html" with form=form_criar_torneio %}
+    	
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
+	</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('select').select2();
+});
+</script>
+{% endblock %}

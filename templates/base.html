@@ -114,6 +114,19 @@
 	  							
 		        			</div>
 		        		</li>
+		        		
+		        		<li class="nav-item dropdown {% if 'torneios' in request.resolver_match.url_name %}active{% endif %}">
+			        		<a class="nav-link dropdown-toggle" href="#" id="torneiosDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			          			Torneios
+			        		</a>
+			        		<div class="dropdown-menu" aria-labelledby="torneiosDropdown">
+	  							{% if request.user.jogador.admin %}
+	  							<a class="dropdown-item" href="{% url 'torneios:criar_torneio' %}">Adicionar torneio</a>
+	  							{% endif %}
+	  							<a class="dropdown-item" href="{% url 'torneios:listar_torneios' %}">Listar torneios</a>
+	  							
+		        			</div>
+		        		</li>
 			    	</ul>
 			    	
 				    <div class="my-2 my-lg-0">

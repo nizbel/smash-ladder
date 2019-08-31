@@ -323,7 +323,8 @@ def avaliar_jogador(request, username):
                     feedback.data_hora = timezone.localtime()
                     feedback.avaliado = jogador
                     feedback.save()
-                                    
+                    
+                    messages.success(request, f'Feedback para {jogador.nick} registrado com sucesso')
                     return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': username}))
             except Exception as e:
                 messages.error(request, str(e))
