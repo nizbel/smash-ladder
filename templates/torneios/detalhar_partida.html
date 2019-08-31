@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Partida de {{ torneio.nome }}
+{% endblock %}
+
+{% block page_header %}
+	Partida de {{ torneio.nome }}
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Jogador 1</h6>
+					    <h6 class="card-title">
+					    	<a href="{% url 'torneios:detalhar_jogador_torneio' partida.round.torneio_id partida.jogador_1.id %}">
+						    	<strong>{{ partida.jogador_1.nome }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Jogador 2</h6>
+					    <h6 class="card-title">
+					    	<a href="{% url 'torneios:detalhar_jogador_torneio' partida.round.torneio_id partida.jogador_2.id %}">
+					    		<strong>{{ partida.jogador_2.nome }}</strong>
+				    		</a>
+					    </h6>
+				    </div>
+				    
+			  		<div class="col-6">
+					    <h6 class="card-title">Torneio</h6>
+					    <h6 class="card-title">
+					    	<a href="{% url 'torneios:detalhar_torneio' partida.round.torneio_id %}">
+					    		<strong>{{ partida.round.torneio.nome }}</strong>
+				    		</a>
+			    		</h6>
+				    </div>
+				    <div class="col-6">
+					    <h6 class="card-title">Round</h6>
+					    <h6 class="card-title"><strong>{{ partida.round.descricao }}</strong></h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultado
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row pb-3">
+			  		<div class="col-5 text-left d-flex flex-column">
+				    	<h5 class="card-title {% if partida.ganhador == partida.jogador_1 %}
+			  				text-success
+			  			{% else %}
+			  				text-danger
+			  			{% endif %}">{{ partida.score_1 }}</h5>
+				    	<h6 class="card-title mb-0">{{ partida.jogador_2.nome }}</h6>
+			    	</div>
+			  		<div class="col-2 text-center">
+				    	<h6 class="card-title">VS</h6>
+			    	</div>
+			  		<div class="col-5 text-right">
+				    	<h5 class="card-title
+			  			{% if partida.ganhador == partida.jogador_2 %}
+			  				text-success
+			  			{% else %}
+			  				text-danger
+			  			{% endif %}">{{ partida.score_2 }}</h5>
+				    	<h6 class="card-title mb-0">{{ partida.jogador_2.nome }}</h6>
+			    	</div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+{% endblock %}

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'smashLadder',
     'jogadores',
     'ladder',
+    'torneios',
     
     'debug_toolbar',
 ]
