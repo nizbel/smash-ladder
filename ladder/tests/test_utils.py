@@ -782,7 +782,7 @@ class RecalcularLadderTestCase(TestCase):
     def test_alterar_ladder_deve_desfazer_decaimento(self):
         """Testa se alteração de ladder desfaz um decaimento para o jogador"""
         # Realizar decaimento
-        decaimento = DecaimentoJogador.objects.create(jogador=self.jogador_pos_4, data=timezone.localtime() + datetime.timedelta(days=1), 
+        decaimento = DecaimentoJogador.objects.create(jogador=self.jogador_pos_4, data=self.desafio_ladder.data_hora + datetime.timedelta(minutes=10), 
                                                       posicao_inicial=4, qtd_periodos_inatividade=1)
         decair_jogador(decaimento)
         
