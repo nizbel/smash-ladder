@@ -19,6 +19,9 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
 from ladder.utils import remover_jogador, decair_jogador, alterar_ladder, \
     processar_remocao
 from smashLadder import settings
+from torneios.tests.utils_teste import criar_torneio_teste,\
+    criar_jogadores_torneio_teste
+from torneios.models import JogadorTorneio
 
 
 class ViewListarJogadoresTestCase(TestCase):
@@ -279,6 +282,22 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertNotEqual(graf_variacao_ladder, [])
         self.assertEqual(graf_variacao_ladder[0]['y'], 10)
         self.assertEqual(graf_variacao_ladder[1]['y'], 9)
+        
+    def test_mostrar_torneios_que_participou(self):
+        """Testa mostrar torneios que jogador participou"""
+        # Adicionar torneio
+        torneio = criar_torneio_teste()
+        # Vincular jogador
+        criar_jogadores_torneio_teste(torneio)
+        jogador_torneio = JogadorTorneio.objects.get(nome='Aceblind')
+        jogador_torneio.jogador = self.jogador_2
+        jogador_torneio.save()
+        
+        response = self.client.get(reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertTrue(hasattr(response.context['jogador'], 'torneios'))
+        self.assertIn(torneio, response.context['jogador'].torneios)
         
 class ViewEditarJogadorTestCase(TestCase):
     """Testes para a view de detalhar jogador"""
