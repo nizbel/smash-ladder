@@ -45,9 +45,9 @@ def analisar():
        
 #     imgs['result_por_posicao'] = analisar_resultados_por_posicao(desafios_df)
        
-    imgs_resultados_dif_posicao = analisar_resultados_por_dif_de_posicao(desafios_df)
-    imgs['result_dif_posicao'] = imgs_resultados_dif_posicao[0]
-    imgs['result_dif_posicao_perc'] = imgs_resultados_dif_posicao[1]
+#     imgs_resultados_dif_posicao = analisar_resultados_por_dif_de_posicao(desafios_df)
+#     imgs['result_dif_posicao'] = imgs_resultados_dif_posicao[0]
+#     imgs['result_dif_posicao_perc'] = imgs_resultados_dif_posicao[1]
      
     desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
                                                                            luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
@@ -131,14 +131,14 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
 
 def analisar_resultados_por_posicao(df):
     """Gera imagem para resultado de desafios por posição de desafiante/desafiado"""
-    nome_arquivo = 'qtd_result_por_pos'
-    
-    # Retornar imagem já existente
-    for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if f'{nome_arquivo}_' in img and '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-                return img
+#     nome_arquivo = 'qtd_result_por_pos'
+#     
+#     # Retornar imagem já existente
+#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
+#         if f'{nome_arquivo}_' in img and '-' in img:
+#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
+#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
+#                 return img
             
     resultados_posicao_df = df.copy(True)
     
@@ -156,24 +156,24 @@ def analisar_resultados_por_posicao(df):
     
 def analisar_resultados_por_dif_de_posicao(df):
     """Gera imagens para resultados de desafios com base na diferença de posição"""
-    nome_arquivo_1 = 'vit_derr'
-    nome_arquivo_2 = 'percentual'
-    
-    img_retornar_1 = None
-    img_retornar_2 = None
-    # Retornar imagem já existente
-    for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if img_retornar_1 == None and f'{nome_arquivo_1}_' in img and '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-                img_retornar_1 = img
-        if img_retornar_2 == None and f'{nome_arquivo_2}_' in img and '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-                img_retornar_2 = img
-                
-        if img_retornar_1 != None and img_retornar_2 != None:
-            return (img_retornar_1, img_retornar_2)
+#     nome_arquivo_1 = 'vit_derr'
+#     nome_arquivo_2 = 'percentual'
+#     
+#     img_retornar_1 = None
+#     img_retornar_2 = None
+#     # Retornar imagem já existente
+#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
+#         if img_retornar_1 == None and f'{nome_arquivo_1}_' in img and '-' in img:
+#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
+#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
+#                 img_retornar_1 = img
+#         if img_retornar_2 == None and f'{nome_arquivo_2}_' in img and '-' in img:
+#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
+#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
+#                 img_retornar_2 = img
+#                 
+#         if img_retornar_1 != None and img_retornar_2 != None:
+#             return (img_retornar_1, img_retornar_2)
             
     perc_resultados_dif_pos_df = df.copy(True)
     
@@ -185,15 +185,15 @@ def analisar_resultados_por_dif_de_posicao(df):
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
                                         'score_desafiado', 'posicao_desafiado', 'desafio_coringa'], axis=1)
     
-    plt.rcParams.update({'font.size': 10, 'figure.figsize': (8, 5)})
-    plt.figure()
+#     plt.rcParams.update({'font.size': 10, 'figure.figsize': (8, 5)})
+#     plt.figure()
     
     val_min = int(perc_resultados_dif_pos_df['diferenca_posicoes'].describe()['min'])
     val_max = int(perc_resultados_dif_pos_df['diferenca_posicoes'].describe()['max'])
     variacao = val_max - val_min
     perc_resultados_dif_pos_df.hist(alpha=0.5, bins=variacao, by='resultado')
 
-    nome_formatado_1 = salvar_imagem(nome_arquivo_1, plt)
+#     nome_formatado_1 = salvar_imagem(nome_arquivo_1, plt)
     
     perc_resultados_dif_pos_df['qtd_desafios'] = 1
 
@@ -214,15 +214,16 @@ def analisar_resultados_por_dif_de_posicao(df):
     
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.rename_axis('', axis='columns')
     
-    perc_resultados_dif_pos_df.plot.bar(stacked=True, legend=False)
+#     perc_resultados_dif_pos_df.plot.bar(stacked=True, legend=False)
     
-    plt.legend(loc=9, bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
+#     plt.legend(loc=9, bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
+#     
+#     plt.xlabel('Diferença de posições')
+# 
+#     nome_formatado_2 = salvar_imagem(nome_arquivo_2, plt)
     
-    plt.xlabel('Diferença de posições')
-
-    nome_formatado_2 = salvar_imagem(nome_arquivo_2, plt)
-    
-    return (nome_formatado_1, nome_formatado_2)
+    print(perc_resultados_dif_pos_df)
+    return perc_resultados_dif_pos_df
 
 def gerar_acumulados_anteriores():
     """Gera análises de acumulados de resultados anteriores, que não sejam alteráveis"""
