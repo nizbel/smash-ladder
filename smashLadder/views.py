@@ -183,7 +183,19 @@ def analise_resultado_por_posicao(request):
                              'resultado': desafios_df['resultado'].tolist()})
         
 def analise_resultado_por_diferenca_posicao(request):
-    pass
+    """Retorna dados sobre diferença de posição"""
+    if request.is_ajax():
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
+                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
+                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
+                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
+        
+        desafios_df = analisar_resultados_por_posicao(desafios_df)
+        
+        return JsonResponse({'posicao_desafiante': desafios_df['posicao_desafiante'].tolist(), 
+                             'posicao_desafiado': desafios_df['posicao_desafiado'].tolist(),
+                             'qtd_desafios': desafios_df['qtd_desafios'].tolist(),
+                             'resultado': desafios_df['resultado'].tolist()})
         
 def analise_vitorias_por_personagem(request):
     """Retorna dados sobre vitórias por personagem"""
