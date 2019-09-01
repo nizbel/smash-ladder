@@ -330,6 +330,15 @@ class ViewDetalharJogadorTestCase(TestCase):
         
         self.assertEqual(len(response.context['jogador'].outros_torneios), 1)
         
+    def test_nao_mostrar_outros_torneios_sem_vinculacao(self):
+        """Testa se não preenche outros torneios caso jogador não seja vinculado"""
+        # Buscar outro jogador, um sem vínculo
+        jogador_sem_vinculo = JogadorTorneio.objects.filter(torneio=self.torneio, jogador__isnull=True)[0]
+        response = self.client.get(reverse('torneios:detalhar_jogador_torneio', kwargs={'torneio_id': self.torneio.id, 
+                                                                                        'jogador_id': jogador_sem_vinculo.id}))
+        
+        self.assertFalse(hasattr(response.context['jogador'], 'outros_torneios'))
+        
 class ViewEditarJogadorTorneioTestCase(TestCase):
     """Testes para view de editar jogador do torneio"""
     @classmethod
