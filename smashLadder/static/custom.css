@@ -242,8 +242,8 @@ ul.ladder-top-10 li.ladder-ferias {
 	div.personagens-4::after {
 		content: "";
 		background-repeat: no-repeat;
-		background-size: auto 90%, auto 90%, auto 90%, auto 90%;
-		background-position: 0%, 33%, 66%, 100%;
+		background-size: auto 120%, auto 70%, auto 70%, auto 50%;
+		background-position: 50% -150%, 0% 0%, 100% 0%, 50% 0%;
 		opacity: 0.25;
 		top: 0;
 		left: 0;

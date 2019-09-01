@@ -22,6 +22,7 @@ from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem, \
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
     JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
 from ladder.utils import buscar_desafiaveis
+from torneios.models import JogadorTorneio
 
 
 def detalhar_jogador(request, username):
@@ -144,6 +145,9 @@ def detalhar_jogador(request, username):
                 if registro['personagem'] == personagem.id:
                     registro['personagem'] = personagem
                     break
+                
+    # Adicionar torneios participados
+    jogador.torneios = JogadorTorneio.objects.filter(jogador=jogador).order_by('-torneio__data').select_related('torneio')
                 
     return render(request, 'jogadores/detalhar_jogador.html', {'jogador': jogador, 'desafios': desafios})
 

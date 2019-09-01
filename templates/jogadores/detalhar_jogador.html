@@ -212,6 +212,33 @@
 		</div>
 	</div>
 	{% endif %}
+	
+	{% if jogador.torneios %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Torneios participados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+		  			{% for jogador_torneio in jogador.torneios %}
+		  			<div class="card col-12">
+			  			<div class="card-body">
+					    	<h5 class="card-title">{{ jogador_torneio.torneio.nome }}</h5>
+					    	
+						    <h6 class="card-subtitle mb-2 text-muted">{{ jogador_torneio.torneio.data }}</h6>
+						    
+						    <p class="card-text">{{ jogador_torneio.posicao_final }}º lugar</p>
+						    
+						    <a class="card-link" href="{% url 'torneios:detalhar_torneio' jogador_torneio.torneio.id %}">Ver detalhes</a>
+					  	</div>
+				  	</div>
+				  	{% endfor %}
+				</div>
+		  	</div>
+		</div>
+	</div>
+	{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
