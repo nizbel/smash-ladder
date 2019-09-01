@@ -28,12 +28,12 @@ class Command(BaseCommand):
         
 def analisar():
     """Roda análises cadastradas"""
-    # Apagar imagens anteriores
-    for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds > TEMPO_APAGAR_IMAGENS:
-                os.remove(os.path.join(CAMINHO_ANALISES, img))
+#     # Apagar imagens anteriores
+#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
+#         if '-' in img:
+#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
+#             if (datetime.datetime.now() - horario).seconds > TEMPO_APAGAR_IMAGENS:
+#                 os.remove(os.path.join(CAMINHO_ANALISES, img))
         
     
     desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \

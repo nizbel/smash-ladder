@@ -38,11 +38,8 @@ def home(request):
 
 def analises(request):
     """Mostrar análises dos dados de desafios"""
-    imagens = analisar()
-    for imagem in imagens:
-        imagens[imagem] = 'analises/' + imagens[imagem]
         
-    return render(request, 'analises.html', {'imagens': imagens})
+    return render(request, 'analises.html', {})
 
 def analise_resultado_acumulado_jogadores(request):
     """Retorna dados sobre acumulado de resultados de desafios entre jogadores"""
