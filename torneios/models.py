@@ -72,6 +72,8 @@ class JogadorTorneio(models.Model):
                            ('id_site', 'torneio'))
         
     def __str__(self):
+        if self.time:
+            return f'{self.time} | {self.nome}'
         return self.nome
         
 class Time(models.Model):

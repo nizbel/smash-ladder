@@ -16,7 +16,7 @@ from torneios.models import Torneio, Partida, JogadorTorneio, Round
 from torneios.utils import buscar_torneio_challonge, gerar_torneio_challonge, \
     buscar_jogadores_challonge, gerar_jogadores_challonge, \
     buscar_partidas_challonge, gerar_partidas_challonge, logar_challonge, \
-    vincular_automaticamente_jogadores_torneio_a_ladder
+    vincular_automaticamente_jogadores_torneio_a_ladder, alterar_nome_rounds
 
 
 @login_required
@@ -66,6 +66,7 @@ def criar_torneio(request):
                         partidas, rounds, vitorias_por_ausencia = gerar_partidas_challonge(dados_partidas, torneio)
                         for round_torneio in rounds:
                             round_torneio.save()
+                        alterar_nome_rounds(torneio)
                         for partida in partidas:
                             partida.round_id = partida.round.id
                             partida.save()
