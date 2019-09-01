@@ -461,7 +461,7 @@ def detalhar_desafio_ladder(request, desafio_id):
     
     # Buscar alterações após desafio
     desafio_ladder.alteracoes_ladder = desafio_ladder.resultadodesafioladder_set.all().annotate(alteracao=F('alteracao_posicao')*-1) \
-        .order_by('-alteracao', '-id')
+        .order_by('-alteracao', '-id').select_related('jogador')
     
     # Verificar se usuário pode alterar desafio
     if request.user.is_authenticated:
