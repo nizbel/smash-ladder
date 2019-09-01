@@ -165,7 +165,8 @@ def listar_torneios(request):
 
 def detalhar_partida(request, torneio_id, partida_id):
     """Detalha uma partida"""
-    partida = get_object_or_404(Partida, id=partida_id)
+    partida = get_object_or_404(Partida.objects.select_related('jogador_1', 'jogador_2', 'round__torneio'), id=partida_id)
+    
     
     return render(request, 'torneios/detalhar_partida.html', {'partida': partida})
 
@@ -178,8 +179,9 @@ def listar_partidas(request, torneio_id):
 
 def detalhar_jogador(request, torneio_id, jogador_id):
     """Detalha um jogador de um torneio"""
-    jogador = get_object_or_404(JogadorTorneio, id=jogador_id)
-    partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio=jogador.torneio)
+    jogador = get_object_or_404(JogadorTorneio.objects.select_related('jogador__user'), id=jogador_id)
+    partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio=jogador.torneio) \
+        .select_related('jogador_1', 'jogador_2')
     
     return render(request, 'torneios/detalhar_jogador.html', {'jogador': jogador, 'partidas': partidas})
 

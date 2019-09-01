@@ -5,16 +5,14 @@ from django.db.models.fields import IntegerField
 from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from django.templatetags.static import static
 from django.utils import timezone
 
 from jogadores.models import Jogador
 from ladder.models import PosicaoLadder, DesafioLadder, HistoricoLadder, \
     JogadorLuta
 import pandas as pd
-from smashLadder.management.commands.analise import analisar, \
-    gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
-    CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador, \
+from smashLadder.management.commands.analise import analisar_resultado_acumulado_entre_jogadores, \
+    analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
     analisar_resultados_por_posicao, analisar_vitorias_por_personagem, \
     analisar_resultados_por_dif_de_posicao

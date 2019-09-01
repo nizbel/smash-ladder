@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block title %}
-	- Partida de {{ torneio.nome }}
+	- Partida de {{ partida.round.torneio.nome }}
 {% endblock %}
 
 {% block page_header %}
-	Partida de {{ torneio.nome }}
+	Partida de {{ partida.round.torneio.nome }}
 {% endblock %}
 
 {% block content %}
@@ -44,6 +44,12 @@
 				    <div class="col-6">
 					    <h6 class="card-title">Round</h6>
 					    <h6 class="card-title"><strong>{{ partida.round.descricao }}</strong></h6>
+				    </div>
+				    
+				    
+				    <div class="col-6">
+					    <h6 class="card-title">Ganhador</h6>
+					    <h6 class="card-title"><strong>{{ partida.ganhador.nome }}</strong></h6>
 				    </div>
 			    </div>
 		  	</div>

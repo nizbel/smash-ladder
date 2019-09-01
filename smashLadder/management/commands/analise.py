@@ -4,20 +4,12 @@ import datetime
 import os
 
 from django.core.management.base import BaseCommand
-from django.db.models.expressions import F, Case, When, Value
-from django.db.models.fields import IntegerField
+from django.db.models.expressions import F
 from django.utils import timezone
 
-from ladder.models import DesafioLadder, JogadorLuta, Luta
-import matplotlib.pyplot as plt
+from ladder.models import DesafioLadder
 import numpy as np
 import pandas as pd
-from smashLadder import settings
-
-
-CAMINHO_ANALISES = 'smashLadder/static/analises/' if settings.DEBUG else f'{settings.STATIC_ROOT}/analises/'
-TEMPO_APAGAR_IMAGENS = 300
-TEMPO_GERAR_NOVA_IMAGEM = 180
 
 
 class Command(BaseCommand):
@@ -28,69 +20,13 @@ class Command(BaseCommand):
         
 def analisar():
     """Roda análises cadastradas"""
-#     # Apagar imagens anteriores
-#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-#         if '-' in img:
-#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-#             if (datetime.datetime.now() - horario).seconds > TEMPO_APAGAR_IMAGENS:
-#                 os.remove(os.path.join(CAMINHO_ANALISES, img))
-        
-    
-    desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
-                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
-                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
-                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
-    
-    imgs = {}
-       
-#     imgs['result_por_posicao'] = analisar_resultados_por_posicao(desafios_df)
-       
-#     imgs_resultados_dif_posicao = analisar_resultados_por_dif_de_posicao(desafios_df)
-#     imgs['result_dif_posicao'] = imgs_resultados_dif_posicao[0]
-#     imgs['result_dif_posicao_perc'] = imgs_resultados_dif_posicao[1]
-     
-    desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
-                                                                           luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
-                                                                           luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
-                                                .annotate(nome_personagem=F('personagem__nome')) \
-                                                .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
-                                                                        output_field=IntegerField())) \
-                                                .values('nome_personagem', 'vitoria')))
-      
-#     imgs['vitorias_por_personagem'] = analisar_vitorias_por_personagem(desafios_personagens_df)
-    
-#     desafios_jogadores_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False) \
-#                                                 .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
-#                                                                         output_field=IntegerField())) \
-#                                                 .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
-#      
-#     imgs['vitorias_contra_personagem'] = analisar_vitorias_contra_personagens(desafios_jogadores_personagens_df)
-    
-    # ANÁLISE ESPECÍFICA
-#     nick_especifico = 'Mad'
-#     desafios_especifico = desafios_df[(desafios_df['nick_desafiado'] == nick_especifico) | (desafios_df['nick_desafiante'] == nick_especifico)]
-#     desafios_especifico['score'] = np.where(desafios_especifico['nick_desafiante'] == nick_especifico, 
-#                                             desafios_especifico['score_desafiante'], desafios_especifico['score_desafiado'])
-#     desafios_especifico['oponente'] = np.where(desafios_especifico['nick_desafiante'] == nick_especifico, 
-#                                                desafios_especifico['nick_desafiado'], desafios_especifico['nick_desafiante'])
-#     print(desafios_especifico)
-    
-#     desafios_especifico.plot(kind='bar', x='oponente', y='score', title='Resultado desafiante')
-
-    return imgs
+    pass
     
 def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
+    """Gera dados para resultado acumulado entre jogadores"""
     if not mes_ano:
         data_atual = timezone.localtime()
         mes_ano = (data_atual.month, data_atual.year)
-    nome_arquivo = f'acumulado_entre_jogadores_{mes_ano[1]}_{mes_ano[0]}'
-    
-    # Retornar imagem já existente
-    for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-        if f'{nome_arquivo}' in img and '-' in img:
-            horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-            if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-                return img
     
     resultado_pares_df = df.copy(True)
      
@@ -130,16 +66,7 @@ def analisar_resultado_acumulado_entre_jogadores(df, mes_ano=None):
     return resultado_pares_df
 
 def analisar_resultados_por_posicao(df):
-    """Gera imagem para resultado de desafios por posição de desafiante/desafiado"""
-#     nome_arquivo = 'qtd_result_por_pos'
-#     
-#     # Retornar imagem já existente
-#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-#         if f'{nome_arquivo}_' in img and '-' in img:
-#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-#                 return img
-            
+    """Gera dados para resultado de desafios por posição de desafiante/desafiado"""
     resultados_posicao_df = df.copy(True)
     
     resultados_posicao_df['qtd_desafios'] = 1
@@ -155,26 +82,7 @@ def analisar_resultados_por_posicao(df):
     return resultados_posicao_df
     
 def analisar_resultados_por_dif_de_posicao(df):
-    """Gera imagens para resultados de desafios com base na diferença de posição"""
-#     nome_arquivo_1 = 'vit_derr'
-#     nome_arquivo_2 = 'percentual'
-#     
-#     img_retornar_1 = None
-#     img_retornar_2 = None
-#     # Retornar imagem já existente
-#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-#         if img_retornar_1 == None and f'{nome_arquivo_1}_' in img and '-' in img:
-#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-#                 img_retornar_1 = img
-#         if img_retornar_2 == None and f'{nome_arquivo_2}_' in img and '-' in img:
-#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-#                 img_retornar_2 = img
-#                 
-#         if img_retornar_1 != None and img_retornar_2 != None:
-#             return (img_retornar_1, img_retornar_2)
-            
+    """Gera dados para resultados de desafios com base na diferença de posição"""
     perc_resultados_dif_pos_df = df.copy(True)
     
     perc_resultados_dif_pos_df['resultado'] = np.where(perc_resultados_dif_pos_df['score_desafiante'] == 3, 
@@ -182,16 +90,11 @@ def analisar_resultados_por_dif_de_posicao(df):
     
     perc_resultados_dif_pos_df['diferenca_posicoes'] = perc_resultados_dif_pos_df['posicao_desafiante'] - perc_resultados_dif_pos_df['posicao_desafiado']
     
-#     plt.rcParams.update({'font.size': 10, 'figure.figsize': (8, 5)})
-#     plt.figure()
-    
     val_min = int(perc_resultados_dif_pos_df['diferenca_posicoes'].describe()['min'])
     val_max = int(perc_resultados_dif_pos_df['diferenca_posicoes'].describe()['max'])
     variacao = val_max - val_min
     perc_resultados_dif_pos_df.hist(alpha=0.5, bins=variacao, by='resultado')
 
-#     nome_formatado_1 = salvar_imagem(nome_arquivo_1, plt)
-    
     perc_resultados_dif_pos_df['qtd_desafios'] = 1
 
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.groupby(['resultado', 'diferenca_posicoes']).sum()
@@ -207,45 +110,10 @@ def analisar_resultados_por_dif_de_posicao(df):
     perc_resultados_dif_pos_df['percentual_derrotas'] = 100 * perc_resultados_dif_pos_df['derrota'] / \
         (perc_resultados_dif_pos_df['vitoria'] + perc_resultados_dif_pos_df['derrota'])
     
-#     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['Derrota', 'Vitória'], axis=1)
-#     
-#     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.rename_axis('', axis='columns')
-    
-#     perc_resultados_dif_pos_df.plot.bar(stacked=True, legend=False)
-    
-#     plt.legend(loc=9, bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
-#     
-#     plt.xlabel('Diferença de posições')
-# 
-#     nome_formatado_2 = salvar_imagem(nome_arquivo_2, plt)
-    
     return perc_resultados_dif_pos_df
 
-def gerar_acumulados_anteriores():
-    """Gera análises de acumulados de resultados anteriores, que não sejam alteráveis"""
-    for ano in range(2019, timezone.localtime().year+1):
-        for mes in range(5, timezone.localtime().month+1):
-            if f'acumulado_entre_jogadores_{ano}_{mes-1}.png' not in \
-                    [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-                desafios_anteriores_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(ano, mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
-                                                           .annotate(nick_desafiante=F('desafiante__nick')) \
-                                                .annotate(nick_desafiado=F('desafiado__nick')).values(
-                                                    'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
-                                                    'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
-                
-                analisar_resultado_acumulado_entre_jogadores(desafios_anteriores_df, (mes-1, ano))
-        
 def analisar_vitorias_por_personagem(df):
-    """Gera imagem para quantidade de vitórias por personagem"""
-#     nome_arquivo = 'vitorias_por_personagem'
-#     
-#     # Retornar imagem já existente
-#     for img in [f for f in os.listdir(CAMINHO_ANALISES) if os.path.isfile(os.path.join(CAMINHO_ANALISES, f))]:
-#         if f'{nome_arquivo}_' in img and '-' in img:
-#             horario = datetime.datetime.strptime(img.split('-', 1)[1].split('.')[0], '%Y-%m-%d-%H-%M-%S')
-#             if (datetime.datetime.now() - horario).seconds <= TEMPO_GERAR_NOVA_IMAGEM:
-#                 return img
-            
+    """Gera dados para quantidade de vitórias por personagem"""
     vitorias_por_personagem_df = df.copy(True)
 
     vitorias_por_personagem_df['qtd_lutas'] = 1    
@@ -264,7 +132,7 @@ def analisar_vitorias_por_personagem(df):
     return vitorias_por_personagem_df
 
 def analisar_vitorias_contra_personagens_para_um_jogador(df, nick_jogador, mes_ano=None):
-    """Gera imagem para vitórias contra cada personagem para um jogador até mês/ano"""
+    """Gera dados para vitórias contra cada personagem para um jogador até mês/ano"""
     vitorias_contra_personagem_df = df.copy(True)
      
     idx_jogador = vitorias_contra_personagem_df['jogador__nick'] == nick_jogador
@@ -284,30 +152,8 @@ def analisar_vitorias_contra_personagens_para_um_jogador(df, nick_jogador, mes_a
     
     vitorias_contra_personagem_df = vitorias_contra_personagem_df.drop('vitoria', axis=1)
     
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.reset_index([0])
-#     print(vitorias_contra_personagem_df)
-#      
-#     vitorias_contra_personagem_df = vitorias_contra_personagem_df.pivot(index='personagem__nome', values=['Qtd. lutas', 'vitoria'])
-                                        
     return vitorias_contra_personagem_df
 
-def salvar_imagem(nome_arquivo, plot_ctrl, formato='png', alteravel=True):
-    """Salva imagem no formato especificado"""
-    hora_atual = timezone.localtime()
-    
-    # Arquivos que podem ser alterados com o tempo possuem timestamp mostrando último horário
-    if alteravel:
-        nome_formatado = nome_arquivo + f'-{hora_atual.strftime("%Y-%m-%d-%H-%M-%S")}.{formato}'
-    else:
-        nome_formatado = nome_arquivo + f'.{formato}'
-        
-    caminho = CAMINHO_ANALISES + nome_formatado
-    
-    plot_ctrl.savefig(caminho, bbox_inches='tight')
-    plot_ctrl.close('all')
-    
-    return nome_formatado
-    
 def analisar_resultado_acumulado_para_um_jogador(df, nick_jogador, mes_ano=None):
     """Gera dados de resultados de desafio acumulados para um jogador até mês/ano"""
     if not mes_ano:
