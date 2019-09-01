@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from django.db.models.aggregates import Max, Min
 from django.utils import timezone
 
 import challonge
@@ -76,8 +77,10 @@ def gerar_partidas_challonge(dados_partidas, torneio):
         elif dados_partida['round'] in [round_torneio.indice for round_torneio in rounds]:
             round_torneio = [round_torneio for round_torneio in rounds if round_torneio.indice == dados_partida['round']][0]
         else:
-            # TODO Gerar nome de torneio
-            round_torneio = Round(torneio=torneio, indice=dados_partida['round'])
+            # Gerar nome de torneio
+            nome_round = f'Winners {dados_partida["round"]}' if  dados_partida['round'] >= 0 else f'Losers {abs(dados_partida["round"])}'
+            
+            round_torneio = Round(torneio=torneio, indice=dados_partida['round'], nome=nome_round)
             rounds.append(round_torneio)
             
         ganhador = JogadorTorneio.objects.get(id_site=dados_partida['winner-id'])
@@ -115,3 +118,14 @@ def vincular_automaticamente_jogadores_torneio_a_ladder(torneio):
                 jogador_torneio.jogador = JogadorTorneio.objects.filter(torneio__data__lt=torneio.data, nome=jogador_torneio.nome, jogador__isnull=False) \
                 .order_by('-torneio__data')[0].jogador
                 jogador_torneio.save()
+                
+def alterar_nome_rounds(torneio):
+    """Altera nomes de rounds finais"""
+    ultimo_round_winners = Round.objects.filter(torneio=torneio).aggregate(ultimo_round=Max('indice'))['ultimo_round']
+    Round.objects.filter(torneio=torneio, indice=(ultimo_round_winners-2)).update(nome='Winners Semis')
+    Round.objects.filter(torneio=torneio, indice=(ultimo_round_winners-1)).update(nome='Winners Finals')
+    Round.objects.filter(torneio=torneio, indice=ultimo_round_winners).update(nome='Grand Finals')
+    
+    ultimo_round_losers = Round.objects.filter(torneio=torneio).aggregate(ultimo_round=Min('indice'))['ultimo_round']
+    Round.objects.filter(torneio=torneio, indice=(ultimo_round_losers-1)).update(nome='Losers Semis')
+    Round.objects.filter(torneio=torneio, indice=ultimo_round_losers).update(nome='Losers Finals')
