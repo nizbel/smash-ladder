@@ -56,11 +56,11 @@
 		  	<ul class="list-group list-group-flush">
 			  	{% for jogador in torneio.top_3 %}
 					<li class="list-group-item">
-						<span>{{ forloop.counter }}: <a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador.nome }}</a></span>
+						<span>{{ forloop.counter }}: <a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador }}</a></span>
 					</li>
 				{% endfor %}
 		  	</ul>
-		  	<div class="card-body col-12">
+		  	<div class="card-body col-12 text-center">
 				<a class="card-link" href="{% url 'torneios:listar_jogadores_torneio' torneio.id %}">Ver todos</a>
 		  	</div>
 		</div>
@@ -71,19 +71,44 @@
 		  	<div class="card-header bg-cinza-2">
 		    	Partidas
 		  	</div>
-		  	<ul class="list-group list-group-flush">
-			  	{% for partida in torneio.partidas %}
-					<li class="list-group-item">
-						<span>
-							<a href="{% url 'torneios:detalhar_partida' torneio.id partida.id %}">
-								{{ partida.jogador_1 }} vs {{ partida.jogador_2 }}
-							</a>
-						</span>
-					</li>
-				{% endfor %}
-		  	</ul>
 		  	<div class="card-body col-12">
-				<a class="card-link" href="{% url 'torneios:listar_partidas' torneio.id %}">Ver todos</a>
+		  		<div class="row">
+		  			{% for partida in torneio.partidas %}
+		  			<div class="card col-12">
+			  			<div class="card-body">
+					  		<div class="row d-flex">
+						  		<div class="col-5 text-left d-flex flex-column">
+							    	<h5 class="card-title mb-0">{{ partida.jogador_1.nome }}</h5>
+							    	<h6 class="card-title {% if partida.jogador_1 == partida.ganhador %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{ partida.score_1 }}</h6>
+						    	</div>
+						  		<div class="col-2 text-center">
+							    	<h5 class="card-title">VS</h5>
+						    	</div>
+						  		<div class="col-5 text-right">
+							    	<h5 class="card-title mb-0">{{ partida.jogador_2.nome }}</h5>
+							    	<h6 class="card-title {% if partida.jogador_2 == partida.ganhador %}
+						  				text-success
+						  			{% else %}
+						  				text-danger
+						  			{% endif %}">{{ partida.score_2 }}</h6>
+						    	</div>
+					    	</div>
+					    	
+						    <h6 class="card-subtitle mb-2 text-muted">{{ partida.round.nome }}</h6>
+						    
+						    <a class="card-link" href="{% url 'torneios:detalhar_partida' torneio.id partida.id %}">Ver detalhes</a>
+					  	</div>
+				  	</div>
+				  	{% endfor %}
+		  			
+					<div class="col-12 text-center mt-3 mb-0">
+						<a class="card-link" href="{% url 'torneios:listar_partidas' torneio.id %}">Ver todas</a>
+					</div>
+				</div>
 		  	</div>
 		</div>
 	</div>
