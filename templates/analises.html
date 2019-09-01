@@ -115,6 +115,7 @@ $(document).ready(function(){
 	plotGraficoAcumuladoEntreJogadores();
 	plotGraficoResultadosPorPosicao();
 	plotGraficoVitoriasPorPersonagem();
+	plotGrafResultadosDifPosicao();
 });
 
 function plotGraficoAcumuladoEntreJogadores() {
@@ -251,6 +252,90 @@ function plotGraficoVitoriasPorPersonagem() {
 			
 			Plotly.newPlot('grafVitoriasPorPersonagem', data, layout);
 			$('#cardGrafVitoriasPorPersonagem').unblock(); 
+        }
+    );
+}
+
+function plotGrafResultadosDifPosicao() {
+	$('#cardGrafResultadosDifPosicao').block({ 
+        message: ''
+    });
+    
+	ajax("{% url 'analise_resultado_por_diferenca_posicao' %}", 
+		'GET', 
+		{}, 
+		function(resultado) {
+			var data = [
+			  {
+				x: resultado.dif_posicao,
+				y: resultado.qtd_vitorias,
+				hovertemplate: 'Diferença: <b>%{x}</b><br>Vitórias: <b>%{y}</b>',
+				marker: {color: '#1f77b4'},
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar'
+			  },
+			  {
+				x: resultado.dif_posicao,
+				y: resultado.qtd_derrotas,
+				hovertemplate: 'Diferença: <b>%{x}</b><br>Derrotas: <b>%{y}</b>',
+				marker: {color: '#d62728'},
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				xaxis: 'x2',
+				yaxis: 'y2'
+			  },
+			  {
+			  	x: resultado.dif_posicao,
+			  	y: resultado.perc_vitorias,
+				hovertemplate: '% Vitórias: <b>%{y:.2f}</b>',
+				marker: {color: '#1f77b4'},
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				xaxis: 'x3',
+				yaxis: 'y3'
+			  },
+			  {
+			  	x: resultado.dif_posicao,
+			  	y: resultado.perc_derrotas,
+				hovertemplate: '% Derrotas: <b>%{y:.2f}</b>',
+				marker: {color: '#d62728'},
+			  	hoverinfo: 'text',
+			  	name: '',
+				type: 'bar',
+				xaxis: 'x3',
+				yaxis: 'y3'
+			  }
+			];
+			
+			var layout = {
+			  showlegend: false,
+			  xaxis: {
+			  	title: 'Diferença de posições'
+			  },
+			  yaxis: {
+			  	title: 'Qtd. Vitórias'
+		  	  },
+			  xaxis2: {
+			  	title: 'Diferença de posições'
+			  },
+			  yaxis2: {
+			  	title: 'Qtd. Derrotas'
+		  	  },
+			  xaxis3: {
+			  	title: 'Diferença de posições'
+			  },
+			  yaxis3: {
+			  	title: 'Percentuais'
+			  },
+			  grid: {rows: 1, columns: 3, pattern: 'independent'},
+			  barmode: 'stack'
+			};
+			
+			Plotly.newPlot('grafResultadosDifPosicao', data, layout);
+			$('#cardGrafResultadosDifPosicao').unblock(); 
         }
     );
 }
