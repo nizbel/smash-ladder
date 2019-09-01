@@ -98,9 +98,10 @@ def detalhar_torneio(request, torneio_id):
     """Detalha um torneio"""
     torneio = get_object_or_404(Torneio.objects.select_related('adicionado_por'), id=torneio_id)
     
-    torneio.top_3 = JogadorTorneio.objects.filter(torneio=torneio, posicao_final__lte=3).order_by('posicao_final')
+    torneio.top_3 = JogadorTorneio.objects.filter(torneio=torneio, posicao_final__lte=3).order_by('posicao_final').select_related('time')
     
-    torneio.partidas = Partida.objects.filter(round__torneio=torneio).order_by('round').select_related('jogador_1', 'jogador_2', 'round')[:5]
+    torneio.partidas = Partida.objects.filter(round__torneio=torneio).order_by('round') \
+        .select_related('jogador_1__time', 'jogador_2__time', 'round', 'ganhador')[:5]
     
     torneio.qtd_jogadores = JogadorTorneio.objects.filter(torneio=torneio, valido=True).count()
     
@@ -160,7 +161,7 @@ def editar_torneio(request, torneio_id):
 
 def listar_torneios(request):
     """Lista torneios cadastrados"""
-    torneios = Torneio.objects.all()
+    torneios = Torneio.objects.all().order_by('data')
     
     return render(request, 'torneios/listar_torneios.html', {'torneios': torneios})
 
@@ -182,7 +183,14 @@ def detalhar_jogador(request, torneio_id, jogador_id):
     """Detalha um jogador de um torneio"""
     jogador = get_object_or_404(JogadorTorneio.objects.select_related('jogador__user'), id=jogador_id)
     partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio=jogador.torneio) \
-        .select_related('jogador_1', 'jogador_2')
+        .select_related('jogador_1__time', 'jogador_2__time', 'round', 'ganhador')
+    jogador.qtd_partidas = len(partidas)
+    
+    # Verificar se jogador possui outros torneios
+    if jogador.jogador:
+        # Precisa estar vinculado a um jogador da ladder
+        jogador.outros_torneios = JogadorTorneio.objects.filter(jogador=jogador.jogador).exclude(torneio__id=torneio_id) \
+            .select_related('torneio')
     
     return render(request, 'torneios/detalhar_jogador.html', {'jogador': jogador, 'partidas': partidas})
 
@@ -219,6 +227,6 @@ def editar_jogador(request, torneio_id, jogador_id):
 def listar_jogadores(request, torneio_id):
     """Lista jogadores de um torneio"""
     torneio = get_object_or_404(Torneio, id=torneio_id)
-    jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id)
+    jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id).order_by('posicao_final')
     
     return render(request, 'torneios/listar_jogadores.html', {'jogadores': jogadores, 'torneio': torneio})

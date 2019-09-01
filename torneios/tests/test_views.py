@@ -315,6 +315,21 @@ class ViewDetalharJogadorTestCase(TestCase):
                                                                                         'jogador_id': self.jogador_torneio.id}))
         self.assertContains(response, reverse('jogadores:detalhar_jogador', kwargs={'username': response.context['jogador'].jogador.user.username}), 1)
         
+    def test_mostrar_outros_torneios(self):
+        """Testa se lista outros torneios que o jogador participou"""
+        # Criar outro torneio
+        torneio = criar_torneio_teste(nome='teste 2', url='teste2')
+        criar_jogadores_torneio_teste(torneio)
+        # Vincular jogador do torneio a jogador da ladder
+        jogador_torneio = JogadorTorneio.objects.get(nome='Sena', torneio=torneio)
+        jogador_torneio.jogador = self.usuario_comum
+        jogador_torneio.save()
+        
+        response = self.client.get(reverse('torneios:detalhar_jogador_torneio', kwargs={'torneio_id': self.torneio.id, 
+                                                                                        'jogador_id': self.jogador_torneio.id}))
+        
+        self.assertEqual(len(response.context['jogador'].outros_torneios), 1)
+        
 class ViewEditarJogadorTorneioTestCase(TestCase):
     """Testes para view de editar jogador do torneio"""
     @classmethod
