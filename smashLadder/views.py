@@ -16,7 +16,8 @@ from smashLadder.management.commands.analise import analisar, \
     gerar_acumulados_anteriores, analisar_resultado_acumulado_entre_jogadores, \
     CAMINHO_ANALISES, analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
-    analisar_resultados_por_posicao, analisar_vitorias_por_personagem
+    analisar_resultados_por_posicao, analisar_vitorias_por_personagem, \
+    analisar_resultados_por_dif_de_posicao
 from smashLadder.utils import mes_ano_prox
 
 
@@ -185,17 +186,16 @@ def analise_resultado_por_posicao(request):
 def analise_resultado_por_diferenca_posicao(request):
     """Retorna dados sobre diferença de posição"""
     if request.is_ajax():
-        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
-                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
-                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
-                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all() \
+                                    .values('score_desafiante', 'posicao_desafiante', 'score_desafiado', 'posicao_desafiado')))
         
-        desafios_df = analisar_resultados_por_posicao(desafios_df)
+        desafios_df = analisar_resultados_por_dif_de_posicao(desafios_df)
         
-        return JsonResponse({'posicao_desafiante': desafios_df['posicao_desafiante'].tolist(), 
-                             'posicao_desafiado': desafios_df['posicao_desafiado'].tolist(),
-                             'qtd_desafios': desafios_df['qtd_desafios'].tolist(),
-                             'resultado': desafios_df['resultado'].tolist()})
+        return JsonResponse({'qtd_vitorias': desafios_df['vitoria'].tolist(), 
+                             'perc_vitorias': desafios_df['percentual_vitorias'].tolist(),
+                             'qtd_derrotas': desafios_df['derrota'].tolist(),
+                             'perc_derrotas': desafios_df['percentual_derrotas'].tolist(),
+                             'dif_posicao': desafios_df.index.tolist()})
         
 def analise_vitorias_por_personagem(request):
     """Retorna dados sobre vitórias por personagem"""

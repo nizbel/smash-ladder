@@ -178,12 +178,9 @@ def analisar_resultados_por_dif_de_posicao(df):
     perc_resultados_dif_pos_df = df.copy(True)
     
     perc_resultados_dif_pos_df['resultado'] = np.where(perc_resultados_dif_pos_df['score_desafiante'] == 3, 
-                                                'Vitória', 'Derrota')
+                                                'vitoria', 'derrota')
     
     perc_resultados_dif_pos_df['diferenca_posicoes'] = perc_resultados_dif_pos_df['posicao_desafiante'] - perc_resultados_dif_pos_df['posicao_desafiado']
-    
-    perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
-                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa'], axis=1)
     
 #     plt.rcParams.update({'font.size': 10, 'figure.figsize': (8, 5)})
 #     plt.figure()
@@ -205,14 +202,14 @@ def analisar_resultados_por_dif_de_posicao(df):
     
     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.fillna(0)
     
-    perc_resultados_dif_pos_df['% Vitórias'] = 100 * perc_resultados_dif_pos_df['Vitória'] / \
-        (perc_resultados_dif_pos_df['Vitória'] + perc_resultados_dif_pos_df['Derrota'])
-    perc_resultados_dif_pos_df['% Derrotas'] = 100 * perc_resultados_dif_pos_df['Derrota'] / \
-        (perc_resultados_dif_pos_df['Vitória'] + perc_resultados_dif_pos_df['Derrota'])
+    perc_resultados_dif_pos_df['percentual_vitorias'] = 100 * perc_resultados_dif_pos_df['vitoria'] / \
+        (perc_resultados_dif_pos_df['vitoria'] + perc_resultados_dif_pos_df['derrota'])
+    perc_resultados_dif_pos_df['percentual_derrotas'] = 100 * perc_resultados_dif_pos_df['derrota'] / \
+        (perc_resultados_dif_pos_df['vitoria'] + perc_resultados_dif_pos_df['derrota'])
     
-    perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['Derrota', 'Vitória'], axis=1)
-    
-    perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.rename_axis('', axis='columns')
+#     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.drop(['Derrota', 'Vitória'], axis=1)
+#     
+#     perc_resultados_dif_pos_df = perc_resultados_dif_pos_df.rename_axis('', axis='columns')
     
 #     perc_resultados_dif_pos_df.plot.bar(stacked=True, legend=False)
     
@@ -222,7 +219,6 @@ def analisar_resultados_por_dif_de_posicao(df):
 # 
 #     nome_formatado_2 = salvar_imagem(nome_arquivo_2, plt)
     
-    print(perc_resultados_dif_pos_df)
     return perc_resultados_dif_pos_df
 
 def gerar_acumulados_anteriores():
