@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import os
 
 from django.core.management.base import BaseCommand
-from django.db.models.expressions import F
 from django.utils import timezone
 
-from ladder.models import DesafioLadder
 import numpy as np
-import pandas as pd
 
 
 class Command(BaseCommand):
