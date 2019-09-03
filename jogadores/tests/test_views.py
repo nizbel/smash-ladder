@@ -297,7 +297,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         self.assertTrue(hasattr(response.context['jogador'], 'torneios'))
-        self.assertIn(torneio, response.context['jogador'].torneios)
+        self.assertIn(jogador_torneio, response.context['jogador'].torneios)
         
 class ViewEditarJogadorTestCase(TestCase):
     """Testes para a view de detalhar jogador"""
