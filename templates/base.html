@@ -78,8 +78,6 @@
 			        		</a>
 			        		<ul class="dropdown-menu" aria-labelledby="ladderDropdown">
 					  			<li><a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a></li>
-					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a></li>
-					  			<li><a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a></li>
 	  							{% if request.user.jogador.admin %}
 	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Aumento de Range</a>
 						            <ul class="dropdown-menu">
@@ -87,6 +85,10 @@
 				              			<li><a class="dropdown-item" href="{% url 'ladder:remover_permissao_aumento_range' %}">Remover permissão</a></li>
 			              			</ul>
 		              			</li>
+		              			{% endif %}
+					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a></li>
+					  			<li><a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a></li>
+	  							{% if request.user.jogador.admin %}
 					  			<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Remoções da ladder</a>
 						            <ul class="dropdown-menu">
 						            	{% comment %}
@@ -104,7 +106,8 @@
 			        		<a class="nav-link" href="{% url 'ladder:detalhar_regras_ladder' %}">Regras</a>
 			      		</li>
 			      		
-			      		<li class="nav-item dropdown {% if 'analises' in request.resolver_match.url_name %}active{% endif %}">
+			      		<li class="nav-item dropdown 
+			      			{% if 'analises' in request.resolver_match.url_name  and 'torneio' not in request.resolver_match.url_name %}active{% endif %}">
 			        		<a class="nav-link dropdown-toggle" href="#" id="analisesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Análises
 			        		</a>
@@ -123,8 +126,8 @@
 	  							{% if request.user.jogador.admin %}
 	  							<a class="dropdown-item" href="{% url 'torneios:criar_torneio' %}">Adicionar torneio</a>
 	  							{% endif %}
+	  							<a class="dropdown-item" href="{% url 'torneios:analises_torneio_por_jogador' %}">Análises</a>
 	  							<a class="dropdown-item" href="{% url 'torneios:listar_torneios' %}">Listar torneios</a>
-	  							
 		        			</div>
 		        		</li>
 			    	</ul>
