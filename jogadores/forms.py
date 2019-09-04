@@ -71,14 +71,6 @@ class FeedbackForm(ModelForm):
         
     
     def __init__(self,*args,**kwargs):
-        if 'avaliado' in kwargs:
-            self.avaliado = kwargs.pop('avaliado')
-        if 'avaliador' in kwargs:
-            self.avaliador = kwargs.pop('avaliador')
-        if 'data_hora' in kwargs:
-            self.data_hora = kwargs.pop('data_hora')
-            
         super(FeedbackForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
-        
