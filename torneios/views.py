@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """Views para torneios"""
-import traceback
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models.aggregates import Count
+from django.db.models.expressions import F, Case, When
 from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls.base import reverse
 
+from jogadores.models import Jogador
 from torneios.forms import CriarTorneioForm, JogadorTorneioForm, RoundForm
 from torneios.models import Torneio, Partida, JogadorTorneio, Round
 from torneios.utils import buscar_torneio_challonge, gerar_torneio_challonge, \
@@ -230,3 +231,32 @@ def listar_jogadores(request, torneio_id):
     jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id).order_by('posicao_final')
     
     return render(request, 'torneios/listar_jogadores.html', {'jogadores': jogadores, 'torneio': torneio})
+
+def analises_por_jogador(request):
+    """Mostrar análises de resultado em torneios por jogador"""
+    jogadores = Jogador.objects.filter(jogadortorneio__isnull=False, jogadortorneio__valido=True).order_by('nick').distinct()
+    return render(request, 'torneios/analises_por_jogador.html', {'jogadores': jogadores})
+                             
+def analise_resultado_torneio_para_um_jogador(request):
+    """Retorna dados sobre resultados em torneios de um jogador"""
+    if request.is_ajax():
+        jogador_id = int(request.GET.get('jogador_id'))
+        
+        # Verificar se jogador existe
+        jogador = get_object_or_404(Jogador, id=jogador_id)
+        
+        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, jogador=jogador).order_by('torneio__data') \
+            .values('posicao_final', 'torneio__data', 'torneio'))
+        dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
+            .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
+            .values('id', 'qtd_jogadores')
+        
+        for dado_jogador in dados_jogador:
+            for dado_torneio in dados_torneios:
+                if dado_jogador['torneio'] == dado_torneio['id']:
+                    dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
+                    break
+        
+        return JsonResponse({'data': [dado['torneio__data'] for dado in dados_jogador], 
+                             'posicao': [dado['posicao_final'] for dado in dados_jogador], 
+                             'qtd_jogadores': [dado['qtd_jogadores'] for dado in dados_jogador]})
