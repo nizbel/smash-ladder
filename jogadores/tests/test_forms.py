@@ -3,8 +3,9 @@ import datetime
 from decimal import Decimal
 
 from django.test import TestCase
+from django.utils import timezone
 
-from jogadores.forms import JogadorForm, StagesValidasForm
+from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm
 from jogadores.models import Jogador, Personagem, Stage
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_personagens_teste, criar_stages_teste
@@ -168,18 +169,23 @@ class FeedbackFormTestCase(TestCase):
         
         # Configurar jogador
         criar_jogadores_teste(['teets', 'sena'])
+        cls.teets = Jogador.objects.get(nick='teets')
+        cls.sena = Jogador.objects.get(nick='sena')
         
     def test_form_texto_sucesso(self):
         """Testa deixar texto de feedback com sucesso"""
+        form = FeedbackForm({'texto': 'Teste'})
+        self.assertTrue(form.is_valid())
+        
+        feedback = form.save(commit=False)
+        self.assertEqual(feedback.texto, 'Teste')
         
     def test_form_texto_maior_que_limite(self):
         """Testa erro ao deixar feedback maior do que o limite"""
+        texto_maior_que_limite = 't' * 1000
+        form = FeedbackForm({'texto': texto_maior_que_limite})
+        self.assertFalse(form.is_valid())
         
-    def test_form_avaliado_vazio(self):
-        """Testa erro ao receber avaliado vazio"""
+        self.assertIn('texto', form.errors)
+        self.assertEqual(len(form.errors), 1)
         
-    def test_form_avaliador_vazio(self):
-        """Testa erro ao receber avaliador vazio"""
-    
-    def test_form_data_vazio(self):
-        """Testa erro ao receber data vazia"""

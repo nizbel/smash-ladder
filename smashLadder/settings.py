@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'jogadores',
     'ladder',
     'torneios',
+    'performance',
     
     'debug_toolbar',
 ]
@@ -58,6 +59,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    
+    'smashLadder.middleware.PerformanceMiddleware'
 ]
 
 ROOT_URLCONF = 'smashLadder.urls'
@@ -156,9 +159,9 @@ LOGOUT_REDIRECT_URL = 'inicio'
 NOME_SITE = 'CdL UnB'
 
 # Acelerar testes
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-]
+# PASSWORD_HASHERS = [
+#     'django.contrib.auth.hashers.MD5PasswordHasher',
+# ]
 
 # Configuracoes extras
 from conf.conf import *
