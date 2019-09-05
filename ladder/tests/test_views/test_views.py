@@ -2,7 +2,6 @@
 import calendar
 import datetime
 
-from django.contrib.auth.models import User
 from django.contrib.messages.api import get_messages
 from django.test.testcases import TestCase
 from django.urls.base import reverse
@@ -11,7 +10,7 @@ from django.utils import timezone
 from jogadores.models import Jogador, Personagem, RegistroFerias, \
     StageValidaLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
-    criar_personagens_teste, criar_stage_teste
+    criar_personagens_teste, criar_stage_teste, criar_jogador_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, Luta, LutaLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
@@ -989,8 +988,7 @@ class ViewDetalharLadderAtualTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         super(ViewDetalharLadderAtualTestCase, cls).setUpTestData()
-        cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
-        
+
         criar_jogadores_teste()
         
         cls.sena = Jogador.objects.get(nick='sena')
@@ -1010,7 +1008,7 @@ class ViewDetalharLadderAtualTestCase(TestCase):
         
     def test_acesso_logado(self):
         """Testa acesso a tela de listar jogadores logado"""
-        self.client.login(username=self.user.username, password='teste')
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), PosicaoLadder.objects.all().count())
@@ -1111,9 +1109,10 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         super(ViewDetalharHistoricoLadderTestCase, cls).setUpTestData()
-        cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
         
         criar_jogadores_teste()
+        
+        cls.teets = Jogador.objects.get(nick='teets')
         
         # Preparar mês anterior para histórico
         data_atual = timezone.now().date()
@@ -1129,7 +1128,7 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
         
     def test_acesso_logado(self):
         """Testa acesso a tela de listar jogadores logado"""
-        self.client.login(username=self.user.username, password='teste')
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.get(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes).count())
@@ -1153,7 +1152,7 @@ class ViewDetalharRegrasTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         super(ViewDetalharRegrasTestCase, cls).setUpTestData()
-        cls.user = User.objects.create_user('teste', 'teste@teste.com', 'teste')
+        cls.teets = criar_jogador_teste(tag='teets')
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de regras sem logar"""
@@ -1162,7 +1161,7 @@ class ViewDetalharRegrasTestCase(TestCase):
         
     def test_acesso_logado(self):
         """Testa acesso a tela de regras logado"""
-        self.client.login(username=self.user.username, password='teste')
+        self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.get(reverse('ladder:detalhar_regras_ladder'))
         self.assertEqual(response.status_code, 200)
         
