@@ -57,9 +57,9 @@ class JogadorTorneioForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         
-        jogador = cleaned_data['jogador']
-        time = cleaned_data['time']
-        valido = cleaned_data['valido']
+        jogador = cleaned_data.get('jogador')
+        time = cleaned_data.get('time')
+        valido = cleaned_data.get('valido')
         
         # Verifica se outro jogador no mesmo torneio já não está vinculado ao mesmo jogador da ladder
         if jogador and JogadorTorneio.objects.filter(torneio=self.instance.torneio, jogador=jogador).exclude(id=self.instance.id).exists():
@@ -69,6 +69,10 @@ class JogadorTorneioForm(forms.ModelForm):
         # Jogador inválido não pode ter time
         if not valido and time:
             raise ValidationError('Jogador inválido não pode estar ligado a time')
+        
+        # Jogador inválido não pode ter vínculo
+        if not valido and jogador:
+            raise ValidationError('Jogador inválido não pode possui vínculo a jogador da Ladder')
     
 class RoundForm(forms.ModelForm):
     """Formulário para round de um torneio"""
