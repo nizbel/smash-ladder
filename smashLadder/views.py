@@ -209,3 +209,9 @@ def analise_vitorias_por_personagem(request):
         return JsonResponse({'qtd_lutas': desafios_personagens_df['qtd_lutas'].tolist(), 
                              'perc_vitorias': desafios_personagens_df['perc_vitorias'].tolist(),
                              'personagem': desafios_personagens_df.index.tolist()})  
+        
+def listar_requisicoes(request):
+    """Lista requisições feitas no site"""
+    
+    return render(request, 'requisicoes.html', {})
+    
