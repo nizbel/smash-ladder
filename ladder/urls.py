@@ -43,4 +43,15 @@ urlpatterns = [
     
     # Lutas
     path(r'lutas/detalhar/<int:luta_id>/', views.detalhar_luta, name='detalhar_luta'),
+    
+    # Análises
+    path('analises/geral/', views.analises, name='analises'),
+    path('analises/geral/resultado-acumulado-jogadores/', views.analise_resultado_acumulado_jogadores, name='analise_result_acum_jogadores'),
+    path('analises/geral/resultado-posicao/', views.analise_resultado_por_posicao, name='analise_resultado_por_posicao'),
+    path('analises/geral/resultado-diferenca-posicao/', views.analise_resultado_por_diferenca_posicao, name='analise_resultado_por_diferenca_posicao'),
+    path('analises/geral/vitorias-por-personagem/', views.analise_vitorias_por_personagem, name='analise_vitorias_por_personagem'),
+    path('analises/jogador/', views.analises_por_jogador, name='analises_por_jogador'),
+    path('analises/jogador/resultado-acumulado-jogador/', views.analise_resultado_acumulado_para_um_jogador, name='analise_result_acum_jogador'),
+    path('analises/jogador/resultado-contra-personagens-jogador/', views.analise_resultado_acumulado_contra_personagens_para_um_jogador, 
+         name='analise_result_jogador_contra_personagens'),
 ]

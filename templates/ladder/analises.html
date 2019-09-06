@@ -122,7 +122,7 @@ function plotGraficoAcumuladoEntreJogadores() {
         message: ''
     });
     
-	ajax("{% url 'analise_result_acum_jogadores' %}", 
+	ajax("{% url 'ladder:analise_result_acum_jogadores' %}", 
 		'GET', 
 		{ano: ano, mes: mes}, 
 		function(resultado) {
@@ -159,7 +159,7 @@ function plotGraficoResultadosPorPosicao() {
         message: ''
     });
     
-	ajax("{% url 'analise_resultado_por_posicao' %}", 
+	ajax("{% url 'ladder:analise_resultado_por_posicao' %}", 
 		'GET', 
 		{}, 
 		function(resultado) {
@@ -207,7 +207,7 @@ function plotGraficoVitoriasPorPersonagem() {
         message: ''
     });
     
-	ajax("{% url 'analise_vitorias_por_personagem' %}", 
+	ajax("{% url 'ladder:analise_vitorias_por_personagem' %}", 
 		'GET', 
 		{}, 
 		function(resultado) {
@@ -260,7 +260,7 @@ function plotGrafResultadosDifPosicao() {
         message: ''
     });
     
-	ajax("{% url 'analise_resultado_por_diferenca_posicao' %}", 
+	ajax("{% url 'ladder:analise_resultado_por_diferenca_posicao' %}", 
 		'GET', 
 		{}, 
 		function(resultado) {

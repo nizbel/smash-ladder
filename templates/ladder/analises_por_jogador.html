@@ -188,7 +188,7 @@ function buscarDadosGraficoAcumuladoUmJogador() {
         message: ''
     });
     
-	ajax("{% url 'analise_result_acum_jogador' %}", 
+	ajax("{% url 'ladder:analise_result_acum_jogador' %}", 
 		'GET', 
 		{ano: anoGrafAcumUmJogador, mes: mesGrafAcumUmJogador, jogador_id: jogador_id}, 
 		function(resultado) {
@@ -247,7 +247,7 @@ function plotGraficoAcumuladoUmJogador(dados) {
 
 {% comment %}
 function animarGraficoAcumuladoUmJogador() {
-	ajax("{% url 'analise_result_acum_jogador' %}", 
+	ajax("{% url 'ladder:analise_result_acum_jogador' %}", 
 		'GET', 
 		{ano: ano, mes: mes, jogador_id: 2}, 
 		function(resultado) {
@@ -316,7 +316,7 @@ function buscarDadosGraficoJogadorContraPersonagens() {
 	$('#cardGrafJogadorContraPersonagens').block({ 
         message: ''
     });
-	ajax("{% url 'analise_result_jogador_contra_personagens' %}", 
+	ajax("{% url 'ladder:analise_result_jogador_contra_personagens' %}", 
 		'GET', 
 		{ano: anoGrafJogadorContraPersonagens, mes: mesGrafJogadorContraPersonagens, jogador_id: jogador_id}, 
 		function(resultado) {

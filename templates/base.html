@@ -78,16 +78,17 @@
 			        		</a>
 			        		<ul class="dropdown-menu" aria-labelledby="ladderDropdown">
 					  			<li><a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a></li>
-	  							{% if request.user.jogador.admin %}
-	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Aumento de Range</a>
+					  			
+	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Análises</a>
 						            <ul class="dropdown-menu">
-				              			<li><a class="dropdown-item" href="{% url 'ladder:add_permissao_aumento_range' %}">Permitir</a></li>
-				              			<li><a class="dropdown-item" href="{% url 'ladder:remover_permissao_aumento_range' %}">Remover permissão</a></li>
+				              			<li><a class="dropdown-item" href="{% url 'ladder:analises' %}">Geral</a></li>
+				              			<li><a class="dropdown-item" href="{% url 'ladder:analises_por_jogador' %}">Por jogador</a></li>
 			              			</ul>
 		              			</li>
-		              			{% endif %}
+		              			
 					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a></li>
 					  			<li><a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a></li>
+					  			
 	  							{% if request.user.jogador.admin %}
 					  			<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Remoções da ladder</a>
 						            <ul class="dropdown-menu">
@@ -98,6 +99,7 @@
 			              			</ul>
 		              			</li>
 		              			{% endif %}
+		              			
 					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a></li>
 		        			</ul>
 		        		</li>
@@ -106,18 +108,6 @@
 			        		<a class="nav-link" href="{% url 'ladder:detalhar_regras_ladder' %}">Regras</a>
 			      		</li>
 			      		
-			      		<li class="nav-item dropdown 
-			      			{% if 'analises' in request.resolver_match.url_name  and 'torneio' not in request.resolver_match.url_name %}active{% endif %}">
-			        		<a class="nav-link dropdown-toggle" href="#" id="analisesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			          			Análises
-			        		</a>
-			        		<div class="dropdown-menu" aria-labelledby="analisesDropdown">
-	  							<a class="dropdown-item" href="{% url 'analises' %}">Geral</a>
-	  							<a class="dropdown-item" href="{% url 'analises_por_jogador' %}">Por jogador</a>
-	  							
-		        			</div>
-		        		</li>
-		        		
 		        		<li class="nav-item dropdown {% if 'torneios' in request.resolver_match.namespace %}active{% endif %}">
 			        		<a class="nav-link dropdown-toggle" href="#" id="torneiosDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Torneios
