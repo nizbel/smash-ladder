@@ -17,6 +17,10 @@ Jogadores desafiáveis para {{ jogador.nick }}
 	  		<p class="card-text"><a href="{% url 'jogadores:detalhar_jogador' jogador_desafiavel.user.username %}">{{ jogador_desafiavel.nick }}</a></p>
 	  	</div>
 	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Não há jogadores desafiáveis, parabéns!</h5>
+	</div>
 	{% endfor %}
 	
 	{% if desafios_pendentes %}
