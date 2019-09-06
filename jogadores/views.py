@@ -348,8 +348,19 @@ def listar_avaliacoes(request):
     return render(request, 'jogadores/listar_avaliacoes.html', {'feedbacks': feedbacks})
 
 def listar_desafiaveis(request, username):
+    jogador = get_object_or_404(Jogador, user__username=username)
     
-    return render(request, 'jogadores/listar_desafiaveis.html', {})
+    posicao_atual_jogador = jogador.posicao_em(timezone.localtime())
+    
+    desafiaveis = buscar_desafiaveis(jogador, timezone.localtime(), False, False)
+    
+    desafios_pendentes = DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=True,
+                                                      score_desafiante__gt=F('score_desafiado'),
+                                                      posicao_desafiado__lte=posicao_atual_jogador, posicao_desafiante__gte=posicao_atual_jogador) \
+                                                      .select_related('desafiante', 'desafiado')
+    
+    return render(request, 'jogadores/listar_desafiaveis.html', {'desafiaveis': desafiaveis, 'desafios_pendentes': desafios_pendentes,
+                                                                 'jogador': jogador})
     
 def listar_desafiaveis_json(request):
     """Listar jogadores desafiáveis por um jogador usando ou não coringa em determinada data/hora"""

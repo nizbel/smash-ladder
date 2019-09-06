@@ -140,6 +140,7 @@
 				          			{{ request.user.username }}
 				        		</a>
 				        		<div class="dropdown-menu dropdown-menu-right" aria-labelledby="jogadorDropdown">
+				        			<a class="dropdown-item" href="{% url 'jogadores:listar_desafiaveis' request.user.username %}">Jogadores desafiáveis</a>
 				          			<a class="dropdown-item" href="{% url 'jogadores:detalhar_jogador' request.user.username %}">Meu perfil</a>
 				          			<a class="dropdown-item" href="{% url 'jogadores:listar_avaliacoes' %}">Meu feedback 
 				          				<span class="badge badge-pill badge-dark" id="jogador_qtd_feedbacks"></span>

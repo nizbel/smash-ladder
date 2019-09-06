@@ -63,6 +63,8 @@
 				{% if request.user and request.user.jogador != jogador %}
 				<a class="card-link" href="{% url 'jogadores:avaliar_jogador' jogador.user.username %}">Avaliar</a>
 				{% endif %}
+				
+			    <a class="card-link" href="{% url 'jogadores:listar_desafiaveis' request.user.username %}">Listar desafiáveis</a>
 		  	</div>
 		</div>
 	</div>
