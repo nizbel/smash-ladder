@@ -817,3 +817,48 @@ class ViewDetalharPersonagemTestCase(TestCase):
 #         self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_1.user.username}))
 #         self.assertFalse(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim1).exists())
 #         self.assertTrue(RegistroFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim2).exists())
+
+class ViewListarDesafiaveisTestCase(TestCase):
+    def setUpClass(cls):
+        super(ViewListarDesafiaveisTestCase)
+
+        criar_jogadores_teste()
+        criar_ladder_teste()
+
+        cls.tiovsky = Jogador.objects.get(nick='tiovsky')
+        cls.rata = Jogador.objects.get(nick='rata')
+        # TODO Pegar outros jogadores do fundo da ladder
+
+        cls.desafio_pendente_vitoria = criar_desafio_pendente()
+        cls.desafio_pendente_derrota = criar_desafio_pendente()
+
+    def test_view_deve_trazer_desafiaveis(self):
+        """Testa se view traz lista de desafiáveis"""
+        
+        # TODO Verificar contexto
+
+    def test_view_deve_informar_horario_da_consulta(self):
+        """Testa se view traz o horário em que a consulta foi realizada"""
+
+        # TODO Verificar contexto
+
+    def test_view_deve_informar_se_desafio_pendente_pode_mudar_ladder(self):
+        """Testa se view informa existência de desafio pendente que pode influenciar lista"""
+
+        # TODO Testar se desafio com vitória do desafiante é reportado
+
+        # TODO Testar de desafio com derrota do desafiante é ignorado
+
+    def test_view_deve_listar_multiplos_desafios_pendentes(self):
+        """Testa se view informa lista de desafios que podem influenciar lista"""
+        # TODO Alterar desafio derrota para vitória
+
+        # TODO Testar se desafios são listados
+
+    def test_view_nao_deve_informar_se_desafio_pendente_nao_pode_mudar_ladder(self):
+        """Testa se view ignora existência de desafios pendentes que não influenciam lista"""
+
+        # TODO Testar se desafio pendente de vitória do desafiante é ignorado
+        # por jogadores acima do desafiado
+
+    
