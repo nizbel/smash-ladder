@@ -347,7 +347,11 @@ def listar_avaliacoes(request):
     
     return render(request, 'jogadores/listar_avaliacoes.html', {'feedbacks': feedbacks})
 
-def listar_desafiaveis(request):
+def listar_desafiaveis(request, username):
+    
+    return render(request, 'jogadores/listar_desafiaveis.html', {})
+    
+def listar_desafiaveis_json(request):
     """Listar jogadores desafiáveis por um jogador usando ou não coringa em determinada data/hora"""
     data = {}
     if not request.POST:

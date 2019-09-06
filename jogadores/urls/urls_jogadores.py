@@ -24,11 +24,12 @@ urlpatterns = [
     path(r'editar/<slug:username>/', views.editar_jogador, name='editar_jogador'),
     path(r'listar/', views.listar_jogadores, name='listar_jogadores'),
     path(r'listar-avaliacoes/', views.listar_avaliacoes, name='listar_avaliacoes'),
+    path(r'listar-desafiaveis/<slug:username>/', views.listar_desafiaveis, name='listar_desafiaveis'),
     path(r'listar-desafios/<slug:username>/', views.listar_desafios_jogador, name='listar_desafios_jogador'),
     
     # JSON
     path(r'buscar-quantidade-feedbacks', views.buscar_qtd_feedbacks_jogador, name='buscar_qtd_feedbacks'),
-    path(r'listar-desafiaveis/', views.listar_desafiaveis, name='listar_desafiaveis'),
+    path(r'listar-desafiaveis/', views.listar_desafiaveis_json, name='listar_desafiaveis_json'),
     path(r'listar-personagens-jogador/', views.listar_personagens_jogador, name='listar_personagens_jogador'),
     
 ]
