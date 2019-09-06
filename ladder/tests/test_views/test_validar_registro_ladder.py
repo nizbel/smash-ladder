@@ -542,7 +542,7 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         
     def test_validar_desafio_novo_entrante_com_saidas_e_entradas_jogadores(self):
         """Testa se valida desafio de novo entrante, com uma entrada e saídas desde último desafio de novo entrante"""
-        horario_atual = timezone.now().replace(day=15)
+        horario_atual = timezone.localtime().replace(day=15)
 
         # Remover jogadores na ladder histórico
         remocao_1 = RemocaoJogador.objects.create(jogador=self.mad, data=horario_atual.replace(day=1), 
@@ -558,13 +558,13 @@ class ViewValidarDesafioLadderTestCase(TestCase):
         # Validar desafio de novo entrante
         novo_entrante_1 = criar_jogador_teste('new3')
         desafio_ladder_novo_entrante_1 = criar_desafio_ladder_simples_teste(novo_entrante_1, self.teets, 1, 3, 
-                                                                          horario_atual.replace(hour=10), True, self.tiovsky)
+                                                                          horario_atual.replace(day=4, hour=10), True, self.tiovsky)
         validar_desafio_ladder_teste(desafio_ladder_novo_entrante_1, self.teets)
         
         # Adicionar outro novo entrante
         novo_entrante_2 = criar_jogador_teste('new4')
         desafio_ladder_novo_entrante_2 = criar_desafio_ladder_simples_teste(novo_entrante_2, self.teets, 1, 3, 
-                                                                          horario_atual.replace(hour=11), True, self.tiovsky)
+                                                                          horario_atual.replace(day=4, hour=11), True, self.tiovsky)
         validar_desafio_ladder_teste(desafio_ladder_novo_entrante_2, self.teets)
         
         self.assertEqual(PosicaoLadder.objects.get(jogador=novo_entrante_2).posicao, 9)
