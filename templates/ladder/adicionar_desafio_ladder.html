@@ -171,7 +171,7 @@ function buscarDesafiaveis() {
 		return;
 	}
 	
-	ajax("{% url 'jogadores:listar_desafiaveis' %}", 
+	ajax("{% url 'jogadores:listar_desafiaveis_json' %}", 
 		'POST', 
 		{jogador_id: $("select[id='id_desafiante']").val(), data_hora: $('#id_data_hora').val(), coringa: $('#id_desafio_coringa:checked').length}, 
 		function(resultado) {
