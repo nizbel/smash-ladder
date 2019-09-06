@@ -17,11 +17,12 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_desafio_ladder_simples_teste, criar_desafio_ladder_completo_teste, \
     validar_desafio_ladder_teste
 from ladder.utils import remover_jogador, decair_jogador, alterar_ladder, \
-    processar_remocao
+    processar_remocao, buscar_desafiaveis
 from smashLadder import settings
 from torneios.tests.utils_teste import criar_torneio_teste,\
     criar_jogadores_torneio_teste
 from torneios.models import JogadorTorneio
+from django.test.utils import freeze_time
 
 
 class ViewListarJogadoresTestCase(TestCase):
@@ -818,47 +819,74 @@ class ViewDetalharPersonagemTestCase(TestCase):
 #         self.assertFalse(PedidoFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim1).exists())
 #         self.assertTrue(RegistroFerias.objects.filter(jogador=self.jogador_1, data_inicio=data_inicio, data_fim=data_fim2).exists())
 
-class ViewListarDesafiaveisTestCase(TestCase):
-    def setUpClass(cls):
-        super(ViewListarDesafiaveisTestCase)
+class ViewListarDesafiaveisTestCase(TestCase): 
+    """Testes para a view de listar desafiáveis"""
+    @classmethod
+    def setUpTestData(cls):
+        super(ViewListarDesafiaveisTestCase, cls).setUpTestData()
 
         criar_jogadores_teste()
         criar_ladder_teste()
 
-        cls.tiovsky = Jogador.objects.get(nick='tiovsky')
-        cls.rata = Jogador.objects.get(nick='rata')
-        # TODO Pegar outros jogadores do fundo da ladder
+        cls.tiovsky = Jogador.objects.get(nick='tiovsky') # Posição 10
+        cls.rata = Jogador.objects.get(nick='rata') # Posição 9
+        cls.phils = Jogador.objects.get(nick='phils') # Posição 8
+        cls.dan = Jogador.objects.get(nick='dan') # Posição 7
+        cls.mad = Jogador.objects.get(nick='mad') # Posição 4
 
-        cls.desafio_pendente_vitoria = criar_desafio_pendente()
-        cls.desafio_pendente_derrota = criar_desafio_pendente()
+        cls.desafio_pendente_vitoria = criar_desafio_ladder_simples_teste(cls.rata, cls.dan, 3, 0, timezone.localtime(), False, 
+                                                                          cls.rata, 9, 7)
+        cls.desafio_pendente_derrota = criar_desafio_ladder_simples_teste(cls.tiovsky, cls.phils, 0, 3, timezone.localtime(), False, 
+                                                                          cls.rata, 10, 8)
 
     def test_view_deve_trazer_desafiaveis(self):
         """Testa se view traz lista de desafiáveis"""
+        response = self.client.get(reverse('jogadores:listar_desafiaveis', kwargs={'username': self.tiovsky.user.username}))
+        self.assertEqual(response.status_code, 200)
         
-        # TODO Verificar contexto
-
-    def test_view_deve_informar_horario_da_consulta(self):
-        """Testa se view traz o horário em que a consulta foi realizada"""
-
-        # TODO Verificar contexto
+        # Verificar contexto
+        self.assertEqual(len(response.context['desafiaveis']), DesafioLadder.LIMITE_POSICOES_DESAFIO)
+        for jogador in buscar_desafiaveis(self.tiovsky, timezone.localtime(), retornar_ids=False):
+            self.assertIn(jogador, response.context['desafiaveis'])
 
     def test_view_deve_informar_se_desafio_pendente_pode_mudar_ladder(self):
         """Testa se view informa existência de desafio pendente que pode influenciar lista"""
+        response = self.client.get(reverse('jogadores:listar_desafiaveis', kwargs={'username': self.phils.user.username}))
+        self.assertEqual(response.status_code, 200)
 
-        # TODO Testar se desafio com vitória do desafiante é reportado
+        # Testar se desafio com vitória do desafiante é reportado
+        self.assertEqual(len(response.context['desafios_pendentes']), 1)
+        self.assertIn(self.desafio_pendente_vitoria, response.context['desafios_pendentes'])
 
-        # TODO Testar de desafio com derrota do desafiante é ignorado
+        # Testar de desafio com derrota do desafiante é ignorado
+        self.assertNotIn(self.desafio_pendente_derrota, response.context['desafios_pendentes'])
 
     def test_view_deve_listar_multiplos_desafios_pendentes(self):
         """Testa se view informa lista de desafios que podem influenciar lista"""
-        # TODO Alterar desafio derrota para vitória
+        # Alterar desafio derrota para vitória
+        self.desafio_pendente_derrota.score_desafiante = 3
+        self.desafio_pendente_derrota.score_desafiado = 0
+        self.desafio_pendente_derrota.save()
+        
+        # Testar se desafios são listados
+        response = self.client.get(reverse('jogadores:listar_desafiaveis', kwargs={'username': self.phils.user.username}))
+        self.assertEqual(response.status_code, 200)
 
-        # TODO Testar se desafios são listados
+        self.assertEqual(len(response.context['desafios_pendentes']), 2)
+        self.assertIn(self.desafio_pendente_vitoria, response.context['desafios_pendentes'])
+        self.assertIn(self.desafio_pendente_derrota, response.context['desafios_pendentes'])
+        
+        # Desfazer alteração no desafio derrota
+        self.desafio_pendente_derrota.score_desafiante = 0
+        self.desafio_pendente_derrota.score_desafiado = 3
+        self.desafio_pendente_derrota.save()
 
     def test_view_nao_deve_informar_se_desafio_pendente_nao_pode_mudar_ladder(self):
         """Testa se view ignora existência de desafios pendentes que não influenciam lista"""
+        response = self.client.get(reverse('jogadores:listar_desafiaveis', kwargs={'username': self.mad.user.username}))
+        self.assertEqual(response.status_code, 200)
 
-        # TODO Testar se desafio pendente de vitória do desafiante é ignorado
+        # Testar se desafio pendente de vitória do desafiante é ignorado
         # por jogadores acima do desafiado
-
+        self.assertEqual(len(response.context['desafios_pendentes']), 0)
     
