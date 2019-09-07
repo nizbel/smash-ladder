@@ -31,7 +31,7 @@
 				    </div>
 				    <div class="col-6">
 					    <h6 class="card-title">Torneio</h6>
-					    <h6 class="card-title"><a href="{% url 'torneios:detalhar_torneio' jogador.torneio.id %}">
+					    <h6 class="card-title"><a href="{% url 'torneios:detalhar_torneio' jogador.torneio_id %}">
 						    <strong>{{ jogador.torneio.nome }}</strong>
 					    </a></h6>
 				    </div>
@@ -51,7 +51,7 @@
 			    </div>
 			    
 			    {% if request.user.jogador.admin %}
-				<a class="card-link" href="{% url 'torneios:editar_jogador_torneio' jogador.torneio.id jogador.id %}">Editar</a>
+				<a class="card-link" href="{% url 'torneios:editar_jogador_torneio' jogador.torneio_id jogador.id %}">Editar</a>
 				{% endif %}
 		  	</div>
 		</div>
@@ -69,7 +69,7 @@
 			  			<div class="card-body">
 					  		<div class="row d-flex">
 						  		<div class="col-5 text-left d-flex flex-column">
-							    	<h5 class="card-title mb-0">{{ partida.jogador_1.nome }}</h5>
+							    	<h5 class="card-title mb-0">{{ partida.jogador_1 }}</h5>
 							    	<h6 class="card-title {% if partida.jogador_1 == partida.ganhador %}
 						  				text-success
 						  			{% else %}
@@ -80,7 +80,7 @@
 							    	<h5 class="card-title">VS</h5>
 						    	</div>
 						  		<div class="col-5 text-right">
-							    	<h5 class="card-title mb-0">{{ partida.jogador_2.nome }}</h5>
+							    	<h5 class="card-title mb-0">{{ partida.jogador_2 }}</h5>
 							    	<h6 class="card-title {% if partida.jogador_2 == partida.ganhador %}
 						  				text-success
 						  			{% else %}
@@ -91,7 +91,7 @@
 					    	
 						    <h6 class="card-subtitle mb-2 text-muted">{{ partida.round.nome }}</h6>
 						    
-						    <a class="card-link" href="{% url 'torneios:detalhar_partida' jogador.torneio.id partida.id %}">Ver detalhes</a>
+						    <a class="card-link" href="{% url 'torneios:detalhar_partida' jogador.torneio_id partida.id %}">Ver detalhes</a>
 					  	</div>
 				  	</div>
 				  	{% endfor %}
@@ -117,7 +117,7 @@
 						    
 						    <p class="card-text">{{ jogador_torneio.posicao_final }}º lugar</p>
 						    
-						    <a class="card-link" href="{% url 'torneios:detalhar_torneio' jogador_torneio.torneio.id %}">Ver detalhes</a>
+						    <a class="card-link" href="{% url 'torneios:detalhar_torneio' jogador_torneio.torneio_id %}">Ver detalhes</a>
 					  	</div>
 				  	</div>
 				  	{% endfor %}

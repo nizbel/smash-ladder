@@ -170,7 +170,8 @@ def listar_torneios(request):
 
 def detalhar_partida(request, torneio_id, partida_id):
     """Detalha uma partida"""
-    partida = get_object_or_404(Partida.objects.select_related('jogador_1', 'jogador_2', 'round__torneio'), id=partida_id)
+    partida = get_object_or_404(Partida.objects.select_related('jogador_1', 'jogador_2', 'round__torneio') \
+                                .select_related('jogador_1__time', 'jogador_2__time', 'ganhador__time'), id=partida_id)
     
     
     return render(request, 'torneios/detalhar_partida.html', {'partida': partida})
@@ -178,15 +179,16 @@ def detalhar_partida(request, torneio_id, partida_id):
 def listar_partidas(request, torneio_id):
     """Lista partidas cadastrados"""
     torneio = get_object_or_404(Torneio, id=torneio_id)
-    partidas = Partida.objects.filter(round__torneio__id=torneio_id)
+    partidas = Partida.objects.filter(round__torneio__id=torneio_id) \
+        .select_related('jogador_1__time', 'jogador_2__time', 'ganhador__time', 'round')
     
     return render(request, 'torneios/listar_partidas.html', {'torneio': torneio, 'partidas': partidas})
 
 def detalhar_jogador(request, torneio_id, jogador_id):
     """Detalha um jogador de um torneio"""
-    jogador = get_object_or_404(JogadorTorneio.objects.select_related('jogador__user'), id=jogador_id)
-    partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio=jogador.torneio) \
-        .select_related('jogador_1__time', 'jogador_2__time', 'round', 'ganhador')
+    jogador = get_object_or_404(JogadorTorneio.objects.select_related('jogador__user', 'torneio'), id=jogador_id)
+    partidas = Partida.objects.filter(Q(jogador_1=jogador) | Q(jogador_2=jogador), round__torneio__id=jogador.torneio_id) \
+        .select_related('jogador_1__time', 'jogador_2__time', 'round', 'ganhador__time')
     jogador.qtd_partidas = len(partidas)
     
     # Verificar se jogador possui outros torneios
@@ -230,7 +232,7 @@ def editar_jogador(request, torneio_id, jogador_id):
 def listar_jogadores(request, torneio_id):
     """Lista jogadores de um torneio"""
     torneio = get_object_or_404(Torneio, id=torneio_id)
-    jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id).order_by('posicao_final')
+    jogadores = JogadorTorneio.objects.filter(torneio__id=torneio_id).order_by('posicao_final').select_related('time')
     
     return render(request, 'torneios/listar_jogadores.html', {'jogadores': jogadores, 'torneio': torneio})
 
@@ -271,7 +273,7 @@ def listar_times(request):
 
 def analises_por_time(request):
     """Mostrar análises de torneios por time"""
-    times = Time.objects.filter(jogadortorneio__jogador__isnull=False).distinct()
+    times = Time.objects.filter(jogadortorneio__jogador__isnull=False).distinct().order_by('nome')
     return render(request, 'torneios/analises_por_time.html', {'times': times})
 
 def analise_resultado_torneio_para_um_time(request):
@@ -294,7 +296,8 @@ def analise_resultado_torneio_para_um_time(request):
                 if dado_jogador['torneio'] == dado_torneio['id']:
                     dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
                     break
-                
+        
+        # TODO transferir operações com pandas para utils
         dados_jogadores_df = pd.DataFrame(list(dados_jogador))
         
         # Adicionar rendimento no torneio

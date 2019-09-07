@@ -10,7 +10,7 @@ Jogadores de {{ torneio.nome }}
 	{% for jogador in jogadores %}
 	<div class="card col-6 col-md-1">
 	  	<div class="card-body text-center">
-	  		<p class="card-text"><a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador.nome }}</a></p>
+	  		<p class="card-text"><a href="{% url 'torneios:detalhar_jogador_torneio' torneio.id jogador.id %}">{{ jogador }}</a></p>
 	  		<h6 class="card-subtitle mb-2 text-muted">{{ jogador.posicao_final }}º lugar</h6>
 	  	</div>
 	</div>

@@ -78,7 +78,7 @@
 			  			<div class="card-body">
 					  		<div class="row d-flex">
 						  		<div class="col-5 text-left d-flex flex-column">
-							    	<h5 class="card-title mb-0">{{ partida.jogador_1.nome }}</h5>
+							    	<h5 class="card-title mb-0">{{ partida.jogador_1 }}</h5>
 							    	<h6 class="card-title {% if partida.jogador_1 == partida.ganhador %}
 						  				text-success
 						  			{% else %}
@@ -89,7 +89,7 @@
 							    	<h5 class="card-title">VS</h5>
 						    	</div>
 						  		<div class="col-5 text-right">
-							    	<h5 class="card-title mb-0">{{ partida.jogador_2.nome }}</h5>
+							    	<h5 class="card-title mb-0">{{ partida.jogador_2 }}</h5>
 							    	<h6 class="card-title {% if partida.jogador_2 == partida.ganhador %}
 						  				text-success
 						  			{% else %}
