@@ -59,7 +59,7 @@ class VitoriaAusencia(models.Model):
 class JogadorTorneio(models.Model):
     """Vincula jogador a um torneio"""
     nome = models.CharField('Nome do jogador', max_length=30)
-    time = models.ForeignKey('Time', on_delete=models.CASCADE, blank=True, null=True)
+    time = models.ForeignKey('Time', on_delete=models.SET_NULL, blank=True, null=True)
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE, blank=True, null=True)
     torneio = models.ForeignKey('Torneio', on_delete=models.CASCADE)
     posicao_final = models.SmallIntegerField('Resultado no torneio')
