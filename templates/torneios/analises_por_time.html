@@ -73,22 +73,29 @@ function buscarDadosGraficoResultado() {
 function plotGraficoResultado(dados) {
 	var data = [];
 
-	for (jogador_atual in dados.dados_jogadores) {
-		var dados_jogador = dados.dados_jogadores[jogador_atual];
-		for (torneio in dados_jogador) {
-			var dados_torneio = dados_jogador[torneio];
-			data.push({
-				x: dados_torneio.torneio__data,
-				y: dados_torneio.posicao,
-				hovertemplate: 'Posição: <b>%{y}</b>',
-			  	hoverinfo: 'text',
-			  	name: dados_torneio.nome
-			});
+	for (var i = 0; i < dados.dados_jogadores.length; i++) {
+		var jogador_atual = dados.dados_jogadores[i];
+		
+		// Alterar texto de todos da lista
+		for (var indicePosicao = 0; indicePosicao < jogador_atual.posicao_final.length; indicePosicao++) {
+			var textoPosicao = jogador_atual.posicao_final[indicePosicao] + '';
+			jogador_atual.posicao_final[indicePosicao] = '<b>' + jogador_atual.nome + '</b><br>Posição: <b>' + textoPosicao + '</b>';
 		}
+		
+		data.push({
+			x: jogador_atual.data,
+			y: jogador_atual.rendimento,
+			text: jogador_atual.posicao_final,
+			//hovertemplate: jogador_atual + '<br>Posição: <b>%{jogador_atual.posicao_final}</b>',
+		  	hoverinfo: 'text',
+		  	name: '',
+		  	type: 'bar'
+		});
 	}
-	console.log(data);
 	
 	var layout = {
+	  showlegend: false,
+	  hovermode: 'closest',
 	  font: {
 	  	size: 16
 	  },
@@ -96,10 +103,7 @@ function plotGraficoResultado(dados) {
 	  	title: 'Data'
   	  },
   	  yaxis: {
-	    showlegend: false,
-		autorange: 'reversed',
-	    overlaying: 'y2',
-	    title: 'Posição'
+	    title: 'Rendimento'
 	  },
 	};
 	
