@@ -12,7 +12,7 @@ Editar {{ jogador.nome }}
 {% endblock %}
 
 {% block content %}
-	<form class="col-12" action="{% url 'torneios:editar_jogador_torneio' form_jogador.instance.id form_jogador.instance.torneio.id %}" method="post">
+	<form class="col-12" action="{% url 'torneios:editar_jogador_torneio' form_jogador.instance.torneio.id form_jogador.instance.id %}" method="post">
 	    {% csrf_token %}
     	{% include "form.html" with form=form_jogador %}
     	
