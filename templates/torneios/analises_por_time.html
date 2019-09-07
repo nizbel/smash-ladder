@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}- Análises por time{% endblock %}
+
+{% block page_header %}Análises por time{% endblock %}
+
+{% block extra_header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 text-center mb-3">
+		<h4>Recomendável ver em dispositivos com telas maiores</h4>
+	</div>
+	
+	<div class="col-12 text-center mb-3">
+        <label>Time</label>
+        <select id="time" class="form-control">
+        	{% for time in times %}
+        	<option value="{{ time.id }}">{{ time.nome }}</option>
+        	{% endfor %}
+    	</select>
+	</div>
+	
+	<div class="col-12 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultados
+		  	</div>
+		  	<div class="card-body col-12" id="cardGrafResultado">
+  				<div id="grafResultado"></div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+
+<script type="text/javascript">
+var time_id = $('#time').val();
+
+$(document).ready(function(){
+	$('select').select2();
+	
+	$('#time').change(function() {
+		time_id = $(this).val();
+		
+		buscarDadosGraficoResultado();
+	});
+	
+	buscarDadosGraficoResultado();
+});
+
+function buscarDadosGraficoResultado() {
+	$('#cardGrafResultado').block({ 
+        message: ''
+    });
+    
+	ajax("{% url 'torneios:analise_torneio_resultado_por_time' %}", 
+		'GET', 
+		{time_id: time_id}, 
+		function(resultado) {
+			plotGraficoResultado(resultado);
+			
+			$('#cardGrafResultado').unblock(); 
+        }
+    );
+}
+
+function plotGraficoResultado(dados) {
+	var data = [];
+
+	for (jogador_atual in dados.dados_jogadores) {
+		var dados_jogador = dados.dados_jogadores[jogador_atual];
+		for (torneio in dados_jogador) {
+			var dados_torneio = dados_jogador[torneio];
+			data.push({
+				x: dados_torneio.torneio__data,
+				y: dados_torneio.posicao,
+				hovertemplate: 'Posição: <b>%{y}</b>',
+			  	hoverinfo: 'text',
+			  	name: dados_torneio.nome
+			});
+		}
+	}
+	console.log(data);
+	
+	var layout = {
+	  font: {
+	  	size: 16
+	  },
+	  xaxis: {
+	  	title: 'Data'
+  	  },
+  	  yaxis: {
+	    showlegend: false,
+		autorange: 'reversed',
+	    overlaying: 'y2',
+	    title: 'Posição'
+	  },
+	};
+	
+	Plotly.newPlot('grafResultado', data, layout);
+}
+</script>
+{% endblock %}

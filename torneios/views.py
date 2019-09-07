@@ -13,11 +13,13 @@ from django.urls.base import reverse
 
 from jogadores.models import Jogador
 from torneios.forms import CriarTorneioForm, JogadorTorneioForm, RoundForm
-from torneios.models import Torneio, Partida, JogadorTorneio, Round
+from torneios.models import Torneio, Partida, JogadorTorneio, Round, Time
 from torneios.utils import buscar_torneio_challonge, gerar_torneio_challonge, \
     buscar_jogadores_challonge, gerar_jogadores_challonge, \
     buscar_partidas_challonge, gerar_partidas_challonge, logar_challonge, \
     vincular_automaticamente_jogadores_torneio_a_ladder, alterar_nome_rounds
+    
+import pandas as pd
 
 
 @login_required
@@ -260,3 +262,52 @@ def analise_resultado_torneio_para_um_jogador(request):
         return JsonResponse({'data': [dado['torneio__data'] for dado in dados_jogador], 
                              'posicao': [dado['posicao_final'] for dado in dados_jogador], 
                              'qtd_jogadores': [dado['qtd_jogadores'] for dado in dados_jogador]})
+        
+def listar_times(request):
+    """Lista times registrados"""
+    times = Time.objects.all()
+    
+    return render(request, 'torneios/listar_times.html', {'times': times})
+
+def analises_por_time(request):
+    """Mostrar análises de torneios por time"""
+    times = Time.objects.all()
+    return render(request, 'torneios/analises_por_time.html', {'times': times})
+
+def analise_resultado_torneio_para_um_time(request):
+    """Retorna dados sobre resultados em torneios de um time"""
+    if request.is_ajax():
+        time_id = int(request.GET.get('time_id'))
+        
+        # Verificar se jogador existe
+        time = get_object_or_404(Time, id=time_id)
+        
+        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, time=time).order_by('id', 'torneio__data') \
+            .values('posicao_final', 'torneio__data', 'torneio', 'nome'))
+        
+        dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
+            .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
+            .values('id', 'qtd_jogadores')
+        
+        for dado_jogador in dados_jogador:
+            for dado_torneio in dados_torneios:
+                if dado_jogador['torneio'] == dado_torneio['id']:
+                    dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
+                    break
+                
+#         dados_jogadores = {}
+#         for dado in dados_jogador:
+#             if dado['nome'] not in dados_jogadores:
+#                 dados_jogadores[dado['nome']] = [dado,]
+#             else:
+#                 dados_jogadores[dado['nome']].append(dado)
+                
+        dados_jogadores = pd.DataFrame(list(dados_jogador))
+        
+        dados_jogadores['resultado'] = 1 - (dados_jogadores['posicao_final'] - 1) / dados_jogadores['qtd_jogadores']
+        
+        dados_jogadores = dados_jogadores.drop('qtd_jogadores', axis=1)
+        
+        print(dados_jogadores)
+        
+        return JsonResponse({'dados_jogadores': dados_jogadores})

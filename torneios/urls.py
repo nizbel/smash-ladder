@@ -37,5 +37,7 @@ urlpatterns = [
     # Análises
     path('analises/jogador/', views.analises_por_jogador, name='analises_torneio_por_jogador'),
     path('analises/jogador/resultado/', views.analise_resultado_torneio_para_um_jogador, name='analise_torneio_resultado_por_jogador'),
+    path('analises/time/', views.analises_por_time, name='analises_torneio_por_time'),
+    path('analises/time/resultado/', views.analise_resultado_torneio_para_um_time, name='analise_torneio_resultado_por_time'),
     
 ]
