@@ -112,12 +112,21 @@
 			        		<a class="nav-link dropdown-toggle" href="#" id="torneiosDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			          			Torneios
 			        		</a>
-			        		<div class="dropdown-menu" aria-labelledby="torneiosDropdown">
+			        		<ul class="dropdown-menu" aria-labelledby="torneiosDropdown">
 	  							{% if request.user.jogador.admin %}
-	  							<a class="dropdown-item" href="{% url 'torneios:criar_torneio' %}">Adicionar torneio</a>
+	  							<li><a class="dropdown-item" href="{% url 'torneios:criar_torneio' %}">Adicionar torneio</a></li>
 	  							{% endif %}
-	  							<a class="dropdown-item" href="{% url 'torneios:analises_torneio_por_jogador' %}">Análises</a>
-	  							<a class="dropdown-item" href="{% url 'torneios:listar_torneios' %}">Listar torneios</a>
+	  							
+	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Análises</a>
+						            <ul class="dropdown-menu">
+				              			<li><a class="dropdown-item" href="{% url 'torneios:analises_torneio_por_jogador' %}">Por jogador</a></li>
+						            	{% comment %}
+				              			<li><a class="dropdown-item" href="{% url 'torneios:analises_torneio_por_time' %}">Por time</a></li>
+				              			{% endcomment %}
+			              			</ul>
+		              			</li>
+	  							
+	  							<li><a class="dropdown-item" href="{% url 'torneios:listar_torneios' %}">Listar torneios</a></li>
 		        			</div>
 		        		</li>
 			    	</ul>
