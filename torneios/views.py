@@ -271,7 +271,7 @@ def listar_times(request):
 
 def analises_por_time(request):
     """Mostrar análises de torneios por time"""
-    times = Time.objects.all()
+    times = Time.objects.filter(jogadortorneio__jogador__isnull=False).distinct()
     return render(request, 'torneios/analises_por_time.html', {'times': times})
 
 def analise_resultado_torneio_para_um_time(request):
@@ -282,8 +282,8 @@ def analise_resultado_torneio_para_um_time(request):
         # Verificar se jogador existe
         time = get_object_or_404(Time, id=time_id)
         
-        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, time=time).order_by('id', 'torneio__data') \
-            .values('posicao_final', 'torneio__data', 'torneio', 'nome'))
+        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, time=time, jogador__isnull=False).order_by('id', 'torneio__data') \
+            .values('posicao_final', 'torneio__data', 'torneio', 'jogador__nick'))
         
         dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
             .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
@@ -295,19 +295,28 @@ def analise_resultado_torneio_para_um_time(request):
                     dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
                     break
                 
-#         dados_jogadores = {}
-#         for dado in dados_jogador:
-#             if dado['nome'] not in dados_jogadores:
-#                 dados_jogadores[dado['nome']] = [dado,]
-#             else:
-#                 dados_jogadores[dado['nome']].append(dado)
-                
-        dados_jogadores = pd.DataFrame(list(dados_jogador))
+        dados_jogadores_df = pd.DataFrame(list(dados_jogador))
         
-        dados_jogadores['resultado'] = 1 - (dados_jogadores['posicao_final'] - 1) / dados_jogadores['qtd_jogadores']
+        # Adicionar rendimento no torneio
+        dados_jogadores_df['rendimento'] = 1 - (dados_jogadores_df['posicao_final'] - 1) / dados_jogadores_df['qtd_jogadores']
         
-        dados_jogadores = dados_jogadores.drop('qtd_jogadores', axis=1)
+        dados_jogadores_df = dados_jogadores_df.drop(['qtd_jogadores', 'torneio'], axis=1)
         
-        print(dados_jogadores)
+        # Alterar nomes de colunas para facilitar
+        dados_jogadores_df = dados_jogadores_df.rename(columns={'torneio__data': 'data', 'jogador__nick': 'nome'})
+        
+        dados_jogadores_df = dados_jogadores_df.sort_values(['nome', 'data'])
+        
+        dados_jogadores = list()
+        for nome in dados_jogadores_df['nome'].unique().tolist():
+            # Preparar dicionário com dados do jogador
+            dict_jogador = {'nome': nome}
+            jogadores_idx = dados_jogadores_df['nome'] == nome
+            temp_df = dados_jogadores_df.loc[jogadores_idx, dados_jogadores_df.columns != 'nome']
+            
+            for column in temp_df.columns:
+                dict_jogador[column] = temp_df[column].values.tolist()
+            
+            dados_jogadores.append(dict_jogador)
         
         return JsonResponse({'dados_jogadores': dados_jogadores})
