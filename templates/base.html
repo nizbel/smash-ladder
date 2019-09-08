@@ -79,6 +79,15 @@
 			        		<ul class="dropdown-menu" aria-labelledby="ladderDropdown">
 					  			<li><a class="dropdown-item" href="{% url 'ladder:adicionar_desafio_ladder' %}">Adicionar desafio</a></li>
 					  			
+					  			{% if request.user.jogador.admin %}
+	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Aumento de Range</a>
+						            <ul class="dropdown-menu">
+				              			<li><a class="dropdown-item" href="{% url 'ladder:add_permissao_aumento_range' %}">Permitir</a></li>
+				              			<li><a class="dropdown-item" href="{% url 'ladder:remover_permissao_aumento_range' %}">Remover permissão</a></li>
+			              			</ul>
+		              			</li>
+		              			{% endif %}
+					  			
 	  							<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Análises</a>
 						            <ul class="dropdown-menu">
 				              			<li><a class="dropdown-item" href="{% url 'ladder:analises' %}">Geral</a></li>
