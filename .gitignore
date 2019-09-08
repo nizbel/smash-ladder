@@ -12,6 +12,7 @@ fabfile.py
 .dockerignore
 Dockerfile
 
+templates/afazer
 
 **/img/
 backups/
