@@ -312,7 +312,7 @@ class AlterarLadderTestCase(TestCase):
         """Testa alteração de ladder com desafio anterior a último validado com novo entrante"""
         # Preparar desafios
         # Garantir que novo entrante desafie antes
-        desafio_anterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora - datetime.timedelta(days=5), 
+        desafio_anterior = DesafioLadder(data_hora=self.desafio_ladder.data_hora - datetime.timedelta(days=6), 
                                           desafiante=self.desafio_ladder_novo_entrante_vitoria.desafiante,
                                           desafiado=self.desafio_ladder_novo_entrante_vitoria.desafiado,
                                           adicionado_por=self.desafio_ladder_novo_entrante_vitoria.adicionado_por,
