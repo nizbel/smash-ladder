@@ -31,7 +31,8 @@ def preparar_backup():
 
         arquivo.write(render_to_string(arquivo_base, {'nome_db': settings.DATABASES['default']['NAME'],
                                                       'user': settings.DATABASES['default']['USER'], 
-                                                      'host': settings.DATABASES['default']['HOST'], 'project_path': settings.BASE_DIR}))
+                                                      'host': settings.DATABASES['default']['HOST'], 'project_path': settings.BASE_DIR,
+                                                      'jogo': settings.JOGO, 'uf': settings.UF}))
         
     # Verificar se é possível chamar o db_dump por subprocess
     subprocess.call(['sh', arquivo_dump])
