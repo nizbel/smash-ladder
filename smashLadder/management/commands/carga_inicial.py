@@ -24,7 +24,7 @@ class Command(BaseCommand):
     help = 'Gera carga inicial com personagens, stages e ladder inicial'
 
     def add_arguments(self, parser):
-        parser.add_argument('desafios', action='store_true')
+        parser.add_argument('--desafios', action='store_true')
         
     def handle(self, *args, **options):
         try:
