@@ -16,14 +16,14 @@ class PerformanceMiddleware(object):
         
         # Se não houve erro, guardar performance
         if response.status_code < 400:
-            jogador = None
+            user = None
             if not request.user.is_anonymous:
-                jogador = request.user.jogador
+                user = request.user
     
             data_hora_resposta = timezone.localtime()
             
             performance = PerformanceRequisicao(data_hora_requisicao=data_hora_requisicao, data_hora_resposta=data_hora_resposta,
-                                                jogador=jogador, url=request.path)
+                                                url=request.path, user=user)
             performance.save()
         
         return response
