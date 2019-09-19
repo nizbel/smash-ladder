@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils.text import slugify
 
 from jogadores.models import Jogador, Personagem, Stage
@@ -31,6 +31,9 @@ STAGES_TESTE = [
 
 def criar_jogadores_teste(lista_nicks_criar=None):
     """Gera jogadores para teste de acordo com uma lista de nicks, ou todos se lista vazia"""
+    # Criar grupo padrão de admins
+    Group.objects.get_or_create(name='Admins')
+    
     for jogador in JOGADORES_TESTE:
         if not lista_nicks_criar or jogador['nick'] in lista_nicks_criar:
             user = User.objects.create_user(username=slugify(jogador['nick']), password=SENHA_TESTE)
