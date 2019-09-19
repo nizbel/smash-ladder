@@ -41,7 +41,7 @@ def preparar_backup():
 
     # Se produção, enviar backups para pasta do dropbox
     if settings.DEBUG == False:
-        pattern = re.compile(r'backup-\d+-\d+-\d+-\d+')
+        pattern = re.compile(r'%s-%s-backup-\d+-\d+-\d+-\d+' % (settings.JOGO, settings.UF))
 
         for (_, _, nomes_arquivo) in os.walk(DROPBOX_ROOT_PATH):
             for nome_arquivo in [nome for nome in nomes_arquivo if pattern.match(nome)]:
