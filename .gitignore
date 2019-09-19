@@ -10,10 +10,10 @@ fabfile.py
 
 # Docker
 .dockerignore
-Dockerfile
+Dockerfile*
 
 templates/afazer
 
 **/img/
 backups/
-**/static/analises/
+**/static/admin/

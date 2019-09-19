@@ -19,13 +19,13 @@ class Command(BaseCommand):
             with transaction.atomic():
                 for personagem in Personagem.objects.all():
                     nome_arquivo = (personagem.nome + 'Imagem.png')
-                    if os.path.isfile(settings.BASE_DIR + \
-                                      '/smashLadder/static/img/personagens/' + nome_arquivo):
-                        personagem.imagem = PASTA_IMAGENS + 'personagens/' + nome_arquivo
-                        personagem.save()
+#                     if os.path.isfile(settings.BASE_DIR + \
+#                                       '/smashLadder/static/img/personagens/' + nome_arquivo):
+                    personagem.imagem = PASTA_IMAGENS + 'personagens/' + nome_arquivo
+                    personagem.save()
                         
                     # Buscar imagens apenas em desenvolvimento
-                    elif settings.DEBUG:
+                    if settings.DEBUG:
                         print(personagem.nome)
                         nome_formatado = personagem.nome.replace(' ', '_')
                         

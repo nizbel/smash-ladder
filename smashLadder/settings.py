@@ -78,6 +78,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'smashLadder.context_processors.nome_site',
                 'smashLadder.context_processors.prod',
+                'smashLadder.context_processors.uf',
             ],
         },
     },
@@ -88,6 +89,8 @@ WSGI_APPLICATION = 'smashLadder.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+JOGO = 'smash'
+UF = 'df'
 
 DATABASES = {
     'default': {

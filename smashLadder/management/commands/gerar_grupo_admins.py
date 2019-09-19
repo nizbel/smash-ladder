@@ -3,6 +3,11 @@ from django.contrib.auth.models import User, Permission, Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+permissoes_admins = [
+    'Can view', 
+    'Can add user', 'Can change user', 
+    'Can add jogador', 'Can change jogador',
+    'Can add registro ferias', 'Can change registro ferias']
 
 class Command(BaseCommand):
     help = 'Gera grupo inicial de admins'
@@ -18,18 +23,13 @@ class Command(BaseCommand):
             
                 # Varre permissões para dar apenas permissões de visualizar
                 for permissao in Permission.objects.all():
-                    if 'Can view' in permissao.name:
-                        grupo_admins.permissions.add(permissao)
-                    elif 'Can add user' in permissao.name:
-                        grupo_admins.permissions.add(permissao)
-                    elif 'Can add jogador' in permissao.name:
-                        grupo_admins.permissions.add(permissao)
-                    elif 'Can add registro ferias' in permissao.name:
-                        grupo_admins.permissions.add(permissao)
-                    elif 'Can change registro ferias' in permissao.name:
-                        grupo_admins.permissions.add(permissao)
+                    for permissao_admin in permissoes_admins:
+                        if permissao_admin in permissao.name:
+                            grupo_admins.permissions.add(permissao)
+                            break
+                            
                     else:
-                        if grupo_admins.permissions.filter(permissao).exists():
+                        if grupo_admins.permissions.filter(id=permissao.id).exists():
                             grupo_admins.permissions.remove(permissao)
                 grupo_admins.save()
                 

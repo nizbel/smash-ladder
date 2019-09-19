@@ -74,12 +74,34 @@ var anoGrafJogadorContraPersonagens = dataAtual.getYear() + 1900;
 var resultadosGrafJogadorContraPersonagens = []; 
 
 var max_mes = dataAtual.getMonth() + 1;
-var min_mes = 4;
+var min_mes = {{ mes_inicial }};
 
 var max_ano = dataAtual.getYear() + 1900;
-var min_ano = 2019;
+var min_ano = {{ ano_inicial}};
 
 var jogador_id = $('#jogador').val();
+
+function bloquearBotoesGrafAcumUmJogador() {
+	if (mesGrafAcumUmJogador == min_mes && anoGrafAcumUmJogador == min_ano) {
+		$('#antGrafAcumUmJogador').addClass('disabled');
+	} else if (mesGrafAcumUmJogador == max_mes && anoGrafAcumUmJogador == max_ano) {
+		$('#proxGrafAcumUmJogador').addClass('disabled');
+	} else {
+		$('#antGrafAcumUmJogador').removeClass('disabled');
+		$('#proxGrafAcumUmJogador').removeClass('disabled');
+	}
+}
+
+function bloquearBotoesGrafJogadorContraPersonagens() {
+	if (mesGrafJogadorContraPersonagens == min_mes && anoGrafJogadorContraPersonagens == min_ano) {
+		$('#antGrafJogadorContraPersonagens').addClass('disabled');
+	} else if (mesGrafJogadorContraPersonagens == max_mes && anoGrafJogadorContraPersonagens == max_ano) {
+		$('#proxGrafJogadorContraPersonagens').addClass('disabled');
+	} else {
+		$('#antGrafJogadorContraPersonagens').removeClass('disabled');
+		$('#proxGrafJogadorContraPersonagens').removeClass('disabled');
+	}
+}
 
 $(document).ready(function(){
 	$('select').select2();
@@ -176,6 +198,8 @@ function playGraficoAcumuladoUmJogador() {
 }
 
 function buscarDadosGraficoAcumuladoUmJogador() {
+	bloquearBotoesGrafAcumUmJogador();
+	
 	// Verificar se dados requeridos já não foram guardados
     for (var indiceResultado = 0; indiceResultado < resultadosGrafAcumUmJogador.length; indiceResultado++) {
     	if (resultadosGrafAcumUmJogador[indiceResultado].mes == mesGrafAcumUmJogador && resultadosGrafAcumUmJogador[indiceResultado].ano == anoGrafAcumUmJogador) {
@@ -305,6 +329,8 @@ function playGraficoJogadorContraPersonagens() {
 }
 
 function buscarDadosGraficoJogadorContraPersonagens() {
+	bloquearBotoesGrafJogadorContraPersonagens();
+	
 	// Verificar se dados requeridos já não foram guardados
     for (var indiceResultado = 0; indiceResultado < resultadosGrafJogadorContraPersonagens.length; indiceResultado++) {
     	if (resultadosGrafJogadorContraPersonagens[indiceResultado].mes == mesGrafJogadorContraPersonagens && resultadosGrafJogadorContraPersonagens[indiceResultado].ano == anoGrafJogadorContraPersonagens) {

@@ -7,3 +7,6 @@ def nome_site(context):
 
 def prod(context):
     return {'PROD': (not settings.DEBUG)}
+
+def uf(context):
+    return {'UF': settings.UF.upper()}

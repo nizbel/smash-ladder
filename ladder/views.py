@@ -712,8 +712,18 @@ def validar_desafio_ladder(request, desafio_id):
 
 def analises(request):
     """Mostrar análises dos dados de desafios"""
-        
-    return render(request, 'ladder/analises.html', {})
+    
+    # Buscar primeiros registros de ladder
+    if HistoricoLadder.objects.all().exists():
+        primeiro_registro = HistoricoLadder.objects.all().order_by('ano', 'mes')[0]
+        mes_inicial = primeiro_registro.mes
+        ano_inicial = primeiro_registro.ano
+    else:
+        data_atual = timezone.localdate()
+        mes_inicial = data_atual.month
+        ano_inicial = data_atual.year
+    
+    return render(request, 'ladder/analises.html', {'mes_inicial': mes_inicial, 'ano_inicial': ano_inicial})
 
 def analise_resultado_acumulado_jogadores(request):
     """Retorna dados sobre acumulado de resultados de desafios entre jogadores"""
@@ -751,8 +761,20 @@ def analise_resultado_acumulado_jogadores(request):
         
 def analises_por_jogador(request):
     """Mostrar análises dos dados de desafios por jogador"""
+    
+    # Buscar primeiros registros de ladder
+    if HistoricoLadder.objects.all().exists():
+        primeiro_registro = HistoricoLadder.objects.all().order_by('ano', 'mes')[0]
+        mes_inicial = primeiro_registro.mes
+        ano_inicial = primeiro_registro.ano
+    else:
+        data_atual = timezone.localdate()
+        mes_inicial = data_atual.month
+        ano_inicial = data_atual.year
+        
     jogadores = Jogador.objects.all()
-    return render(request, 'ladder/analises_por_jogador.html', {'jogadores': jogadores})
+    return render(request, 'ladder/analises_por_jogador.html', {'jogadores': jogadores, 'mes_inicial': mes_inicial, 
+                                                                'ano_inicial': ano_inicial})
                              
 def analise_resultado_acumulado_para_um_jogador(request):
     """Retorna dados sobre acumulado de resultados de desafios de um jogador"""

@@ -2,11 +2,12 @@
 """Modelos usados para guardar jogadores"""
 import datetime
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db import models
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import Case, When, F
 from django.db.models.query_utils import Q
+from django.db.models.signals import post_save
 from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
@@ -17,7 +18,7 @@ from smashLadder.utils import DateTimeFieldTz, mes_ano_ant
 
 class Jogador(models.Model):
     """Informações do jogador"""
-    nick = models.CharField(u'Nickname', max_length=30)
+    nick = models.CharField(u'Tag', max_length=30)
     main = models.ForeignKey('Personagem', on_delete=models.CASCADE, blank=True, null=True)
     admin = models.BooleanField(u'É da administração?', default=False)
     ultimo_uso_coringa = models.DateField(u'Último uso de coringa', default=None, blank=True, null=True)
@@ -166,7 +167,21 @@ class Jogador(models.Model):
         
             return ultima_permissao.is_valida(data_hora)
         return False
-        
+
+def adicionar_grupo_admins(sender, instance, created, **kwargs):
+    """Post-create user signal that adds the user to everyone group."""
+
+    if instance.admin:
+        instance.user.groups.add(Group.objects.get(name='Admins'))
+        instance.user.is_staff = True
+        instance.user.save()
+    else:
+        if instance.user.groups.filter(name='Admins').exists():
+            instance.user.groups.remove(Group.objects.get(name='Admins'))
+            instance.user.is_staff = False
+            instance.user.save()
+
+post_save.connect(adicionar_grupo_admins, sender=Jogador)
 
 class Personagem(models.Model):
     """Personagens disponíveis no jogo"""

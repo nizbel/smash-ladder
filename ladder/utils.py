@@ -999,7 +999,11 @@ def avaliar_decaimento(jogador):
         raise ValueError(f'{jogador} não está na ladder')
     
     # Verificar último desafio validado do jogador
-    ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('-data_hora')[0]
+    if DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).exists():
+        ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('-data_hora')[0]
+    else:
+        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder
+        ultimo_desafio = DesafioLadder(data_hora=DesafioLadder.validados.all().order_by('data_hora')[0].data_hora)
     
     # Verificar períodos de férias desde último desafio
     registros_ferias = RegistroFerias.objects.filter(jogador=jogador, data_inicio__gt=ultimo_desafio.data_hora.date())

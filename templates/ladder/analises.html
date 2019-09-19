@@ -74,14 +74,23 @@ var mes = dataAtual.getMonth() + 1;
 var ano = dataAtual.getYear() + 1900;
 
 var max_mes = mes;
-var min_mes = 4;
+var min_mes = {{ mes_inicial }};
 
 var max_ano = ano;
-var min_ano = 2019;
+var min_ano = {{ ano_inicial }};
 
 function alterar_mes_ano() {
 	$('#mes').html(mes);
 	$('#ano').html(ano);
+	
+	if (mes == min_mes && ano == min_ano) {
+		$('#ant_acumulado').addClass('disabled');
+	} else if (mes == max_mes && ano == max_ano) {
+		$('#prox_acumulado').addClass('disabled');
+	} else {
+		$('#ant_acumulado').removeClass('disabled');
+		$('#prox_acumulado').removeClass('disabled');
+	}
 }
 
 $(document).ready(function(){
