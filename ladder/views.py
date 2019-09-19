@@ -573,6 +573,12 @@ def editar_desafio_ladder(request, desafio_id):
 
 def detalhar_regras(request):
     """Detalhar regras da ladder"""
+    admins = Jogador.objects.filter(admin=True).select_related('user')
+    for admin in admins:
+        if admin.user.first_name or admin.user.last_name:
+            admin.nome_tag = f'{admin.user.first_name} "{admin.nick}" {admin.user.last_name}'.strip()
+        else:
+            admin.nome_tag = admin.nick
     
     return render(request, 'ladder/regras.html', {'LIMITE_POSICOES_DESAFIO': DesafioLadder.LIMITE_POSICOES_DESAFIO, 
                                                   'MELHOR_DE': DesafioLadder.MELHOR_DE, 
@@ -580,7 +586,8 @@ def detalhar_regras(request):
                                                   'PERIODO_ESPERA_DESAFIO_CORINGA': DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA,
                                                   'PERIODO_MAX_FERIAS': RegistroFerias.PERIODO_MAX_FERIAS,
                                                   'QTD_POSICOES_DECAIMENTO': DecaimentoJogador.QTD_POSICOES_DECAIMENTO,
-                                                  'PERIODO_INATIVIDADE': DecaimentoJogador.PERIODO_INATIVIDADE})
+                                                  'PERIODO_INATIVIDADE': DecaimentoJogador.PERIODO_INATIVIDADE,
+                                                  'admins': admins})
 
 def listar_desafios_ladder(request, ano=None, mes=None):
     """Listar desafios de ladder específica"""

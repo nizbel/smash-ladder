@@ -82,7 +82,7 @@
 			</li>
 			<li class="list-group-item list-group-item-order">
 				Evitem realizar uma partida sem antes comprovar com a comissão se ela é válida. As pessoas da comissão são 
-				<strong>Tiago "Teets" Kfouri</strong> e <strong>Gabriel "Aceblind" Saraiva</strong>.
+				{% for admin in admins %}{% if not forloop.first and not forloop.last %},{% endif %}{% if forloop.last and not forloop.first %} e{% endif %} <strong>{{ admin.nome_tag }}</strong>{% endfor %}.
 			</li>
 			<li class="list-group-item list-group-item-order">
 				Para entrar e participar da Smashscada, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
