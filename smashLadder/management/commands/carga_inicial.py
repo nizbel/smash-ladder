@@ -45,13 +45,17 @@ class Command(BaseCommand):
                     stages = json.loads(arq.read())
                     for stage in stages:
                         nome = stage['nome']
-                        for modelo in [Stage.TIPO_NORMAL, Stage.TIPO_BATTLEFIELD, Stage.TIPO_OMEGA]:
-                            # Ver se não se trata de exceções
-                            if {'nome': nome, 'modelo': modelo} in STAGE_EXCECOES:
-                                continue
-                            
-                            if not Stage.objects.filter(nome=nome, modelo=modelo).exists():
-                                Stage.objects.create(nome=nome, modelo=modelo)
+                        if settings.JOGO == 'smash':
+                            for modelo in [Stage.TIPO_NORMAL, Stage.TIPO_BATTLEFIELD, Stage.TIPO_OMEGA]:
+                                # Ver se não se trata de exceções
+                                if {'nome': nome, 'modelo': modelo} in STAGE_EXCECOES:
+                                    continue
+                                
+                                if not Stage.objects.filter(nome=nome, modelo=modelo).exists():
+                                    Stage.objects.create(nome=nome, modelo=modelo)
+                        else:
+                            if not Stage.objects.filter(nome=nome, modelo=Stage.TIPO_NORMAL).exists():
+                                    Stage.objects.create(nome=nome, modelo=Stage.TIPO_NORMAL)
         
                 # Ladder
                 with open(f'templates/cargas_iniciais/{settings.JOGO}/{settings.UF}/ladder_inicial.json', 'r') as arq:
