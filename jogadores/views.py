@@ -225,7 +225,6 @@ def editar_jogador(request, username):
             form_jogador.fields['main'].disabled = True
             form_jogador.fields['nick'].disabled = True
         
-        
         if form_jogador.is_valid():
             jogador = form_jogador.save(commit=False)
             jogador.save()

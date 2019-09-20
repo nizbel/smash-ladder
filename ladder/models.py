@@ -230,7 +230,6 @@ class DecaimentoJogador(models.Model):
     # Adicionado como datetime para facilitar comparações na hora de calcular ladder
     data = DateTimeFieldTz('Data do decaimento')
     posicao_inicial = models.SmallIntegerField('Posição da qual jogador caiu')
-#     posicao_final = models.SmallIntegerField('Posição para qual jogador caiu')
     qtd_periodos_inatividade = models.SmallIntegerField('Quantidade de períodos inativo', validators=[MinValueValidator(1), MaxValueValidator(2)])
     
     class Meta():

@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from django.contrib.auth.models import User
 from django.test.testcases import TestCase
 from django.utils import timezone
 
 from jogadores.models import Jogador, RegistroFerias
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
-    criar_jogador_teste
+    criar_jogador_teste, SENHA_TESTE
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
-    CancelamentoDesafioLadder, RemocaoJogador, DecaimentoJogador
+    CancelamentoDesafioLadder, RemocaoJogador, DecaimentoJogador, InicioLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
@@ -1431,7 +1432,6 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_6)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 6)
-#         self.assertEqual(decaimento.posicao_final, 6 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_apos_periodo_inatividade_sem_registro(self):
@@ -1442,7 +1442,6 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_7)
         self.assertEqual(decaimento.data.date(), timezone.localdate() - datetime.timedelta(days=1))
         self.assertEqual(decaimento.posicao_inicial, 7)
-#         self.assertEqual(decaimento.posicao_final, 7 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_apos_periodo_inatividade_com_registro(self):
@@ -1480,7 +1479,6 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_2)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 2)
-#         self.assertEqual(decaimento.posicao_final, 2 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 2)
         
     def test_avaliar_jogador_ferias_sem_cair_no_periodo_inatividade(self):
@@ -1496,7 +1494,6 @@ class AvaliarDecaimentoTestCase(TestCase):
         self.assertEqual(decaimento.jogador, self.jogador_pos_3)
         self.assertEqual(decaimento.data.date(), timezone.localdate())
         self.assertEqual(decaimento.posicao_inicial, 3)
-#         self.assertEqual(decaimento.posicao_final, 3 + DecaimentoJogador.QTD_POSICOES_DECAIMENTO)
         self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
         
     def test_avaliar_jogador_fora_ladder(self):
@@ -1504,6 +1501,34 @@ class AvaliarDecaimentoTestCase(TestCase):
         # Deve jogar erro
         with self.assertRaisesMessage(ValueError, f'{self.new} não está na ladder'):
             avaliar_decaimento(self.new)
+            
+    def test_avaliar_decaimento_jogador_sem_desafios(self):
+        """Testa se jogador sem desafios recebe como data inicial o primeiro desafio feito"""
+        # Criar novo jogador
+        user = User.objects.create_user(username='teste', password=SENHA_TESTE)
+        jogador = Jogador.objects.create(nick='teste', admin=False, user=user)
+        
+        # Adicionar na ladder
+        PosicaoLadder.objects.create(posicao=11, jogador=jogador)
+        InicioLadder.objects.create(posicao=11, jogador=jogador)
+        
+        # Verificar resultado de avaliação de decaimento
+        decaimento = avaliar_decaimento(jogador)
+        
+        self.assertEqual(decaimento.jogador, jogador)
+        data_primeiro_desafio = DesafioLadder.validados.order_by('data_hora')[0].data_hora.date()
+        self.assertEqual(decaimento.data.date(), data_primeiro_desafio + datetime.timedelta(days=DecaimentoJogador.PERIODO_INATIVIDADE))
+        self.assertEqual(decaimento.posicao_inicial, 11)
+        self.assertEqual(decaimento.qtd_periodos_inatividade, 1)
+        
+    def test_avaliar_decaimento_ladder_recem_iniciada(self):
+        """Testa se não é jogado erro ao avaliar decaimento de jogador em ladder sem desafios"""
+        # Cancelar todos os desafios
+        for desafio in DesafioLadder.validados.all():
+            CancelamentoDesafioLadder.objects.create(desafio_ladder=desafio, jogador=self.jogador_pos_1, data_hora=desafio.data_hora)
+            
+        self.assertEqual(avaliar_decaimento(self.jogador_pos_2), None)
+        
             
 class BuscarDesafiaveisTestCase(TestCase):
     """Testes para a função de buscar jogadores desafiáveis"""

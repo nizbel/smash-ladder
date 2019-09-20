@@ -998,6 +998,10 @@ def avaliar_decaimento(jogador):
     if not PosicaoLadder.objects.filter(jogador=jogador).exists():
         raise ValueError(f'{jogador} não está na ladder')
     
+    # Se ainda não há desafios validados, não há decaimentos
+    if not DesafioLadder.validados.exists():
+        return None
+    
     # Verificar último desafio validado do jogador
     if DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).exists():
         ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('-data_hora')[0]
