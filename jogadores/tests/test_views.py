@@ -335,6 +335,7 @@ class ViewEditarJogadorTestCase(TestCase):
         self.assertFalse(response.context['form_jogador'].fields['admin'].disabled)
         self.assertTrue(response.context['form_jogador'].fields['main'].disabled)
         self.assertTrue(response.context['form_jogador'].fields['nick'].disabled)
+        self.assertFalse(response.context['form_jogador'].fields['email'].disabled)
         
     def test_acesso_logado_proprio_usuario(self):
         """Testa acesso a tela de editar o próprio usuário"""
@@ -346,6 +347,7 @@ class ViewEditarJogadorTestCase(TestCase):
         self.assertTrue(response.context['form_jogador'].fields['admin'].disabled)
         self.assertFalse(response.context['form_jogador'].fields['main'].disabled)
         self.assertFalse(response.context['form_jogador'].fields['nick'].disabled)
+        self.assertFalse(response.context['form_jogador'].fields['email'].disabled)
         
     def test_acesso_logado_proprio_usuario_admin(self):
         """Testa acesso a tela de editar o próprio usuário sendo admin"""
@@ -357,6 +359,7 @@ class ViewEditarJogadorTestCase(TestCase):
         self.assertFalse(response.context['form_jogador'].fields['admin'].disabled)
         self.assertFalse(response.context['form_jogador'].fields['main'].disabled)
         self.assertFalse(response.context['form_jogador'].fields['nick'].disabled)
+        self.assertFalse(response.context['form_jogador'].fields['email'].disabled)
         
     def test_edicao_campos_proprio_usuario(self):
         """Testa edição de campos pelo próprio usuário"""

@@ -11,7 +11,8 @@ from smashLadder.utils import preparar_classes_form
 
 
 class JogadorForm(ModelForm):
-
+    email = forms.EmailField(required=False, help_text='Utilizado para troca de senha')
+    
     class Meta:
         model = Jogador
         fields = ('nick', 'main', 'admin')
@@ -24,6 +25,9 @@ class JogadorForm(ModelForm):
             self.admin = False
             
         super(JogadorForm,self).__init__(*args,**kwargs)
+        
+        if self.instance:
+            self.fields['email'].initial = self.instance.user.email
         
         preparar_classes_form(self)
 
