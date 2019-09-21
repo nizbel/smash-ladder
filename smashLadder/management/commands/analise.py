@@ -4,6 +4,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from jogadores.models import Stage
 import numpy as np
 
 
@@ -188,3 +189,25 @@ def analisar_resultado_acumulado_para_um_jogador(df, nick_jogador, mes_ano=None)
     resultado_pares_df = resultado_pares_df.drop(['nick_desafiante'], axis=1)
     
     return resultado_pares_df
+
+def analisar_vitorias_stages_para_um_jogador(df, nick_jogador):
+    """Gera dados de resultados em stages para um jogador"""
+    resultado_stages_df = df.copy(True)
+    
+    # Adicionar coluna para contar qtd de lutas
+    resultado_stages_df['qtd_lutas'] = 1
+    
+    # Se modo for battlefield, contar como battlefield, o mesmo para final destination
+    bf_idx = resultado_stages_df['luta__stage__modelo'] == Stage.TIPO_BATTLEFIELD
+    resultado_stages_df.loc[bf_idx, ['luta__stage__nome']] = 'Battlefield'
+    
+    fd_idx = resultado_stages_df['luta__stage__modelo'] == Stage.TIPO_OMEGA
+    resultado_stages_df.loc[fd_idx, ['luta__stage__nome']] = 'Final Destination'
+        
+    resultado_stages_df = resultado_stages_df.drop('luta__stage__modelo', axis=1)
+    
+    resultado_stages_df = resultado_stages_df.groupby('luta__stage__nome').sum()
+    
+    resultado_stages_df['percentual_vitorias'] = resultado_stages_df['vitoria'] / resultado_stages_df['qtd_lutas'] * 100
+    
+    return resultado_stages_df

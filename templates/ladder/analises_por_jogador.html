@@ -55,6 +55,17 @@
 			</div>
 		</div>
 	</div>
+	
+	<div class="col-12 col-md-6 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultado acumulado por stage
+		  	</div>
+		  	<div class="card-body col-12" id="cardGrafResultadoStages">
+  				<div id="grafResultadoStages"></div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -179,6 +190,7 @@ $(document).ready(function(){
 	
 	buscarDadosGraficoAcumuladoUmJogador();
 	buscarDadosGraficoJogadorContraPersonagens();
+	buscarDadosGraficoResultadoStages();
 });
 
 function playGraficoAcumuladoUmJogador() {
@@ -396,6 +408,68 @@ function plotGraficoJogadorContraPersonagens(dados) {
 	};
 	
 	Plotly.newPlot('grafJogadorContraPersonagens', data, layout);
+}
+
+function buscarDadosGraficoResultadoStages() {
+	$('#cardGrafResultadoStages').block({ 
+        message: ''
+    });
+	ajax("{% url 'ladder:analise_stages_jogador' %}", 
+		'GET', 
+		{jogador_id: jogador_id}, 
+		function(resultado) {
+			plotGraficoResultadoStages(resultado);
+			
+			$('#cardGrafResultadoStages').unblock();
+        }
+    );
+}
+
+function plotGraficoResultadoStages(dados) {
+	var data = [
+	  {
+	    opacity: 0.7,
+		x: dados.stage,
+		y: dados.quantidade_lutas,
+		hovertemplate: 'Lutas: <b>%{y}</b>',
+	  	hoverinfo: 'text',
+	  	name: '',
+		type: 'bar',
+		offsetgroup: 1,
+		yaxis: 'y'
+	  },
+	  {
+	    opacity: 0.7,
+		x: dados.stage,
+		y: dados.percentual_vitorias,
+		hovertemplate: '% Vitórias: <b>%{y:.2f}</b>',
+	  	hoverinfo: 'text',
+	  	name: '',
+		type: 'bar',
+		offsetgroup: 2,
+		yaxis: 'y2'
+	  }
+	];
+
+	var layout = {
+	  font: {
+	  	size: 16
+	  },
+	  showlegend: false,
+	  xaxis: {
+	  	type: 'category'
+  	  },
+	  yaxis: {
+	  	title: 'Qtd. lutas'
+	  },
+	  yaxis2: {
+	  	title: '% Vitórias',
+	  	side: 'right',
+        overlaying: 'y'
+	  }
+  	};
+	
+	Plotly.newPlot('grafResultadoStages', data, layout);
 }
 </script>
 {% endblock %}

@@ -30,7 +30,7 @@ from smashLadder.management.commands.analise import analisar_resultado_acumulado
     analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
     analisar_resultados_por_posicao, analisar_resultados_por_dif_de_posicao, \
-    analisar_vitorias_por_personagem
+    analisar_vitorias_por_personagem, analisar_vitorias_stages_para_um_jogador
 from smashLadder.utils import mes_ano_ant, mes_ano_prox
 
 
@@ -932,21 +932,30 @@ def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
                              'personagem': desafios_df.index.tolist()})
         
-# def analise_resultado_stages_para_um_jogador(request):
-#     """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
-#     if request.is_ajax():
-#         desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, luta__lutaladder__desafio_ladder__in=desafios_validados) \
-#                                         .filter(luta__lutaladder__desafio_ladder__desafiante__in=jogadores_validos, 
-#                                                 luta__lutaladder__desafio_ladder__desafiado__in=jogadores_validos)
-#                                         .filter(Q(luta__lutaladder__desafio_ladder__desafiante=jogador) | Q(luta__lutaladder__desafio_ladder__desafiado=jogador))
-#                                         .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
-#                                                                output_field=IntegerField())) \
-#                                         .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
-#          
-#         # Verifica se dataframe possui dados
-#         if desafios_df.empty:
-#             return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
-#         
-#         return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
-#                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
-#                              'personagem': desafios_df.index.tolist()})
+def analise_resultado_stages_para_um_jogador(request):
+    """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
+    if request.is_ajax():
+        jogador_id = int(request.GET.get('jogador_id'))
+        
+        # Verificar se jogador existe
+        jogador = get_object_or_404(Jogador, id=jogador_id)
+        
+        desafios_validados = DesafioLadder.validados.filter(Q(desafiante=jogador) | 
+                                                            Q(desafiado=jogador))
+        
+        desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(luta__lutaladder__desafio_ladder__in=desafios_validados, 
+                                                                   luta__stage__isnull=False, jogador=jogador)
+                                                                   .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
+                                                               output_field=IntegerField())) \
+                                        .values('luta__stage__nome', 'luta__stage__modelo', 'vitoria')))
+         
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
+        
+        desafios_df = analisar_vitorias_stages_para_um_jogador(desafios_df, jogador.nick)
+        
+        return JsonResponse({'quantidade_lutas': desafios_df['qtd_lutas'].tolist(), 
+                             'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
+                             'quantidade_vitorias': desafios_df['vitoria'].tolist(),
+                             'stage': desafios_df.index.tolist()})
