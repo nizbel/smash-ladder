@@ -935,7 +935,17 @@ def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
 # def analise_resultado_stages_para_um_jogador(request):
 #     """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
 #     if request.is_ajax():
-#         
+#         desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, luta__lutaladder__desafio_ladder__in=desafios_validados) \
+#                                         .filter(luta__lutaladder__desafio_ladder__desafiante__in=jogadores_validos, 
+#                                                 luta__lutaladder__desafio_ladder__desafiado__in=jogadores_validos)
+#                                         .filter(Q(luta__lutaladder__desafio_ladder__desafiante=jogador) | Q(luta__lutaladder__desafio_ladder__desafiado=jogador))
+#                                         .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
+#                                                                output_field=IntegerField())) \
+#                                         .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
+#          
+#         # Verifica se dataframe possui dados
+#         if desafios_df.empty:
+#             return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
 #         
 #         return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
 #                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),

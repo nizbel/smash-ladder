@@ -363,6 +363,9 @@ class ViewEditarJogadorTestCase(TestCase):
         
     def test_edicao_campos_proprio_usuario(self):
         """Testa edição de campos pelo próprio usuário"""
+        # Guardar email original 
+        email = self.jogador_1.user.email
+        
         marth = Personagem.objects.get(nome='Marth')
         self.client.login(username=self.jogador_1.user.username, password=SENHA_TESTE)
         response = self.client.post(reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_1.user.username}),
@@ -373,6 +376,7 @@ class ViewEditarJogadorTestCase(TestCase):
         self.jogador_1 = Jogador.objects.get(user__username=self.jogador_1.user.username)
         self.assertEqual(self.jogador_1.nick, 'sena2')
         self.assertEqual(self.jogador_1.main, marth)
+        self.assertEqual(self.jogador_1.user.email, email)
         
     def test_edicao_campos_admin(self):
         """Testa edição de campos pelo admin"""
@@ -387,10 +391,13 @@ class ViewEditarJogadorTestCase(TestCase):
         
     def test_edicao_campos_proprio_usuario_admin(self):
         """Testa edição de campos pelo admin"""
+        # Novo email
+        novo_email = 'novo_email@teste.com'
+        
         marth = Personagem.objects.get(nome='Marth')
         self.client.login(username=self.jogador_2.user.username, password=SENHA_TESTE)
         response = self.client.post(reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_2.user.username}),
-                                    {'nick': 'teets2', 'main': marth.id, 'admin': False})
+                                    {'nick': 'teets2', 'main': marth.id, 'admin': False, 'email': novo_email})
         self.assertRedirects(response, reverse('jogadores:detalhar_jogador', kwargs={'username': self.jogador_2.user.username}))
         
         # Atualizar objeto
@@ -398,6 +405,7 @@ class ViewEditarJogadorTestCase(TestCase):
         self.assertEqual(self.jogador_2.admin, False)
         self.assertEqual(self.jogador_2.main, marth)
         self.assertEqual(self.jogador_2.nick, 'teets2')
+        self.assertEqual(self.jogador_2.user.email, novo_email)
         
 class ViewListarStagesTestCase(TestCase):
     """Testes para a view de listar stages"""

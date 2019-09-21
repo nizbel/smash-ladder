@@ -229,6 +229,12 @@ def editar_jogador(request, username):
             jogador = form_jogador.save(commit=False)
             jogador.save()
             
+            # Verificar se houve alteração no email
+            email_form = form_jogador.cleaned_data['email']
+            if email_form and jogador.user.email != email_form:
+                jogador.user.email = email_form
+                jogador.user.save()
+            
             return redirect(reverse('jogadores:detalhar_jogador', kwargs={'username': jogador.user.username}))
         
 #         else:
