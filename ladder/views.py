@@ -758,6 +758,10 @@ def analise_resultado_acumulado_jogadores(request):
                                             'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
                                                     'score_desafiado').order_by('data_hora')))
         
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': [], 'jogador': []})
+        
         desafios_df = analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))
         
         # Trocar NaNs por None, para ser codificado em JSON
@@ -765,6 +769,67 @@ def analise_resultado_acumulado_jogadores(request):
         
         return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
                              'jogador': desafios_df.index.tolist()})
+        
+    
+def analise_resultado_por_posicao(request):
+    """Retorna dados sobre resultados por posição"""
+    if request.is_ajax():
+        
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
+                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
+                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
+                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
+        
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'posicao_desafiante': [], 'posicao_desafiado': [], 'qtd_desafios': [], 'resultado': []})
+        
+        desafios_df = analisar_resultados_por_posicao(desafios_df)
+        
+        return JsonResponse({'posicao_desafiante': desafios_df['posicao_desafiante'].tolist(), 
+                             'posicao_desafiado': desafios_df['posicao_desafiado'].tolist(),
+                             'qtd_desafios': desafios_df['qtd_desafios'].tolist(),
+                             'resultado': desafios_df['resultado'].tolist()})
+        
+def analise_resultado_por_diferenca_posicao(request):
+    """Retorna dados sobre diferença de posição"""
+    if request.is_ajax():
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all() \
+                                    .values('score_desafiante', 'posicao_desafiante', 'score_desafiado', 'posicao_desafiado')))
+        
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'qtd_vitorias': [], 'perc_vitorias': [], 'qtd_derrotas': [], 'perc_derrotas': [], 'dif_posicao': []})
+        
+        desafios_df = analisar_resultados_por_dif_de_posicao(desafios_df)
+        
+        return JsonResponse({'qtd_vitorias': desafios_df['vitoria'].tolist(), 
+                             'perc_vitorias': desafios_df['percentual_vitorias'].tolist(),
+                             'qtd_derrotas': desafios_df['derrota'].tolist(),
+                             'perc_derrotas': desafios_df['percentual_derrotas'].tolist(),
+                             'dif_posicao': desafios_df.index.tolist()})
+        
+def analise_vitorias_por_personagem(request):
+    """Retorna dados sobre vitórias por personagem"""
+    if request.is_ajax():
+        
+        desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
+                                                                           luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
+                                                                           luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
+                                                .annotate(nome_personagem=F('personagem__nome')) \
+                                                .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
+                                                                        output_field=IntegerField())) \
+                                                .values('nome_personagem', 'vitoria')))
+        
+        # Verifica se dataframe possui dados
+        if desafios_personagens_df.empty:
+            return JsonResponse({'qtd_lutas': [], 'perc_vitorias': [], 'personagem': []})
+        
+        desafios_personagens_df = analisar_vitorias_por_personagem(desafios_personagens_df)
+        
+        return JsonResponse({'qtd_lutas': desafios_personagens_df['qtd_lutas'].tolist(), 
+                             'perc_vitorias': desafios_personagens_df['perc_vitorias'].tolist(),
+                             'personagem': desafios_personagens_df.index.tolist()})  
         
 def analises_por_jogador(request):
     """Mostrar análises dos dados de desafios por jogador"""
@@ -866,51 +931,12 @@ def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
         return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
                              'personagem': desafios_df.index.tolist()})
-    
-def analise_resultado_por_posicao(request):
-    """Retorna dados sobre resultados por posição"""
-    if request.is_ajax():
         
-        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all().annotate(nick_desafiante=F('desafiante__nick')) \
-                                    .annotate(nick_desafiado=F('desafiado__nick')).values(
-                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'posicao_desafiante', 'nick_desafiado', 
-                                        'score_desafiado', 'posicao_desafiado', 'desafio_coringa').order_by('data_hora')))
-        
-        desafios_df = analisar_resultados_por_posicao(desafios_df)
-        
-        return JsonResponse({'posicao_desafiante': desafios_df['posicao_desafiante'].tolist(), 
-                             'posicao_desafiado': desafios_df['posicao_desafiado'].tolist(),
-                             'qtd_desafios': desafios_df['qtd_desafios'].tolist(),
-                             'resultado': desafios_df['resultado'].tolist()})
-        
-def analise_resultado_por_diferenca_posicao(request):
-    """Retorna dados sobre diferença de posição"""
-    if request.is_ajax():
-        desafios_df = pd.DataFrame(list(DesafioLadder.validados.all() \
-                                    .values('score_desafiante', 'posicao_desafiante', 'score_desafiado', 'posicao_desafiado')))
-        
-        desafios_df = analisar_resultados_por_dif_de_posicao(desafios_df)
-        
-        return JsonResponse({'qtd_vitorias': desafios_df['vitoria'].tolist(), 
-                             'perc_vitorias': desafios_df['percentual_vitorias'].tolist(),
-                             'qtd_derrotas': desafios_df['derrota'].tolist(),
-                             'perc_derrotas': desafios_df['percentual_derrotas'].tolist(),
-                             'dif_posicao': desafios_df.index.tolist()})
-        
-def analise_vitorias_por_personagem(request):
-    """Retorna dados sobre vitórias por personagem"""
-    if request.is_ajax():
-        
-        desafios_personagens_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, 
-                                                                           luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
-                                                                           luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
-                                                .annotate(nome_personagem=F('personagem__nome')) \
-                                                .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0,
-                                                                        output_field=IntegerField())) \
-                                                .values('nome_personagem', 'vitoria')))
-        
-        desafios_personagens_df = analisar_vitorias_por_personagem(desafios_personagens_df)
-        
-        return JsonResponse({'qtd_lutas': desafios_personagens_df['qtd_lutas'].tolist(), 
-                             'perc_vitorias': desafios_personagens_df['perc_vitorias'].tolist(),
-                             'personagem': desafios_personagens_df.index.tolist()})  
+# def analise_resultado_stages_para_um_jogador(request):
+#     """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
+#     if request.is_ajax():
+#         
+#         
+#         return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
+#                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
+#                              'personagem': desafios_df.index.tolist()})
