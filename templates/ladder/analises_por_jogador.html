@@ -126,6 +126,7 @@ $(document).ready(function(){
 		
 		buscarDadosGraficoAcumuladoUmJogador();
 		buscarDadosGraficoJogadorContraPersonagens();
+		buscarDadosGraficoResultadoStages();
 	});
 	
 	// Gráfico acumulado de resultados de desafios
@@ -442,7 +443,7 @@ function plotGraficoResultadoStages(dados) {
 	    opacity: 0.7,
 		x: dados.stage,
 		y: dados.percentual_vitorias,
-		hovertemplate: '% Vitórias: <b>%{y:.2f}</b>',
+		hovertemplate: 'Vitórias: <b>%{y:.2f}%</b>',
 	  	hoverinfo: 'text',
 	  	name: '',
 		type: 'bar',
@@ -456,13 +457,11 @@ function plotGraficoResultadoStages(dados) {
 	  	size: 16
 	  },
 	  showlegend: false,
-	  xaxis: {
-	  	type: 'category'
-  	  },
 	  yaxis: {
 	  	title: 'Qtd. lutas'
 	  },
 	  yaxis2: {
+	    range: [0, 100],
 	  	title: '% Vitórias',
 	  	side: 'right',
         overlaying: 'y'

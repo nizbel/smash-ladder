@@ -236,7 +236,7 @@ function plotGraficoVitoriasPorPersonagem() {
 			    opacity: 0.7,
 				x: resultado.personagem,
 				y: resultado.perc_vitorias,
-				hovertemplate: '% Vitórias: <b>%{y:.2f}</b>',
+				hovertemplate: 'Vitórias: <b>%{y:.2f}%</b>',
 			  	hoverinfo: 'text',
 			  	name: '',
 				type: 'bar',
@@ -254,6 +254,7 @@ function plotGraficoVitoriasPorPersonagem() {
 			  	title: 'Qtd. lutas'
 			  },
 			  yaxis2: {
+			    range: [0, 100],
 			  	title: '% Vitórias',
 			  	overlaying: 'y',
 			  	side: 'right'
