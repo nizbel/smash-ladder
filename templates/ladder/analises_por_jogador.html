@@ -66,6 +66,17 @@
 			</div>
 		</div>
 	</div>
+	
+	<div class="col-12 col-md-6 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Diferença de vitórias em desafios
+		  	</div>
+		  	<div class="card-body col-12" id="cardGrafDifVitoriasDesafios">
+  				<div id="grafDifVitoriasDesafios"></div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -127,6 +138,7 @@ $(document).ready(function(){
 		buscarDadosGraficoAcumuladoUmJogador();
 		buscarDadosGraficoJogadorContraPersonagens();
 		buscarDadosGraficoResultadoStages();
+		buscarDadosGraficoDifVitoriasDesafios();
 	});
 	
 	// Gráfico acumulado de resultados de desafios
@@ -192,6 +204,7 @@ $(document).ready(function(){
 	buscarDadosGraficoAcumuladoUmJogador();
 	buscarDadosGraficoJogadorContraPersonagens();
 	buscarDadosGraficoResultadoStages();
+	buscarDadosGraficoDifVitoriasDesafios();
 });
 
 function playGraficoAcumuladoUmJogador() {
@@ -469,6 +482,48 @@ function plotGraficoResultadoStages(dados) {
   	};
 	
 	Plotly.newPlot('grafResultadoStages', data, layout);
+}
+
+function buscarDadosGraficoDifVitoriasDesafios() {
+	$('#cardGrafDifVitoriasDesafios').block({ 
+        message: ''
+    });
+	ajax("{% url 'ladder:analise_vitorias_desafio_jogador' %}", 
+		'GET', 
+		{jogador_id: jogador_id}, 
+		function(resultado) {
+			plotGraficoDifVitoriasDesafios(resultado);
+			
+			$('#cardGrafDifVitoriasDesafios').unblock();
+        }
+    );
+}
+
+function plotGraficoDifVitoriasDesafios(dados) {
+	console.log(dados);
+	var data = [
+	  {
+	    opacity: 0.7,
+		x: dados.diferenca,
+		y: dados.quantidade_vitorias,
+		hovertemplate: 'Diferença: <b>%{x}</b><br>Desafios: <b>%{y}</b>',
+	  	hoverinfo: 'text',
+	  	name: '',
+		type: 'bar'
+	  }
+	];
+
+	var layout = {
+	  font: {
+	  	size: 16
+	  },
+	  showlegend: false,
+	  yaxis: {
+	  	title: 'Qtd. desafios'
+	  }
+  	};
+	
+	Plotly.newPlot('grafDifVitoriasDesafios', data, layout);
 }
 </script>
 {% endblock %}

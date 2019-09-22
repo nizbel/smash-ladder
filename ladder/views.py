@@ -30,7 +30,8 @@ from smashLadder.management.commands.analise import analisar_resultado_acumulado
     analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
     analisar_resultados_por_posicao, analisar_resultados_por_dif_de_posicao, \
-    analisar_vitorias_por_personagem, analisar_vitorias_stages_para_um_jogador
+    analisar_vitorias_por_personagem, analisar_resultados_stages_para_um_jogador,\
+    analisar_vitorias_desafio_para_um_jogador
 from smashLadder.utils import mes_ano_ant, mes_ano_prox
 
 
@@ -933,7 +934,7 @@ def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
                              'personagem': desafios_df.index.tolist()})
         
 def analise_resultado_stages_para_um_jogador(request):
-    """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
+    """Retorna dados sobre resultados em stages para um jogador"""
     if request.is_ajax():
         jogador_id = int(request.GET.get('jogador_id'))
         
@@ -953,9 +954,32 @@ def analise_resultado_stages_para_um_jogador(request):
         if desafios_df.empty:
             return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
         
-        desafios_df = analisar_vitorias_stages_para_um_jogador(desafios_df, jogador.nick)
+        desafios_df = analisar_resultados_stages_para_um_jogador(desafios_df, jogador.nick)
         
         return JsonResponse({'quantidade_lutas': desafios_df['qtd_lutas'].tolist(), 
                              'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
                              'quantidade_vitorias': desafios_df['vitoria'].tolist(),
                              'stage': desafios_df.index.tolist()})
+        
+def analise_vitorias_desafio_para_um_jogador(request):
+    """Retorna dados sobre vitórias em desafios para um jogador"""
+    if request.is_ajax():
+        jogador_id = int(request.GET.get('jogador_id'))
+        
+        # Verificar se jogador existe
+        jogador = get_object_or_404(Jogador, id=jogador_id)
+        
+        desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(Q(desafiante=jogador, score_desafiante__gt=F('score_desafiado')) | 
+                                                                       Q(desafiado=jogador, score_desafiado__gt=F('score_desafiante'))) \
+                                                                       .annotate(diferenca=F('score_desafiante')-F('score_desafiado'))
+                                        .values('diferenca')))
+         
+        # Verifica se dataframe possui dados
+        if desafios_df.empty:
+            return JsonResponse({'quantidade_vitorias': [], 'diferenca': []})
+        
+        desafios_df = analisar_vitorias_desafio_para_um_jogador(desafios_df, jogador.nick)
+        
+        return JsonResponse({'quantidade_vitorias': desafios_df['qtd_desafios'].tolist(), 
+                             'diferenca': desafios_df.index.tolist()})
+        

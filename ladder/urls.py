@@ -55,4 +55,5 @@ urlpatterns = [
     path('analises/jogador/resultado-contra-personagens-jogador/', views.analise_resultado_acumulado_contra_personagens_para_um_jogador, 
          name='analise_result_jogador_contra_personagens'),
     path('analises/jogador/resultado-stages-jogador/', views.analise_resultado_stages_para_um_jogador, name='analise_stages_jogador'),
+    path('analises/jogador/vitorias-desafio/', views.analise_vitorias_desafio_para_um_jogador, name='analise_vitorias_desafio_jogador'),
 ]

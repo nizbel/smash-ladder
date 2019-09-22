@@ -190,7 +190,7 @@ def analisar_resultado_acumulado_para_um_jogador(df, nick_jogador, mes_ano=None)
     
     return resultado_pares_df
 
-def analisar_vitorias_stages_para_um_jogador(df, nick_jogador):
+def analisar_resultados_stages_para_um_jogador(df, nick_jogador):
     """Gera dados de resultados em stages para um jogador"""
     resultado_stages_df = df.copy(True)
     
@@ -211,3 +211,19 @@ def analisar_vitorias_stages_para_um_jogador(df, nick_jogador):
     resultado_stages_df['percentual_vitorias'] = resultado_stages_df['vitoria'] / resultado_stages_df['qtd_lutas'] * 100
     
     return resultado_stages_df
+
+def analisar_vitorias_desafio_para_um_jogador(df, nick_jogador):
+    """Gera dados de resultados em stages para um jogador"""
+    vitoria_df = df.copy(True)
+    
+    # Adicionar coluna para contar qtd de lutas
+    vitoria_df['qtd_desafios'] = 1
+    
+    # Se modo for battlefield, contar como battlefield, o mesmo para final destination
+    dif_negativa_idx = vitoria_df['diferenca'] < 0
+    vitoria_df.loc[dif_negativa_idx, ['diferenca']] = vitoria_df.loc[dif_negativa_idx, ['diferenca']] * -1
+    
+    vitoria_df = vitoria_df.groupby('diferenca').sum()
+    
+    return vitoria_df
+
