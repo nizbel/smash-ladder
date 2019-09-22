@@ -172,6 +172,20 @@ function plotGraficoResultadosPorPosicao() {
 		'GET', 
 		{}, 
 		function(resultado) {
+			// Adicionar texto para cada ponto no gráfico
+			resultado.texto = [];
+			
+			// Formatar quantidade de desafios
+			var maior_qtd_desafios = Math.max.apply(Math, resultado.qtd_desafios);
+			var tamanho_max = 25;
+			for (var i = 0; i < resultado.qtd_desafios.length; i++) {
+				resultado.texto.push('Desafiante: <b>' + resultado.posicao_desafiante[i] + '</b>' +
+                        '<br>Desafiado: <b>' + resultado.posicao_desafiado[i] + '</b>' +
+                        '<br>Média: <b>' + resultado.resultado[i].toFixed(2) + '</b>' +
+                        '<br>Qtd. desafios: <b>' + resultado.qtd_desafios[i] + '</b>');
+				resultado.qtd_desafios[i] = resultado.qtd_desafios[i] / maior_qtd_desafios * tamanho_max;
+			}
+			
 			var data = [
 			  {
 			  	marker: {
@@ -184,9 +198,7 @@ function plotGraficoResultadosPorPosicao() {
 				},
 				x: resultado.posicao_desafiante,
 				y: resultado.posicao_desafiado,
-				hovertemplate: 'Desafiante: <b>%{x}</b>' +
-                        '<br>Desafiado: <b>%{y}</b>' +
-                        '<br>Média: <b>%{marker.color:.2f}</b>',
+				text: resultado.texto,
 			  	hoverinfo: 'text',
 			  	name: '',
 				mode: 'markers',

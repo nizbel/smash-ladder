@@ -72,9 +72,6 @@ def analisar_resultados_por_posicao(df):
      
     resultados_posicao_df = resultados_posicao_df.reset_index(level=[0,1])
     
-    max_qtd_desafios = int(resultados_posicao_df['qtd_desafios'].max())
-    resultados_posicao_df['qtd_desafios'] = resultados_posicao_df['qtd_desafios'] / max_qtd_desafios * 25
-    
     return resultados_posicao_df
     
 def analisar_resultados_por_dif_de_posicao(df):
