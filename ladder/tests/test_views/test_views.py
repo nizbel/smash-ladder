@@ -1001,6 +1001,7 @@ class ViewDetalharLadderAtualTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), PosicaoLadder.objects.all().count())
+        self.assertEqual(response.context['qtd_desafios'], 0)
         
         # Verificar se os nomes aparecem no html
         for nick in PosicaoLadder.objects.all().values_list('jogador__nick', flat=True):
@@ -1012,6 +1013,7 @@ class ViewDetalharLadderAtualTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), PosicaoLadder.objects.all().count())
+        self.assertEqual(response.context['qtd_desafios'], 0)
         
         # Verificar se os nomes aparecem no html
         for nick in PosicaoLadder.objects.all().values_list('jogador__nick', flat=True):
@@ -1125,6 +1127,7 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes).count())
+        self.assertEqual(response.context['qtd_desafios'], 0)
         
     def test_acesso_logado(self):
         """Testa acesso a tela de listar jogadores logado"""
@@ -1132,6 +1135,7 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_ladder_historico', kwargs={'ano': self.ano, 'mes': self.mes}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['ladder']), HistoricoLadder.objects.filter(ano=self.ano, mes=self.mes).count())
+        self.assertEqual(response.context['qtd_desafios'], 0)
         
     def test_historico_inexistente(self):
         """Testa tela de erro ao verificar um histórico inexistente"""

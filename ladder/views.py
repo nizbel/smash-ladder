@@ -127,6 +127,8 @@ def detalhar_ladder_atual(request):
     data_atual = timezone.localtime()
     data_mes_anterior = data_atual.replace(day=1) - datetime.timedelta(days=1)
     
+    qtd_desafios = DesafioLadder.objects.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year).count()
+    
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).exists():
         ladder_anterior = HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).select_related('jogador')
@@ -232,7 +234,7 @@ def detalhar_ladder_atual(request):
                     posicao_ladder.jogador.tem_destaque = True
                     break
         
-    return render(request, 'ladder/ladder_atual.html', {'ladder': ladder, 'destaques': destaques})
+    return render(request, 'ladder/ladder_atual.html', {'ladder': ladder, 'destaques': destaques, 'qtd_desafios': qtd_desafios})
     
 def detalhar_ladder_historico(request, ano, mes):
     """Detalhar histórico da ladder em mês/ano específico"""
@@ -246,6 +248,8 @@ def detalhar_ladder_historico(request, ano, mes):
     
     # Pegar mês/ano anterior
     mes_anterior, ano_anterior = mes_ano_ant(mes, ano)
+    
+    qtd_desafios = DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).count()
     
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
@@ -304,7 +308,8 @@ def detalhar_ladder_historico(request, ano, mes):
                     posicao_ladder.jogador.tem_destaque = True
                     break
     
-    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes, 'destaques': destaques})
+    return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes, 'destaques': destaques,
+                                                            'qtd_desafios': qtd_desafios})
 
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
