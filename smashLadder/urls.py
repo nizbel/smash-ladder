@@ -29,6 +29,7 @@ urlpatterns = [
     path('personagens/', include('jogadores.urls.urls_personagens')),
     path('stages/', include('jogadores.urls.urls_stages')),
     path('torneios/', include('torneios.urls')),
+    path('treinamento/', include('treinamento.urls')),
 ]
 
 if settings.DEBUG:

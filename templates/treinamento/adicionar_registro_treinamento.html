@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Adicionar registro de treinamento{% endblock %}
+
+{% block page_header %}Registro de treinamento{% endblock %}
+
+{% block extra_header %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'treinamento:add_registro_treinamento' %}" method="post">
+	    {% csrf_token %}
+	    
+	    {% include "form.html" with form=form_registro_treinamento %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Salvar">
+	</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src={% static "jquery.mask.min.js" %} type="text/javascript"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('select').select2();
+	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
+});
+</script>
+{% endblock %}

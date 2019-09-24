@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Painel de treinamento
+{% endblock %}
+
+{% block page_header %}
+	Painel de treinamento
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Anotações
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for anotacao in ultimas_anotacoes %}
+					<li class="list-group-item">
+						<span>{{ anotacao.texto }}</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:add_anotacao' %}">Adicionar anotação</a>
+		  	</div>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:listar_anotacoes' %}">Ver todas</a>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Registros de treinamento
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for registro in ultimos_registros %}
+					<li class="list-group-item">
+						<span><a href="{% url 'treinamento:detalhar_registro_treinamento' registro.id %}">{{ registro.inicio|date:'d/m/Y' }}</a></span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:add_registro_treinamento' %}">Adicionar registro</a>
+		  	</div>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:listar_registros_treinamento' %}">Ver todos</a>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Métricas
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for metrica in metricas %}
+					<li class="list-group-item">
+						<span><a href="{% url 'treinamento:detalhar_metrica' metrica.id %}">{{ metrica.nome }}</a></span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:add_metrica' %}">Adicionar métrica</a>
+		  	</div>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:listar_metricas' %}">Ver todas</a>
+		  	</div>
+		</div>
+	</div>
+{% endblock %}

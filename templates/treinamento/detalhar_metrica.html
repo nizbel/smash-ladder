@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Métrica de {{ request.user.jogador }}
+{% endblock %}
+
+{% block page_header %}
+	Métrica de {{ request.user.jogador }}
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Nome</h6>
+					    <h6 class="card-title"><strong>{{ metrica.nome }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Descrição</h6>
+					    <h6 class="card-title"><strong>{{ metrica.descricao }}</strong></h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+		  			<div class="col-12">
+						<canvas id="graf-resultados" width="auto"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	// Gráficos
+	var ctx = document.getElementById('graf-resultados').getContext('2d');
+	var grafPercVitorias = new Chart(ctx, {
+	    type: 'line',
+	    data: {
+	    	labels: [{% for resultado in resultados %}'',{% endfor %}],
+	        datasets: [{
+	            label: 'Quantidade',
+	            data: {{ resultados }},
+	            borderWidth: 0,
+	            lineTension: 0
+	        }]
+	    },
+	    options: {
+	    	legend: {
+	    		display: false
+			},
+			tooltips: {
+  				intersect: false
+			},
+	        scales: {
+	            xAxes: [{
+	            	scaleLabel: {
+		            	display: true,
+		                labelString: '{{ metrica.nome }}'
+	                }
+	            }]
+	        }
+	    }
+	});
+});
+</script>
+{% endblock %}

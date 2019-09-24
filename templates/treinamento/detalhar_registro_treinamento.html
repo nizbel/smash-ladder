@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}
+	- Registro de treinamento
+{% endblock %}
+
+{% block page_header %}
+	Registro de treinamento
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Dados
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Data/hora de início</h6>
+					    <h6 class="card-title"><strong>{{ registro_treinamento.inicio|date:'d/m/Y H:i' }}</strong></h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Data/hora de fim</h6>
+					    <h6 class="card-title"><strong>{{ registro_treinamento.fim|date:'d/m/Y H:i' }}</strong></h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Resultados
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for resultado in resultados %}
+					<li class="list-group-item">
+						<span>{{ resultado.metrica.nome }}: {{ resultado.quantidade }}</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:add_resultado_treinamento' registro_treinamento.id %}">Adicionar resultado</a>
+		  	</div>
+		</div>
+	</div>
+{% endblock %}

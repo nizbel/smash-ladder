@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+- Anotações de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block page_header %}
+Anotações de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block content %}
+	{% for anotacao in anotacoes %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ anotacao.data_hora|date:'d/m/Y' }}</h5>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ anotacao.data_hora|date:'H:i' }}</h6>
+		    
+	    	<p class="card-text">{{ anotacao.texto }}</p>
+	  	</div>
+	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Jogador sem anotações cadastradas</h5>
+	</div>
+	{% endfor %}
+{% endblock %}

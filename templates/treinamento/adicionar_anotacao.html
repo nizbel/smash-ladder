@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}- Adicionar anotação{% endblock %}
+
+{% block page_header %}Anotação{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'treinamento:add_anotacao' %}" method="post">
+	    {% csrf_token %}
+	    
+	    {% include "form.html" with form=form_anotacao %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Salvar">
+	</form>
+{% endblock %}

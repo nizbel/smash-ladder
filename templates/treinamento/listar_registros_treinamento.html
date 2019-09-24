@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+- Registros de treinamento de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block page_header %}
+Registros de treinamento de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block content %}
+	{% for registro in registros %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ registro.inicio|date:'d/m/Y' }}</h5>
+	    	
+		    <a class="card-link" href="{% url 'treinamento:detalhar_registro_treinamento' registro.id %}">Ver detalhes</a>
+	  	</div>
+	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Jogador sem anotações cadastradas</h5>
+	</div>
+	{% endfor %}
+{% endblock %}
