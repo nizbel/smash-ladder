@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'ladder',
     'torneios',
     'performance',
+    'treinamento',
     
     'debug_toolbar',
 ]
