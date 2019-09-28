@@ -8,11 +8,11 @@ Remoções de jogador
 
 {% block content %}
 	{% for remocao in remocoes %}
-	<div class="card col-12 col-md-3">
+	<div class="card col-12 col-md-2">
 	  	<div class="card-body">
-	  		<h5 class="card-title mb-0">{{ remocao.jogador.nick }}</h5>
+	  		<h5 class="card-title">{{ remocao.jogador.nick }}</h5>
 	    	
-		    <h6 class="card-subtitle mb-2 text-muted">{{ remocao.data|date:'d/m/Y' }}</h6>
+		    <h6 class="card-subtitle mb-2 text-muted">{{ remocao.data|date:'d/m/Y' }} - Posição {{ remocao.posicao_jogador }}</h6>
 		    
 		    {% if remocao.remocao_por_inatividade %}
 		    	<p class="card-text">Remoção automática</p>

@@ -98,16 +98,17 @@
 					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_ladder_historico' %}">Hall da Fama</a></li>
 					  			<li><a class="dropdown-item" href="{% url 'ladder:detalhar_ladder_atual' %}">Ladder atual</a></li>
 					  			
-	  							{% if request.user.jogador.admin %}
 					  			<li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="javascript:;">Remoções da ladder</a>
 						            <ul class="dropdown-menu">
-						            	{% comment %}
-				              			<li><a class="dropdown-item" href="{% url 'ladder:listar_remocoes_ladder' %}">Listar remoções</a></li>
-				              			{% endcomment %}
-				              			<li><a class="dropdown-item" href="{% url 'ladder:remover_jogador_ladder' %}">Remover jogador</a></li>
+	  									{% if request.user.jogador.admin %}
+				              				<li><a class="dropdown-item" href="{% url 'ladder:listar_remocoes_jogador_ladder' %}">Cancelar remoção</a></li>
+		              					{% endif %}
+				              			<li><a class="dropdown-item" href="{% url 'ladder:listar_remocoes_jogador_ladder' %}">Listar remoções</a></li>
+	  									{% if request.user.jogador.admin %}
+				              				<li><a class="dropdown-item" href="{% url 'ladder:remover_jogador_ladder' %}">Remover jogador</a></li>
+		              					{% endif %}
 			              			</ul>
 		              			</li>
-		              			{% endif %}
 		              			
 					  			<li><a class="dropdown-item" href="{% url 'ladder:listar_desafios_ladder_pendentes_validacao' %}">Ver desafios a validar</a></li>
 		        			</ul>
