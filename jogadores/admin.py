@@ -23,6 +23,8 @@ class UserAdmin(BaseUserAdmin):
         is_superuser = request.user.is_superuser
 
         if not is_superuser:
+            if 'is_active' in form.base_fields:
+                form.base_fields['is_active'].disabled = True
             if 'is_staff' in form.base_fields:
                 form.base_fields['is_staff'].disabled = True
             if 'is_superuser' in form.base_fields:
