@@ -25,7 +25,13 @@ urlpatterns = [
     path(r'historico/listar/', views.listar_ladder_historico, name='listar_ladder_historico'),
     path(r'atual/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_historico'),
+    
+    # Remoções
+    path(r'cancelar-remocao/<int:remocao_id>/', views.cancelar_remocao_jogador_ladder, name='cancelar_remocao_jogador_ladder'),
+    path(r'listar-remocoes/', views.listar_remocoes_jogador_ladder, name='listar_remocoes_jogador_ladder'),
     path(r'remover-jogador/', views.remover_jogador_ladder, name='remover_jogador_ladder'),
+    
+    # Permissões de aumento de range
     path(r'permissao-aumento-range/adicionar/', views.add_permissao_aumento_range, name='add_permissao_aumento_range'),
     path(r'permissao-aumento-range/remover/', views.remover_permissao_aumento_range, name='remover_permissao_aumento_range'),
     path(r'permissao-aumento-range/remover/<int:permissao_id>/', views.remover_permissao_aumento_range, name='remover_permissao_aumento_range'),

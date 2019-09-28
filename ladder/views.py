@@ -22,7 +22,7 @@ from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
     RemocaoJogadorForm, PermissaoAumentoRangeForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador, \
-    ResultadoDesafioLadder, PermissaoAumentoRange
+    PermissaoAumentoRange, RemocaoJogador
 from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder, \
     remover_jogador
 import pandas as pd
@@ -42,6 +42,9 @@ MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER = 'Desafio cancelado com sucesso'
 MENSAGEM_SUCESSO_CANCELAR_MULTIPLOS_DESAFIOS_LADDER = 'Desafios de ladder cancelados com sucesso'
 MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER = 'Desafio editado com sucesso!'
 MENSAGEM_SUCESSO_VALIDAR_DESAFIO_LADDER = 'Desafio validado com sucesso!'
+
+MENSAGEM_SUCESSO_CANCELAR_REMOCAO_JOGADOR_LADDER = 'Remoção cancelada com sucesso'
+MENSAGEM_ERRO_CANCELAR_REMOCAO_INATIVIDADE= 'Não é possível cancelar remoções por inatividade'
 
 @login_required
 def add_desafio_ladder(request):
@@ -421,22 +424,9 @@ def cancelar_desafio_ladder(request, desafio_id):
                     cancelamento = CancelamentoDesafioLadder(desafio_ladder=desafio_ladder, jogador=request.user.jogador)
                     cancelamento.save()
                     
-                    # Remover resultados
-                    ResultadoDesafioLadder.objects.filter(desafio_ladder=desafio_ladder).delete()
-                    
                     # Se validado, verificar alterações decorrentes da operação
                     if desafio_ladder.is_validado():
-#                         # Verificar se desafio é de histórico
-#                         if desafio_ladder.is_historico():
-#                             mes, ano = desafio_ladder.mes_ano_ladder
-#                         else:
-#                             mes, ano = None, None
-                        
-                        
-                        # Remover resultados
-                        
                         # Recalcula ladder para verificar se cancelamento é válido
-#                         recalcular_ladder(mes, ano)
                         recalcular_ladder(desafio_ladder)
                         
                         # Se desafio tinha desafio coringa, verificar último uso do jogador
@@ -638,6 +628,49 @@ def listar_desafios_ladder_pendentes_validacao(request):
             desafio_ladder.is_cancelavel = False
     
     return render(request, 'ladder/listar_desafios_pendente_validacao.html', {'desafios_pendentes': desafios_pendentes})
+
+@login_required
+def cancelar_remocao_jogador_ladder(request, remocao_id):
+    """Cancela uma remoção que não seja por inatividade"""
+    # Usuário deve ser admin
+    if not request.user.jogador.admin:
+        raise PermissionDenied
+    
+    remocao = get_object_or_404(RemocaoJogador, id=remocao_id)
+    if remocao.remocao_por_inatividade:
+        messages.error(request, MENSAGEM_ERRO_CANCELAR_REMOCAO_INATIVIDADE)
+        return redirect(reverse('ladder:listar_remocoes_jogador_ladder')) 
+    
+    if request.POST:
+        confirmacao = request.POST.get('salvar')
+        if confirmacao != None:
+            # Cancelar remoção
+            try:
+                with transaction.atomic():
+                    # Buscar ano/mês da remoção
+                    mes, ano = remocao.mes_ano_ladder
+                    
+                    # Apagar remoção
+                    remocao.delete()
+                    
+                    # Recalcula ladder para verificar se cancelamento é válido
+                    recalcular_ladder(mes=mes, ano=ano)
+                        
+                    messages.success(request, MENSAGEM_SUCESSO_CANCELAR_REMOCAO_JOGADOR_LADDER)
+                    return redirect(reverse('ladder:listar_remocoes_jogador_ladder'))
+            
+            except Exception as e:
+                # Atualizar objeto de remoção
+                remocao = RemocaoJogador.objects.get(id=remocao_id)
+                messages.error(request, str(e))
+    
+    return render(request, 'ladder/cancelar_remocao_jogador_ladder.html', {'remocao': remocao})
+
+def listar_remocoes_jogador_ladder(request):
+    """Lista remoções de jogadores da ladder"""
+    remocoes = RemocaoJogador.objects.all().order_by('-data')
+    
+    return render(request, 'ladder/listar_remocoes_jogador_ladder.html', {'remocoes': remocoes})
 
 @login_required
 def remover_jogador_ladder(request):

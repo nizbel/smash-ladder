@@ -588,7 +588,7 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             desafiaveis = list()
             ladder.sort(key=lambda x: x.posicao, reverse=True)
             
-            # TODO verificar se desafiante possui permissão de aumento de range
+            # Verificar se desafiante possui permissão de aumento de range
             limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
                 
@@ -602,7 +602,7 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             
             # Desafiado é desafiável?
             if desafiado not in desafiaveis:
-                # TODO verificar se desafiante possui permissão de aumento de range
+                # Verificar se desafiante possui permissão de aumento de range
                 if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora):
                     raise ValueError(PermissaoAumentoRange.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO)
                 else:
@@ -727,7 +727,7 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     # Se desafios está vazio, retornar ladder
     if not desafios:
         return ladder
-    
+
     jogadores_ladder = [posicao_ladder.jogador_id for posicao_ladder in ladder]
     
     resultados_desafios = dict(ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios).order_by('jogador').values('jogador') \

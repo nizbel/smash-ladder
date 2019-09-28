@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}- Cancelar remoção {{ remocao.id  }}{% endblock %}
+
+{% block page_header %}
+Cancelar remoção
+{% endblock %}
+
+{% block content %}
+	<div class="col-12">
+		<p>Deseja cancelar a seguinte remoção de jogador da Ladder? A operação de cancelamento não poderá ser desfeita posteriormente.</p>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Remoção
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+			  		<div class="col-6">
+					    <h6 class="card-title">Jogador</h6>
+					    <h6 class="card-title">
+						    <a href="{% url 'jogadores:detalhar_jogador' remocao.jogador.user.username %}">
+						    	<strong>{{ remocao.jogador.nick }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Posição</h6>
+					    <h6 class="card-title"><strong>{{ remocao.posicao_jogador }}</strong></h6>
+				    </div>
+				    
+			  		<div class="col-6">
+					    <h6 class="card-title">Removedor</h6>
+					    <h6 class="card-title">
+						    <a href="{% url 'jogadores:detalhar_jogador' remocao.admin_removedor.user.username %}">
+						    	<strong>{{ remocao.admin_removedor.nick }}</strong>
+					    	</a>
+					    </h6>
+				    </div>
+			  		<div class="col-6">
+					    <h6 class="card-title">Data</h6>
+					    <h6 class="card-title"><strong>{{ remocao.data|date:"d/m/Y" }}</strong></h6>
+				    </div>
+			    </div>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 alert alert-danger mb-0">
+		<strong>Esta operação não poderá ser desfeita</strong>
+	</div>
+	<form action="{% url 'ladder:cancelar_remocao_jogador_ladder' remocao.id %}" method="post">
+	    {% csrf_token %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Confirmar">
+	</form>
+	
+{% endblock %}

@@ -8,7 +8,8 @@ from django.utils import timezone
 
 from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE
-from ladder.models import CancelamentoDesafioLadder, DesafioLadder
+from ladder.models import CancelamentoDesafioLadder, DesafioLadder,\
+    PosicaoLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
     validar_desafio_ladder_teste
@@ -203,9 +204,11 @@ class ViewCancelarDesafioLadderTestCase(TestCase):
         
     def test_cancelar_desafio_validado_atual_sucesso(self):
         """Testa cancelar desafio de ladder atual validado com sucesso"""
+        # Guardar ladder original pré-validação
+        ladder_pre = list(PosicaoLadder.objects.all().order_by('posicao'))
+        
         # Definir desafio como validado
-        self.desafio_ladder.admin_validador = self.teets
-        self.desafio_ladder.save()
+        validar_desafio_ladder_teste(self.desafio_ladder, self.teets)
         
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.post(reverse('ladder:cancelar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}),
@@ -223,6 +226,13 @@ class ViewCancelarDesafioLadderTestCase(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER)
+        
+        # Ladder deve voltar a posição original
+        ladder_pos = list(PosicaoLadder.objects.all().order_by('posicao'))
+        
+        for posicao_pre, posicao_pos in zip(ladder_pre, ladder_pos):
+            self.assertEqual(posicao_pre, posicao_pos)
+        
         
     def test_cancelar_desafio_validado_historico_sucesso(self):
         """Testa cancelar desafio de ladder histórico validado com sucesso"""
