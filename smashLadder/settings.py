@@ -80,6 +80,7 @@ TEMPLATES = [
                 'smashLadder.context_processors.nome_site',
                 'smashLadder.context_processors.prod',
                 'smashLadder.context_processors.uf',
+                'smashLadder.context_processors.jogo',
             ],
         },
     },

@@ -17,10 +17,21 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             with transaction.atomic():
+                if settings.DEBUG:
+                    # Formatar imagens
+                    for arquivo in [imagem for imagem in os.listdir(settings.BASE_DIR + \
+                                                  '/smashLadder/static/img/personagens/') if imagem.endswith('.png')]:
+                        if not arquivo.endswith('Imagem.png'):
+                            os.rename(settings.BASE_DIR + '/smashLadder/static/img/personagens/' + arquivo, 
+                                      settings.BASE_DIR + '/smashLadder/static/img/personagens/' + arquivo[:-4] + 'Imagem.png')
+                            
                 for personagem in Personagem.objects.all():
                     nome_arquivo = (personagem.nome + 'Imagem.png')
-#                     if os.path.isfile(settings.BASE_DIR + \
-#                                       '/smashLadder/static/img/personagens/' + nome_arquivo):
+                    if settings.DEBUG:
+                        if not os.path.isfile(settings.BASE_DIR + \
+                                          '/smashLadder/static/img/personagens/' + nome_arquivo):
+                            print(f'{nome_arquivo} não existe')
+                        
                     personagem.imagem = PASTA_IMAGENS + 'personagens/' + nome_arquivo
                     personagem.save()
                         

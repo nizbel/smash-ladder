@@ -54,7 +54,7 @@
 				Se a pessoa não jogar nenhuma partida durante o período de <strong>{{ PERIODO_INATIVIDADE}} dias</strong>, ela cai {{ QTD_POSICOES_DECAIMENTO }} posições.
 			</li>
 			<li class="list-group-item list-group-item-order">
-				Se uma pessoa cair três vezes por inatividade, ela é retirada da Smashscada.
+				Se uma pessoa cair três vezes por inatividade, ela é retirada da {{ JOGO }}scada.
 			</li>
 			<li class="list-group-item list-group-item-order">
 				Como descrito na regra 2.1, os desafios podem ser realizados online, bastando informar o resultado nesse site e avisando alguém
@@ -85,7 +85,7 @@
 				{% for admin in admins %}{% if not forloop.first and not forloop.last %},{% endif %}{% if forloop.last and not forloop.first %} e{% endif %} <strong>{{ admin.nome_tag }}</strong>{% endfor %}.
 			</li>
 			<li class="list-group-item list-group-item-order">
-				Para entrar e participar da Smashscada, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
+				Para entrar e participar da {{ JOGO }}scada, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
 				range de sua modalidade (ou seja, os últimos colocados da respectiva ladder).
 			</li>
 		</ul>

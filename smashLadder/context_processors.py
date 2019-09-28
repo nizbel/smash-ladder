@@ -10,3 +10,6 @@ def prod(context):
 
 def uf(context):
     return {'UF': settings.UF.upper()}
+
+def jogo(context):
+    return {'JOGO': settings.JOGO.title()}
