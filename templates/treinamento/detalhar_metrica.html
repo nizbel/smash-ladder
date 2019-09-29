@@ -29,7 +29,7 @@
 		</div>
 	</div>
 	
-	<div class="col-12 col-md-4 my-2">
+	<div class="col-12 col-md-8 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
 		    	Resultados
@@ -58,7 +58,7 @@ $(document).ready(function(){
 	    	labels: [{% for resultado in resultados %}'',{% endfor %}],
 	        datasets: [{
 	            label: 'Quantidade',
-	            data: {{ resultados }},
+	            data: {{ resultados|safe }},
 	            borderWidth: 0,
 	            lineTension: 0
 	        }]
@@ -72,10 +72,11 @@ $(document).ready(function(){
 			},
 	        scales: {
 	            xAxes: [{
-	            	scaleLabel: {
-		            	display: true,
-		                labelString: '{{ metrica.nome }}'
-	                }
+	                type: 'time',
+	                time: {
+                    	parser: "DD/MM/YYYY HH:mm",
+                    	min: '{{ resultados.0.x }}'
+                	}
 	            }]
 	        }
 	    }

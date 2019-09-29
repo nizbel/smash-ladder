@@ -3,6 +3,9 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models.aggregates import Sum
+from django.db.models.expressions import ExpressionWrapper, F
+from django.db.models.fields import DurationField
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls.base import reverse
 
@@ -88,9 +91,9 @@ def detalhar_metrica(request, metrica_id):
     
     metrica = get_object_or_404(Metrica, id=metrica_id, jogador=request.user.jogador)
     resultados = list(ResultadoTreinamento.objects.filter(metrica=metrica, registro_treinamento__jogador=request.user.jogador) \
-        .order_by('registro_treinamento__fim').values_list('quantidade', flat=True))
+        .order_by('registro_treinamento__fim').values_list('registro_treinamento__inicio', 'quantidade'))
     
-    print(resultados)
+    resultados = [{'x': resultado[0].strftime('%d/%m/%Y %H:%M'), 'y': resultado[1]} for resultado in resultados]
     
     return render(request, 'treinamento/detalhar_metrica.html', {'metrica': metrica, 'resultados': resultados})
 
@@ -194,5 +197,17 @@ def painel_treinamento(request):
     
     ultimos_registros = RegistroTreinamento.objects.filter(jogador=jogador).order_by('-fim')[:3]
     
+    dados_treinamento = {}
+    dados_treinamento['qtd_sessoes_treinamento'] = RegistroTreinamento.objects.filter(jogador=jogador).count()
+    
+    dados_treinamento['tempo_registrado'] = (RegistroTreinamento.objects.filter(jogador=jogador) \
+        .annotate(diff=ExpressionWrapper(F('fim') - F('inicio'), output_field=DurationField())) \
+        .aggregate(duracao_total=Sum('diff'))['duracao_total'] or 0)
+    if dados_treinamento['tempo_registrado']:
+        segundos = int(dados_treinamento['tempo_registrado'].total_seconds())
+        dados_treinamento['tempo_registrado'] = f'{segundos // 3600}:{segundos % 3600 // 60}'
+    else:
+        dados_treinamento['tempo_registrado'] = '0:00'
+        
     return render(request, 'treinamento/painel.html', {'ultimas_anotacoes': ultimas_anotacoes, 'metricas': metricas, 
-                                                       'ultimos_registros': ultimos_registros})
+                                                       'ultimos_registros': ultimos_registros, 'dados_treinamento': dados_treinamento})
