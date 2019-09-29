@@ -16,6 +16,7 @@ from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
     ResultadoRemocaoJogador, PermissaoAumentoRange
 from smashLadder.utils import mes_ano_ant
+from django.db.models.query import prefetch_related_objects
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -849,7 +850,7 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
                                                                    data_hora__year=desafio_ladder.data_hora.year) \
         .aggregate(ultima_posicao=Max('posicao_desafiante'))['ultima_posicao'] or 0, 
         ultima_ladder.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao'] or 0) + 1
-    
+        
     # Considerar jogadores que saíram da ladder
     if DesafioLadder.validados.filter(posicao_desafiante=ultima_posicao_disponivel-1, data_hora__month=desafio_ladder.data_hora.month,
                                       data_hora__year=desafio_ladder.data_hora.year,
@@ -859,14 +860,28 @@ def gerar_posicao_novo_entrante(desafio_ladder, jogador):
                                                           data_hora__year=desafio_ladder.data_hora.year, 
                                                           data_hora__lt=desafio_ladder.data_hora) \
             .order_by('-data_hora')[0].data_hora
+        
         ultima_posicao_disponivel -= RemocaoJogador.objects.filter(data__gt=ultima_data_hora, data__lt=desafio_ladder.data_hora).count()
+        
+        # Computar entradas no mês, anteriores ao desafio
+        if DesafioLadder.validados.filter(data_hora__gt=ultima_data_hora, data_hora__lt=desafio_ladder.data_hora) \
+                                      .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True), 
+                                               desafiado__in=ultima_ladder.values_list('jogador', flat=True)).exists():
+            ultima_posicao_disponivel += DesafioLadder.validados.filter(data_hora__gt=ultima_data_hora, 
+                                                                        data_hora__lt=desafio_ladder.data_hora) \
+                                          .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True)).count()
+            ultima_posicao_disponivel += DesafioLadder.validados.filter(data_hora__gt=ultima_data_hora, 
+                                                                        data_hora__lt=desafio_ladder.data_hora) \
+                                          .exclude(desafiado__in=ultima_ladder.values_list('jogador', flat=True)).count()
+        
     else:
         ultima_posicao_disponivel -= RemocaoJogador.objects.filter(data__month=desafio_ladder.data_hora.month,
                                       data__year=desafio_ladder.data_hora.year, data__lt=desafio_ladder.data_hora).count()
         # Computar entradas no mês, anteriores ao desafio
         if DesafioLadder.validados.filter(data_hora__month=desafio_ladder.data_hora.month,
                                       data_hora__year=desafio_ladder.data_hora.year, data_hora__lt=desafio_ladder.data_hora) \
-                                      .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True), desafiado__in=ultima_ladder.values_list('jogador', flat=True)).exists():
+                                      .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True), 
+                                               desafiado__in=ultima_ladder.values_list('jogador', flat=True)).exists():
             ultima_posicao_disponivel += DesafioLadder.validados.filter(data_hora__month=desafio_ladder.data_hora.month,
                                           data_hora__year=desafio_ladder.data_hora.year, data_hora__lt=desafio_ladder.data_hora) \
                                           .exclude(desafiante__in=ultima_ladder.values_list('jogador', flat=True)).count()
@@ -1162,6 +1177,9 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
     # Montar lista com desafiáveis
     desafiaveis = list()
     
+    # Buscar registros de férias
+    prefetch_related_objects([posicao_ladder.jogador for posicao_ladder in ladder_para_alterar], 'registroferias_set')
+    
     # Avaliar limite de range
     limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if jogador.possui_permissao_aumento_range(data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
@@ -1176,6 +1194,18 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
             
         if not coringa and len(desafiaveis) == limite_range:
             break
-        
+    
+    # Se jogador estiver fora da ladder, adicionar jogadores que também estão de fora
+    if posicao_jogador == ladder_para_alterar[0].posicao + 1:
+        jogadores_fora_da_ladder = Jogador.objects.all().exclude(id=jogador.id) \
+            .exclude(id__in=[posicao_ladder.jogador.id for posicao_ladder in ladder_para_alterar]) \
+            .prefetch_related('registroferias_set')
+        for jogador_fora in jogadores_fora_da_ladder:
+            if not jogador_fora.de_ferias_na_data(data_hora.date()):
+                if retornar_ids:
+                    desafiaveis.append(jogador_fora.id)
+                else:
+                    desafiaveis.append(jogador_fora)
+    
     return desafiaveis
     

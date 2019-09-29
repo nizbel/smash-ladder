@@ -133,7 +133,6 @@ def detalhar_jogador(request, username):
 #         jogador.qtd_lutas = JogadorLuta.objects.filter(jogador=jogador).count()
         jogador.qtd_lutas = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
             .aggregate(qtd_lutas=Sum(F('score_desafiante') + F('score_desafiado')))['qtd_lutas']
-        print(jogador.qtd_lutas)
         
         # Adicionar top 5 personagens mais usados
         jogador.top_5_personagens = JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False, 

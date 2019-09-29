@@ -15,7 +15,7 @@ from ladder.tests.utils_teste import criar_ladder_teste, \
     validar_desafio_ladder_teste, criar_ladder_inicial_teste
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder, \
     recalcular_ladder, copiar_ladder, remover_jogador, decair_jogador, \
-    avaliar_decaimento, buscar_desafiaveis
+    avaliar_decaimento, buscar_desafiaveis, processar_remocao
 from smashLadder.utils import mes_ano_ant
 
 
@@ -1550,8 +1550,6 @@ class BuscarDesafiaveisTestCase(TestCase):
         cls.jogador_pos_9 = Jogador.objects.get(nick='rata')
         cls.jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
         
-        
-    
         criar_ladder_teste()
     
     def test_trazer_desafiaveis_com_sucesso(self):
@@ -1643,22 +1641,33 @@ class BuscarDesafiaveisTestCase(TestCase):
             self.assertIn(PosicaoLadder.objects.get(jogador__id=jogador_id).posicao, 
                           list(range(posicao_jogador - 1, posicao_jogador - 1 - DesafioLadder.LIMITE_POSICOES_DESAFIO, -1)))
             
-    def test_nao_trazer_novos_entrantes_apos_data_hora(self):
-        """Testa se jogadores novos entrantes após data/hora da checagem não são retornados"""
+    def test_trazer_novos_entrantes_caso_seja_novo_entrante(self):
+        """Testa se jogadores novos entrantes são retornados para desafiante novo entrante"""
         novo_jogador_1 = criar_jogador_teste('new')
         
         novo_jogador_2 = criar_jogador_teste('new_2')
-        posicao_jogador_2 = 11
         
-        desafio = criar_desafio_ladder_simples_teste(novo_jogador_2, self.jogador_pos_9, 3, 0, timezone.localtime(), False, 
-                                                     self.jogador_pos_9, posicao_jogador_2, 9)
+        # Jogador que já esteve em desafio porém foi removido
+        jogador_removido = criar_jogador_teste('removido')
+        posicao_jogador_removido = 11
         
+        # Adicionar desafio
+        desafio = criar_desafio_ladder_simples_teste(jogador_removido, self.jogador_pos_9, 3, 0, timezone.localtime() - datetime.timedelta(days=1), 
+                                                     False, self.jogador_pos_9, posicao_jogador_removido, 9)
         validar_desafio_ladder_teste(desafio, self.jogador_pos_1)
+        
+        # Remover
+        remocao = RemocaoJogador.objects.create(jogador=jogador_removido, data=(timezone.localtime() - datetime.timedelta(minutes=10)), 
+                                                admin_removedor=self.jogador_pos_1, posicao_jogador=posicao_jogador_removido)
+        remover_jogador(remocao)
         
         desafiaveis = buscar_desafiaveis(novo_jogador_1, timezone.localtime() - datetime.timedelta(minutes=5))
         
-        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO)
+        # Trazer quantidade de desafiáveis mais dois novos entrantes
+        self.assertEqual(len(desafiaveis), DesafioLadder.LIMITE_POSICOES_DESAFIO + 2)
         
+        self.assertIn(jogador_removido.id, desafiaveis)
+        self.assertIn(novo_jogador_2.id, desafiaveis)
         self.assertIn(self.jogador_pos_10.id, desafiaveis)
         self.assertIn(self.jogador_pos_9.id, desafiaveis)
         self.assertIn(self.jogador_pos_8.id, desafiaveis)
