@@ -32,7 +32,7 @@ class JogadorForm(ModelForm):
         preparar_classes_form(self)
 
 class StagesValidasForm(Form):
-    retorno = forms.BooleanField(label='Alterar retorno', required=False)
+    retorno = forms.BooleanField(label='Alterar counterpick', required=False)
     stages_validas = forms.MultipleChoiceField(label='Stages válidas para Ladder')
     
     def __init__(self,*args,**kwargs):
