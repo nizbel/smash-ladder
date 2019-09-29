@@ -169,8 +169,7 @@ class Jogador(models.Model):
         return False
 
 def adicionar_grupo_admins(sender, instance, created, **kwargs):
-    """Post-create user signal that adds the user to everyone group."""
-
+    """Sinal post-save para adicionar jogador admin ao grupo Admins"""
     if instance.admin:
         instance.user.groups.add(Group.objects.get(name='Admins'))
         instance.user.is_staff = True
