@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from configuracao.models import ConfiguracaoLadder
 from smashLadder.utils import DateTimeFieldTz
 
 
@@ -33,7 +34,8 @@ class JogadorLuta(models.Model):
     
 class DesafioLadder(models.Model):
     """Desafio para ladder"""
-    LIMITE_POSICOES_DESAFIO = 3 # Diferença máxima de posições para haver desafio
+    LIMITE_POSICOES_DESAFIO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO] # Diferença máxima de posições para haver desafio
     PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
@@ -64,6 +66,15 @@ class DesafioLadder(models.Model):
     class Meta():
         unique_together = (('desafiante', 'data_hora'), ('desafiado', 'data_hora'))
     
+    @staticmethod
+    def alterar_limite_posicoes_desafio():
+        DesafioLadder.LIMITE_POSICOES_DESAFIO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO]
+        
+        # Atualizar mensagem
+        DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {DesafioLadder.LIMITE_POSICOES_DESAFIO} ' \
+            'posições abaixo do desafiado'
+            
     @property
     def lutas(self):
         """Lista de lutas que compõe o desafio"""

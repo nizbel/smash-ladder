@@ -42,10 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'smashLadder',
+    'configuracao',
     'jogadores',
     'ladder',
-    'torneios',
     'performance',
+    'torneios',
     'treinamento',
     
     'debug_toolbar',

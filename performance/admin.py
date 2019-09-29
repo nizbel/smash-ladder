@@ -11,4 +11,13 @@ class PerformanceRequisicaoAdmin(admin.ModelAdmin):
     list_display = ('data_hora_requisicao', 'data_hora_resposta', 'user', 'url', 'duracao')
     search_fields = ['user', 'url']
     
+    def has_add_permission(self, request, obj=None):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
 admin.site.register(PerformanceRequisicao, PerformanceRequisicaoAdmin)
