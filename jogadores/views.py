@@ -131,11 +131,15 @@ def detalhar_jogador(request, username):
         jogador.ultimos_desafios = list(reversed(todos_desafios[-3:]))
             
 #         jogador.qtd_lutas = JogadorLuta.objects.filter(jogador=jogador).count()
-        jogador.qtd_lutas = DesafioLadder.objects.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
+        jogador.qtd_lutas = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)) \
             .aggregate(qtd_lutas=Sum(F('score_desafiante') + F('score_desafiado')))['qtd_lutas']
+        print(jogador.qtd_lutas)
         
         # Adicionar top 5 personagens mais usados
-        jogador.top_5_personagens = JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False).values('personagem') \
+        jogador.top_5_personagens = JogadorLuta.objects.filter(jogador=jogador, personagem__isnull=False, 
+                                                               luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True, 
+                                                               luta__lutaladder__desafio_ladder__admin_validador__isnull=False) \
+                                                               .values('personagem') \
             .annotate(qtd_lutas=Count('personagem')).order_by('-qtd_lutas')[:5]
 
         # Buscar personagens para preencher nome

@@ -10,7 +10,7 @@ Desafios de {{ jogador.nick }}
 {% endblock %}
 
 {% block content %}
-	<div class="col-12 text-center">
+	<div class="col-12 text-center mb-3">
 		<a href="{% url 'jogadores:detalhar_jogador' jogador.user.username %}">Ver dados de {{ jogador.nick }}</a>
 	</div>
 	
