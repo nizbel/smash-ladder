@@ -23,6 +23,7 @@ from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
     JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
 from ladder.utils import buscar_desafiaveis
 from torneios.models import JogadorTorneio
+from django.db.models.query import prefetch_related_objects
 
 
 def detalhar_jogador(request, username):
@@ -361,6 +362,9 @@ def listar_desafiaveis(request, username):
     posicao_atual_jogador = jogador.posicao_em(timezone.localtime())
     
     desafiaveis = buscar_desafiaveis(jogador, timezone.localtime(), False, False)
+    
+    # Buscar usuários de desafiáveis
+    prefetch_related_objects(desafiaveis, 'user')
     
     desafios_pendentes = DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=True,
                                                       score_desafiante__gt=F('score_desafiado'),
