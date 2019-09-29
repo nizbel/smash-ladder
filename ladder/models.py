@@ -39,8 +39,9 @@ class DesafioLadder(models.Model):
     PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
-    MELHOR_DE = 5 # Quantidade máxima de lutas que um desafio pode ter
-    SCORE_VITORIA = 3 # Score para vitória
+    MELHOR_DE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE] # Quantidade máxima de lutas que um desafio pode ter
+    SCORE_VITORIA = ((MELHOR_DE // 2) + 1) # Score para vitória
     
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
     MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO = 'Desafiante está à frente do desafiado'
@@ -75,6 +76,13 @@ class DesafioLadder(models.Model):
         DesafioLadder.MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {DesafioLadder.LIMITE_POSICOES_DESAFIO} ' \
             'posições abaixo do desafiado'
             
+    @staticmethod
+    def alterar_melhor_de():
+        DesafioLadder.MELHOR_DE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE]
+        
+        DesafioLadder.SCORE_VITORIA = ((DesafioLadder.MELHOR_DE // 2) + 1)
+        
     @property
     def lutas(self):
         """Lista de lutas que compõe o desafio"""

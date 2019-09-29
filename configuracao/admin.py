@@ -10,7 +10,8 @@ from ladder.models import DesafioLadder
 
 class ConfiguracaoLadderAdmin(admin.ModelAdmin):
     form = ConfiguracaoLadderForm
-    list_display = ('__str__', 'limite_posicoes_desafio',)
+    
+    list_display = ('__str__', *[field.name for field in ConfiguracaoLadder._meta.fields if field.name != 'id'])
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -28,6 +29,7 @@ class ConfiguracaoLadderAdmin(admin.ModelAdmin):
         # Salvar
         super().save_model(request, obj, form, change)
         
+        DesafioLadder.alterar_melhor_de()
         DesafioLadder.alterar_limite_posicoes_desafio()
         
     
@@ -35,7 +37,7 @@ admin.site.register(ConfiguracaoLadder, ConfiguracaoLadderAdmin)
 
 
 class HistoricoConfiguracaoLadderAdmin(admin.ModelAdmin):
-    list_display = ('data_hora', 'limite_posicoes_desafio', 'responsavel')
+    list_display = ('data_hora', 'responsavel', *[field.name for field in HistoricoConfiguracaoLadder._meta.fields if field.name != 'id'])
     search_fields= ('limite_posicoes_desafio', 'data_hora', 'responsavel__username')
     
     def has_add_permission(self, request, obj=None):
