@@ -34,13 +34,20 @@ class JogadorLuta(models.Model):
     
 class DesafioLadder(models.Model):
     """Desafio para ladder"""
-    LIMITE_POSICOES_DESAFIO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO,]) \
+    try:
+        LIMITE_POSICOES_DESAFIO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO,]) \
             [ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO] # Diferença máxima de posições para haver desafio
+    except:
+        LIMITE_POSICOES_DESAFIO = 3
+            
     PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
-    MELHOR_DE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE,]) \
+    try:
+        MELHOR_DE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE,]) \
             [ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE] # Quantidade máxima de lutas que um desafio pode ter
+    except:
+        MELHOR_DE = 3
     SCORE_VITORIA = ((MELHOR_DE // 2) + 1) # Score para vitória
     
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
