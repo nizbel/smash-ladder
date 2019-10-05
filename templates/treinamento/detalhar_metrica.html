@@ -32,6 +32,35 @@
 		</div>
 	</div>
 	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Estatísticas
+		  	</div>
+		  	<div class="card-body col-12">
+		  		<div class="row">
+		  			<div class="col-12">
+				  		<div class="row">
+					  		<div class="col-6">
+							    <h6 class="card-title">Avanço</h6>
+							    <h6 class="card-title"><strong>{{ metrica.avanco|floatformat:2 }}%</strong></h6>
+						    </div>
+					  		<div class="col-6">
+							    <h6 class="card-title">Média</h6>
+							    <h6 class="card-title"><strong>{{ media_resultados.geral|floatformat:2 }}</strong></h6>
+						    </div>
+						    
+					  		<div class="col-6">
+							    <h6 class="card-title">Média 30 dias</h6>
+							    <h6 class="card-title"><strong>{{ media_resultados.30_dias|floatformat:2 }}</strong></h6>
+						    </div>
+					    </div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
 	<div class="col-12 col-md-8 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
@@ -58,10 +87,10 @@ $(document).ready(function(){
 	var grafPercVitorias = new Chart(ctx, {
 	    type: 'line',
 	    data: {
-	    	labels: [{% for resultado in resultados %}'',{% endfor %}],
+	    	labels: [{% for resultado in resultados_grafico %}'',{% endfor %}],
 	        datasets: [{
 	            label: 'Quantidade',
-	            data: {{ resultados|safe }},
+	            data: {{ resultados_grafico|safe }},
 	            borderWidth: 0,
 	            lineTension: 0
 	        }]
@@ -78,7 +107,7 @@ $(document).ready(function(){
 	                type: 'time',
 	                time: {
                     	parser: "DD/MM/YYYY HH:mm",
-                    	min: '{{ resultados.0.x }}'
+                    	min: '{{ resultados_grafico.0.x }}'
                 	}
 	            }]
 	        }

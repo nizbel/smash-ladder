@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views para treinamento"""
+import datetime
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -8,6 +10,7 @@ from django.db.models.expressions import ExpressionWrapper, F
 from django.db.models.fields import DurationField
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls.base import reverse
+from django.utils import timezone
 
 from treinamento.forms import RegistroTreinamentoForm, AnotacaoForm, MetricaForm, \
     ResultadoTreinamentoForm
@@ -133,9 +136,23 @@ def detalhar_metrica(request, metrica_id):
     resultados = list(ResultadoTreinamento.objects.filter(metrica=metrica, registro_treinamento__jogador=request.user.jogador) \
         .order_by('registro_treinamento__fim').values_list('registro_treinamento__inicio', 'quantidade'))
     
-    resultados = [{'x': resultado[0].strftime('%d/%m/%Y %H:%M'), 'y': resultado[1]} for resultado in resultados]
+    resultados_grafico = [{'x': resultado[0].strftime('%d/%m/%Y %H:%M'), 'y': resultado[1]} for resultado in resultados]
     
-    return render(request, 'treinamento/detalhar_metrica.html', {'metrica': metrica, 'resultados': resultados})
+    media_resultados = {}
+    
+    media_resultados['geral'] = sum([resultado[1] for resultado in resultados]) / len(resultados)
+    
+    resultados_30_dias = [resultado for resultado in resultados if 
+                                       resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))]
+    media_resultados['30_dias'] = sum([resultado[1] for resultado in resultados_30_dias]) / len(resultados_30_dias)
+    
+    if len(resultados) >= 2:
+        metrica.avanco = ((resultados[-1][1] / resultados[0][1]) - 1) * 100
+    else:
+        metrica.avanco = 0
+    
+    return render(request, 'treinamento/detalhar_metrica.html', {'metrica': metrica, 'resultados_grafico': resultados_grafico,
+                                                                 'media_resultados': media_resultados})
 
 @login_required
 def editar_metrica(request, metrica_id):
