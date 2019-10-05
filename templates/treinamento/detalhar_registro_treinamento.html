@@ -24,7 +24,15 @@
 					    <h6 class="card-title">Data/hora de fim</h6>
 					    <h6 class="card-title"><strong>{{ registro_treinamento.fim|date:'d/m/Y H:i' }}</strong></h6>
 				    </div>
+				    
+			  		<div class="col-6">
+					    <h6 class="card-title">Duração</h6>
+					    <h6 class="card-title"><strong>{{ registro_treinamento.duracao }}</strong></h6>
+				    </div>
 			    </div>
+			    
+				<a class="card-link" href="{% url 'treinamento:apagar_registro_treinamento' registro_treinamento.id %}">Apagar</a>
+				<a class="card-link" href="{% url 'treinamento:editar_registro_treinamento' registro_treinamento.id %}">Editar</a>
 		  	</div>
 		</div>
 	</div>

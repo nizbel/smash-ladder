@@ -13,6 +13,7 @@ from treinamento.forms import RegistroTreinamentoForm, AnotacaoForm, MetricaForm
     ResultadoTreinamentoForm
 from treinamento.models import RegistroTreinamento, Anotacao, Metrica, \
     ResultadoTreinamento
+from treinamento.utils import converter_segundos_duracao
 
 
 @login_required
@@ -32,7 +33,8 @@ def add_anotacao(request):
                     anotacao.jogador = jogador
                     anotacao.save()
                         
-                    return redirect(reverse('treinamento:painel_treinamento'))
+                    messages.success(request, 'Anotação adicionada com sucesso')
+                    return redirect(reverse('treinamento:listar_anotacoes'))
                 
             except Exception as e:
                 messages.error(request, e)
@@ -45,6 +47,26 @@ def add_anotacao(request):
         form_anotacao = AnotacaoForm()
         
     return render(request, 'treinamento/adicionar_anotacao.html', {'form_anotacao': form_anotacao})
+
+@login_required
+def apagar_anotacao(request, anotacao_id):
+    """Apaga uma anotação"""
+    jogador = request.user.jogador
+    
+    anotacao = get_object_or_404(Anotacao, jogador=jogador, id=anotacao_id)
+    
+    if request.POST:
+        try:
+            with transaction.atomic():
+                anotacao.delete()
+                
+                messages.success(request, 'Anotação apagada com sucesso')
+                return redirect(reverse('treinamento:listar_anotacoes'))
+            
+        except Exception as e:
+            messages.error(request, e)
+        
+    return render(request, 'treinamento/apagar_anotacao.html', {'anotacao': anotacao})
 
 @login_required
 def listar_anotacoes(request):
@@ -71,7 +93,8 @@ def add_metrica(request):
                     metrica.jogador = jogador
                     metrica.save()
                         
-                    return redirect(reverse('treinamento:painel_treinamento'))
+                    messages.success(request, 'Métrica adicionada com sucesso')
+                    return redirect(reverse('treinamento:detalhar_metrica', kwargs={'metrica_id': metrica.id}))
                 
             except Exception as e:
                 messages.error(request, e)
@@ -86,9 +109,26 @@ def add_metrica(request):
     return render(request, 'treinamento/adicionar_metrica.html', {'form_metrica': form_metrica})
 
 @login_required
+def apagar_metrica(request, metrica_id):
+    """Apaga uma métrica"""
+    metrica = get_object_or_404(Metrica, jogador=request.user.jogador, id=metrica_id)
+    
+    if request.POST:
+        try:
+            with transaction.atomic():
+                metrica.delete()
+                
+                messages.success(request, 'Métrica apagada com sucesso')
+                return redirect(reverse('treinamento:listar_metricas'))
+            
+        except Exception as e:
+            messages.error(request, e)
+        
+    return render(request, 'treinamento/apagar_metrica.html', {'metrica': metrica})
+
+@login_required
 def detalhar_metrica(request, metrica_id):
     """Detalha uma métrica"""
-    
     metrica = get_object_or_404(Metrica, id=metrica_id, jogador=request.user.jogador)
     resultados = list(ResultadoTreinamento.objects.filter(metrica=metrica, registro_treinamento__jogador=request.user.jogador) \
         .order_by('registro_treinamento__fim').values_list('registro_treinamento__inicio', 'quantidade'))
@@ -96,6 +136,40 @@ def detalhar_metrica(request, metrica_id):
     resultados = [{'x': resultado[0].strftime('%d/%m/%Y %H:%M'), 'y': resultado[1]} for resultado in resultados]
     
     return render(request, 'treinamento/detalhar_metrica.html', {'metrica': metrica, 'resultados': resultados})
+
+@login_required
+def editar_metrica(request, metrica_id):
+    """Edita uma métrica"""
+    jogador = request.user.jogador
+    
+    metrica = get_object_or_404(Metrica, jogador=jogador, id=metrica_id)
+    
+    if request.POST:
+        form_metrica = MetricaForm(request.POST, instance=metrica)
+        
+        if form_metrica.is_valid():
+            try:
+                with transaction.atomic():
+                    metrica = form_metrica.save(commit=False)
+                    
+                    # Adicionar jogador
+                    metrica.jogador = jogador
+                    metrica.save()
+                    
+                    messages.success(request, 'Métrica editada com sucesso')
+                    return redirect(reverse('treinamento:detalhar_metrica', kwargs={'metrica_id': metrica.id}))
+                
+            except Exception as e:
+                messages.error(request, e)
+        
+        else:
+            for erro in form_metrica.non_field_errors():
+                messages.error(request, erro)
+                
+    else:
+        form_metrica = MetricaForm(instance=metrica)
+        
+    return render(request, 'treinamento/editar_metrica.html', {'form_metrica': form_metrica})
 
 @login_required
 def listar_metricas(request):
@@ -121,7 +195,9 @@ def add_registro_treinamento(request):
                     registro_treinamento.jogador = jogador
                     registro_treinamento.save()
                         
-                    return redirect(reverse('treinamento:painel_treinamento'))
+                    messages.success(request, 'Registro de treinamento adicionado com sucesso')
+                    return redirect(reverse('treinamento:detalhar_registro_treinamento', 
+                                            kwargs={'registro_id': registro_treinamento.id}))
                 
             except Exception as e:
                 messages.error(request, e)
@@ -136,6 +212,26 @@ def add_registro_treinamento(request):
     return render(request, 'treinamento/adicionar_registro_treinamento.html', {'form_registro_treinamento': form_registro_treinamento})
 
 @login_required
+def apagar_registro_treinamento(request, registro_id):
+    """Apaga um registro de treinamento"""
+    jogador = request.user.jogador
+    
+    registro_treinamento = get_object_or_404(RegistroTreinamento, jogador=jogador, id=registro_id)
+    
+    if request.POST:
+        try:
+            with transaction.atomic():
+                registro_treinamento.delete()
+                
+                messages.success(request, 'Registro de treinamento apagado com sucesso')
+                return redirect(reverse('treinamento:listar_registros_treinamento'))
+            
+        except Exception as e:
+            messages.error(request, e)
+        
+    return render(request, 'treinamento/apagar_registro_treinamento.html', {'registro_treinamento': registro_treinamento})
+
+@login_required
 def listar_registros_treinamento(request):
     """Lista registros de treinamento de um jogador"""
     registros = RegistroTreinamento.objects.filter(jogador=request.user.jogador)
@@ -146,12 +242,54 @@ def listar_registros_treinamento(request):
 def detalhar_registro_treinamento(request, registro_id):
     """Detalha um registro de treinamento"""
     
-    registro_treinamento = get_object_or_404(RegistroTreinamento, id=registro_id, jogador=request.user.jogador)
+    registro_treinamento = get_object_or_404(RegistroTreinamento.objects.annotate(duracao=ExpressionWrapper(F('fim') - F('inicio'), 
+                                                                                                 output_field=DurationField())), 
+                                                                                                 id=registro_id, jogador=request.user.jogador)
+    
+    # Formatar duracao
+    segundos = int(registro_treinamento.duracao.total_seconds())
+    horas, minutos = converter_segundos_duracao(segundos)
+    registro_treinamento.duracao = f'{horas}:{minutos:02d}'
     
     resultados = ResultadoTreinamento.objects.filter(registro_treinamento=registro_treinamento)
     
     return render(request, 'treinamento/detalhar_registro_treinamento.html', {'registro_treinamento': registro_treinamento,
                                                                               'resultados': resultados})
+
+@login_required
+def editar_registro_treinamento(request, registro_id):
+    """Edita um registro de treinamento"""
+    jogador = request.user.jogador
+    
+    registro_treinamento = get_object_or_404(RegistroTreinamento, jogador=jogador, id=registro_id)
+    
+    if request.POST:
+        form_registro_treinamento = RegistroTreinamentoForm(request.POST, instance=registro_treinamento)
+        
+        if form_registro_treinamento.is_valid():
+            try:
+                with transaction.atomic():
+                    registro_treinamento = form_registro_treinamento.save(commit=False)
+                    
+                    # Adicionar jogador
+                    registro_treinamento.jogador = jogador
+                    registro_treinamento.save()
+                        
+                    messages.success(request, 'Registro de treinamento editado com sucesso')
+                    return redirect(reverse('treinamento:detalhar_registro_treinamento', 
+                                            kwargs={'registro_id': registro_treinamento.id}))
+                
+            except Exception as e:
+                messages.error(request, e)
+        
+        else:
+            for erro in form_registro_treinamento.non_field_errors():
+                messages.error(request, erro)
+                
+    else:
+        form_registro_treinamento = RegistroTreinamentoForm(instance=registro_treinamento)
+        
+    return render(request, 'treinamento/editar_registro_treinamento.html', {'form_registro_treinamento': form_registro_treinamento})
 
 @login_required
 def add_resultado_treinamento(request, registro_id):
@@ -171,6 +309,7 @@ def add_resultado_treinamento(request, registro_id):
                     resultado_treinamento.registro_treinamento = registro
                     resultado_treinamento.save()
                         
+                    messages.success(request, 'Resultado de treinamento adicionado com sucesso')
                     return redirect(reverse('treinamento:painel_treinamento'))
                 
             except Exception as e:
@@ -198,6 +337,12 @@ def painel_treinamento(request):
     ultimos_registros = RegistroTreinamento.objects.filter(jogador=jogador).order_by('-fim')[:3]
     
     dados_treinamento = {}
+    dados_treinamento['qtd_anotacoes'] = Anotacao.objects.filter(jogador=jogador).count()
+    
+    dados_treinamento['qtd_metricas'] = Metrica.objects.filter(jogador=jogador).count()
+    
+    dados_treinamento['qtd_resultados'] = ResultadoTreinamento.objects.filter(registro_treinamento__jogador=jogador).count()
+    
     dados_treinamento['qtd_sessoes_treinamento'] = RegistroTreinamento.objects.filter(jogador=jogador).count()
     
     dados_treinamento['tempo_registrado'] = (RegistroTreinamento.objects.filter(jogador=jogador) \
@@ -205,7 +350,9 @@ def painel_treinamento(request):
         .aggregate(duracao_total=Sum('diff'))['duracao_total'] or 0)
     if dados_treinamento['tempo_registrado']:
         segundos = int(dados_treinamento['tempo_registrado'].total_seconds())
-        dados_treinamento['tempo_registrado'] = f'{segundos // 3600}:{segundos % 3600 // 60}'
+        horas, minutos = converter_segundos_duracao(segundos)
+        
+        dados_treinamento['tempo_registrado'] = f'{horas}:{minutos:02d}'
     else:
         dados_treinamento['tempo_registrado'] = '0:00'
         

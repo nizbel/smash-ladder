@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}- Editar métrica{% endblock %}
+
+{% block page_header %}Métrica {{ form_metrica.instance.id }}{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'treinamento:editar_metrica' form_metrica.instance.id %}" method="post">
+	    {% csrf_token %}
+	    
+	    {% include "form.html" with form=form_metrica %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Salvar">
+	</form>
+{% endblock %}

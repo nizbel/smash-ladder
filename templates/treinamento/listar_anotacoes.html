@@ -18,6 +18,8 @@ Anotações de {{ request.user.jogador.nick }}
 		    <h6 class="card-subtitle mb-2 text-muted">{{ anotacao.data_hora|date:'H:i' }}</h6>
 		    
 	    	<p class="card-text">{{ anotacao.texto }}</p>
+	    	
+			<a class="card-link" href="{% url 'treinamento:apagar_anotacao' anotacao.id %}">Apagar</a>
 	  	</div>
 	</div>
 	{% empty %}

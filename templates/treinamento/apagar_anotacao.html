@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Apagar anotação{% endblock %}
+
+{% block page_header %}Apagar anotação {{ anotacao.id }}{% endblock %}
+
+{% block content %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ anotacao.data_hora|date:'d/m/Y' }}</h5>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ anotacao.data_hora|date:'H:i' }}</h6>
+		    
+	    	<p class="card-text">{{ anotacao.texto }}</p>
+	  	</div>
+	</div>
+	
+	<form class="col-12" action="{% url 'treinamento:apagar_anotacao' anotacao.id %}" method="post">
+	    {% csrf_token %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="apagar" value="Apagar">
+	</form>
+{% endblock %}
