@@ -12,20 +12,20 @@
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
-		    	Anotações
+		    	Links úteis
 		  	</div>
 		  	<ul class="list-group list-group-flush">
-			  	{% for anotacao in ultimas_anotacoes %}
+			  	{% for link_util in links_uteis %}
 					<li class="list-group-item">
-						<span>{{ anotacao.texto }}</span>
+						<a href="{{ link_util.url }}">{{ link_util.nome }}</a>
 					</li>
 				{% endfor %}
 		  	</ul>
 		  	<div class="card-body col-12 text-center">
-				<a class="card-link" href="{% url 'treinamento:add_anotacao' %}">Adicionar anotação</a>
+				<a class="card-link" href="{% url 'treinamento:add_link_util' %}">Adicionar link útil</a>
 		  	</div>
 		  	<div class="card-body col-12 text-center">
-				<a class="card-link" href="{% url 'treinamento:listar_anotacoes' %}">Ver todas</a>
+				<a class="card-link" href="{% url 'treinamento:listar_links_uteis' %}">Ver todos</a>
 		  	</div>
 		</div>
 	</div>
@@ -68,6 +68,27 @@
 		  	</div>
 		  	<div class="card-body col-12 text-center">
 				<a class="card-link" href="{% url 'treinamento:listar_metricas' %}">Ver todas</a>
+		  	</div>
+		</div>
+	</div>
+	
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Anotações
+		  	</div>
+		  	<ul class="list-group list-group-flush">
+			  	{% for anotacao in ultimas_anotacoes %}
+					<li class="list-group-item">
+						<span>{{ anotacao.texto }}</span>
+					</li>
+				{% endfor %}
+		  	</ul>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:add_anotacao' %}">Adicionar anotação</a>
+		  	</div>
+		  	<div class="card-body col-12 text-center">
+				<a class="card-link" href="{% url 'treinamento:listar_anotacoes' %}">Ver todas</a>
 		  	</div>
 		</div>
 	</div>

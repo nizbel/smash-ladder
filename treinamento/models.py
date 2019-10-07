@@ -26,3 +26,9 @@ class ResultadoTreinamento(models.Model):
     metrica = models.ForeignKey('Metrica', on_delete=models.CASCADE)
     quantidade = models.IntegerField('Quantidade')
     registro_treinamento = models.ForeignKey('RegistroTreinamento', on_delete=models.CASCADE)
+    
+class LinkUtil(models.Model):
+    nome = models.CharField('Nome', max_length=30)
+    url = models.URLField('URL')
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    descricao = models.CharField('Descrição do link', max_length=250, blank=True, null=True)

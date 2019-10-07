@@ -13,9 +13,9 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from treinamento.forms import RegistroTreinamentoForm, AnotacaoForm, MetricaForm, \
-    ResultadoTreinamentoForm
+    ResultadoTreinamentoForm, LinkUtilForm
 from treinamento.models import RegistroTreinamento, Anotacao, Metrica, \
-    ResultadoTreinamento
+    ResultadoTreinamento, LinkUtil
 from treinamento.utils import converter_segundos_duracao
 
 
@@ -78,6 +78,64 @@ def listar_anotacoes(request):
     
     return render(request, 'treinamento/listar_anotacoes.html', {'anotacoes': anotacoes})
     
+@login_required
+def add_link_util(request):
+    """Adiciona uma link útil"""
+    jogador = request.user.jogador
+    
+    if request.POST:
+        form_link_util = LinkUtilForm(request.POST)
+        
+        if form_link_util.is_valid():
+            try:
+                with transaction.atomic():
+                    link_util = form_link_util.save(commit=False)
+                    
+                    # Adicionar jogador
+                    link_util.jogador = jogador
+                    link_util.save()
+                        
+                    messages.success(request, 'Link útil adicionado com sucesso')
+                    return redirect(reverse('treinamento:listar_links_uteis'))
+                
+            except Exception as e:
+                messages.error(request, e)
+        
+        else:
+            for erro in form_link_util.non_field_errors():
+                messages.error(request, erro)
+                
+    else:
+        form_link_util = LinkUtilForm()
+        
+    return render(request, 'treinamento/adicionar_link_util.html', {'form_link_util': form_link_util})
+
+@login_required
+def apagar_link_util(request, link_util_id):
+    """Apaga uma link útil"""
+    jogador = request.user.jogador
+    
+    link_util = get_object_or_404(LinkUtil, jogador=jogador, id=link_util_id)
+    
+    if request.POST:
+        try:
+            with transaction.atomic():
+                link_util.delete()
+                
+                messages.success(request, 'Link útil apagado com sucesso')
+                return redirect(reverse('treinamento:listar_links_uteis'))
+            
+        except Exception as e:
+            messages.error(request, e)
+        
+    return render(request, 'treinamento/apagar_link_util.html', {'link_util': link_util})
+
+@login_required
+def listar_links_uteis(request):
+    """Lista links úteis de um jogador"""
+    links_uteis = LinkUtil.objects.filter(jogador=request.user.jogador)
+    
+    return render(request, 'treinamento/listar_links_uteis.html', {'links_uteis': links_uteis})
 
 @login_required
 def add_metrica(request):
@@ -349,6 +407,8 @@ def painel_treinamento(request):
     
     ultimas_anotacoes = Anotacao.objects.filter(jogador=jogador).order_by('-data_hora')[:3]
     
+    links_uteis = LinkUtil.objects.filter(jogador=jogador)[:3]
+    
     metricas = Metrica.objects.filter(jogador=jogador)[:3]
     
     ultimos_registros = RegistroTreinamento.objects.filter(jogador=jogador).order_by('-fim')[:3]
@@ -374,4 +434,5 @@ def painel_treinamento(request):
         dados_treinamento['tempo_registrado'] = '0:00'
         
     return render(request, 'treinamento/painel.html', {'ultimas_anotacoes': ultimas_anotacoes, 'metricas': metricas, 
-                                                       'ultimos_registros': ultimos_registros, 'dados_treinamento': dados_treinamento})
+                                                       'ultimos_registros': ultimos_registros, 'dados_treinamento': dados_treinamento,
+                                                       'links_uteis': links_uteis})

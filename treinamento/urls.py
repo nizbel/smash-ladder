@@ -23,6 +23,11 @@ urlpatterns = [
     path(r'anotacao/<int:anotacao_id>/apagar/', views.apagar_anotacao, name='apagar_anotacao'),
     path(r'anotacao/listar/', views.listar_anotacoes, name='listar_anotacoes'),
     
+    # Anotações
+    path(r'link-util/adicionar/', views.add_link_util, name='add_link_util'),
+    path(r'link-util/<int:link_util_id>/apagar/', views.apagar_link_util, name='apagar_link_util'),
+    path(r'link-util/listar/', views.listar_links_uteis, name='listar_links_uteis'),
+    
     # Métricas
     path(r'metrica/adicionar/', views.add_metrica, name='add_metrica'),
     path(r'metrica/<int:metrica_id>/apagar/', views.apagar_metrica, name='apagar_metrica'),

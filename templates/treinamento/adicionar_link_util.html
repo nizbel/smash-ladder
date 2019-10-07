@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}- Adicionar link útil{% endblock %}
+
+{% block page_header %}Link útil{% endblock %}
+
+{% block content %}
+	<form class="col-12" action="{% url 'treinamento:add_link_util' %}" method="post">
+	    {% csrf_token %}
+	    
+	    {% include "form.html" with form=form_link_util %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="salvar" value="Salvar">
+	</form>
+{% endblock %}

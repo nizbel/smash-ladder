@@ -4,7 +4,7 @@ from django import forms
 
 from smashLadder.utils import preparar_classes_form
 from treinamento.models import RegistroTreinamento, Metrica, Anotacao, \
-    ResultadoTreinamento
+    ResultadoTreinamento, LinkUtil
 
 
 class AnotacaoForm(forms.ModelForm):
@@ -18,7 +18,17 @@ class AnotacaoForm(forms.ModelForm):
         
         preparar_classes_form(self)
         
-
+class LinkUtilForm(forms.ModelForm):
+    """Formulário para link útil de treinamento"""
+    class Meta:
+        model = LinkUtil
+        fields = ('nome', 'url', 'descricao')
+        
+    def __init__(self,*args,**kwargs):
+        super(LinkUtilForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+        
 class MetricaForm(forms.ModelForm):
     """Formulário para registro de treinamento"""
     class Meta:

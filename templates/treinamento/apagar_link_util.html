@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Apagar link útil{% endblock %}
+
+{% block page_header %}Apagar link útil {{ link_util.id }}{% endblock %}
+
+{% block content %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ link_util.data_hora|date:'d/m/Y' }}</h5>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ link_util.data_hora|date:'H:i' }}</h6>
+		    
+	    	<p class="card-text">{{ link_util.texto }}</p>
+	  	</div>
+	</div>
+	
+	<form class="col-12" action="{% url 'treinamento:apagar_link_util' link_util.id %}" method="post">
+	    {% csrf_token %}
+	    
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" name="apagar" value="Apagar">
+	</form>
+{% endblock %}

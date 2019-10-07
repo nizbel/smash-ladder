@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+- Links úteis de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block page_header %}
+Links úteis de {{ request.user.jogador.nick }}
+{% endblock %}
+
+{% block content %}
+	{% for link_util in links_uteis %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title"><a href="{{ link_util.url }}">{{ link_util.nome }}</a></h5>
+	    	
+	    	<p class="card-text">{{ link_util.descricao }}</p>
+	    	
+			<a class="card-link" href="{% url 'treinamento:apagar_link_util' link_util.id %}">Apagar</a>
+	  	</div>
+	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Jogador sem links úteis cadastrados</h5>
+	</div>
+	{% endfor %}
+{% endblock %}
