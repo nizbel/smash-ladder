@@ -9,7 +9,7 @@ class PerformanceRequisicaoAdmin(admin.ModelAdmin):
         return obj.data_hora_resposta - obj.data_hora_requisicao
     
     list_display = ('data_hora_requisicao', 'data_hora_resposta', 'user', 'url', 'duracao')
-    search_fields = ['user', 'url']
+    search_fields = ['user__username', 'url']
     
     def has_add_permission(self, request, obj=None):
         return False
