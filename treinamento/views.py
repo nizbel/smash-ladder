@@ -385,7 +385,8 @@ def add_resultado_treinamento(request, registro_id):
                     resultado_treinamento.save()
                         
                     messages.success(request, 'Resultado de treinamento adicionado com sucesso')
-                    return redirect(reverse('treinamento:painel_treinamento'))
+                    return redirect(reverse('treinamento:detalhar_registro_treinamento', 
+                                            kwargs={'registro_id': registro_id}))
                 
             except Exception as e:
                 messages.error(request, e)

@@ -17,7 +17,12 @@
         <label>Jogador</label>
         <select id="jogador" class="form-control">
         	{% for jogador in jogadores %}
-        	<option value="{{ jogador.id }}">{{ jogador.nick }}</option>
+        	<option value="{{ jogador.id }}" 
+        	{% if request.user.is_authenticated %}
+        		{% if jogador.id == request.user.id %}
+        		selected="selected"
+        		{% endif %}
+        	{% endif %}>{{ jogador.nick }}</option>
         	{% endfor %}
     	</select>
 	</div>
