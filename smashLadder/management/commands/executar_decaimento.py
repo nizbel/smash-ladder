@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import traceback
+
+from django.core.mail import mail_admins
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -38,5 +41,6 @@ def executar_decaimento():
             recalcular_ladder()
             
     except:
+        mail_admins("Erro em executar decaimento", traceback.format_exc())
         raise
     

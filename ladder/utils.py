@@ -1126,8 +1126,15 @@ def decair_jogador(decaimento):
     
 def verificar_decaimento_valido(decaimento):
     """Verifica se decaimento é válido"""
-    data_hora_ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
-        .filter(data_hora__lt=decaimento.data).order_by('-data_hora').values_list('data_hora', flat=True)[0]
+    
+    if DesafioLadder.validados.filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
+            .filter(data_hora__lt=decaimento.data).exists():
+        data_hora_ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=decaimento.jogador) | Q(desafiado=decaimento.jogador)) \
+            .filter(data_hora__lt=decaimento.data).order_by('-data_hora').values_list('data_hora', flat=True)[0]
+    else:
+        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder
+        data_hora_ultimo_desafio = DesafioLadder.validados.all().order_by('data_hora')[0].data_hora
+    
     
     # Retorna válido para caso de período de inatividade apontado pelo decaimento ainda ser verdadeiro
     return decaimento.data.date() >= data_hora_ultimo_desafio.date() \
