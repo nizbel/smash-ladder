@@ -16,6 +16,7 @@ Métricas de {{ request.user.jogador.nick }}
 	    	<h5 class="card-title">{{ metrica.nome }}</h5>
 	    	
 		    <h6 class="card-subtitle mb-2 text-muted">{{ metrica.descricao }}</h6>
+		    <a class="card-link" href="{% url 'treinamento:detalhar_metrica' metrica.id %}">Ver detalhes</a>
 	  	</div>
 	</div>
 	{% empty %}

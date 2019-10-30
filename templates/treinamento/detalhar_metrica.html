@@ -42,17 +42,35 @@
 		  			<div class="col-12">
 				  		<div class="row">
 					  		<div class="col-6">
-							    <h6 class="card-title">Avanço</h6>
-							    <h6 class="card-title"><strong>{{ metrica.avanco|floatformat:2 }}%</strong></h6>
-						    </div>
-					  		<div class="col-6">
 							    <h6 class="card-title">Média</h6>
 							    <h6 class="card-title"><strong>{{ media_resultados.geral|floatformat:2 }}</strong></h6>
 						    </div>
-						    
 					  		<div class="col-6">
 							    <h6 class="card-title">Média 30 dias</h6>
 							    <h6 class="card-title"><strong>{{ media_resultados.30_dias|floatformat:2 }}</strong></h6>
+						    </div>
+						    
+					  		<div class="col-6">
+							    <h6 class="card-title">Máx.</h6>
+							    <h6 class="card-title"><strong>{{ maior_resultado.geral|floatformat:2 }}</strong></h6>
+						    </div>
+					  		<div class="col-6">
+							    <h6 class="card-title">Máx. 30 dias</h6>
+							    <h6 class="card-title"><strong>{{ maior_resultado.30_dias|floatformat:2 }}</strong></h6>
+						    </div>
+						    
+					  		<div class="col-6">
+							    <h6 class="card-title">Mín.</h6>
+							    <h6 class="card-title"><strong>{{ menor_resultado.geral|floatformat:2 }}</strong></h6>
+						    </div>
+					  		<div class="col-6">
+							    <h6 class="card-title">Mín. 30 dias</h6>
+							    <h6 class="card-title"><strong>{{ menor_resultado.30_dias|floatformat:2 }}</strong></h6>
+						    </div>
+						    
+					  		<div class="col-6">
+							    <h6 class="card-title">Avanço</h6>
+							    <h6 class="card-title"><strong>{{ metrica.avanco|floatformat:2 }}%</strong></h6>
 						    </div>
 					    </div>
 					</div>
