@@ -197,26 +197,34 @@ def detalhar_metrica(request, metrica_id):
     resultados_grafico = [{'x': resultado[0].strftime('%d/%m/%Y %H:%M'), 'y': resultado[1]} for resultado in resultados]
     
     media_resultados = {}
-    
-    media_resultados['geral'] = sum([resultado[1] for resultado in resultados]) / len(resultados)
-    
-    resultados_30_dias = [resultado for resultado in resultados if 
-                                       resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))]
-    media_resultados['30_dias'] = sum([resultado[1] for resultado in resultados_30_dias]) / len(resultados_30_dias)
-    
     maior_resultado = {}
-    
-    maior_resultado['geral'] = max([resultado[1] for resultado in resultados])
-    
-    maior_resultado['30_Dias'] = max([resultado[1] for resultado in resultados if 
-                                       resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))])
-    
     menor_resultado = {}
     
-    menor_resultado['geral'] = min([resultado[1] for resultado in resultados])
+    if resultados:
+        media_resultados['geral'] = sum([resultado[1] for resultado in resultados]) / len(resultados)
+        
+        resultados_30_dias = [resultado for resultado in resultados if 
+                                           resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))]
+        media_resultados['30_dias'] = sum([resultado[1] for resultado in resultados_30_dias]) / len(resultados_30_dias)
     
-    menor_resultado['30_Dias'] = min([resultado[1] for resultado in resultados if 
-                                       resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))])
+        
+        maior_resultado['geral'] = max([resultado[1] for resultado in resultados])
+        
+        maior_resultado['30_dias'] = max([resultado[1] for resultado in resultados if 
+                                           resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))])
+        
+        
+        menor_resultado['geral'] = min([resultado[1] for resultado in resultados])
+        
+        menor_resultado['30_dias'] = min([resultado[1] for resultado in resultados if 
+                                           resultado[0] >= (timezone.localtime() - datetime.timedelta(days=30))])
+    else:
+        media_resultados['geral'] = 0
+        media_resultados['30_dias'] = 0
+        maior_resultado['geral'] = 0
+        maior_resultado['30_dias'] = 0
+        menor_resultado['geral'] = 0
+        menor_resultado['30_dias'] = 0
     
     if len(resultados) >= 2:
         metrica.avanco = ((resultados[-1][1] / resultados[0][1]) - 1) * 100
