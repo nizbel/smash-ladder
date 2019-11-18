@@ -162,7 +162,7 @@ LOGIN_REDIRECT_URL = 'inicio'
 LOGOUT_REDIRECT_URL = 'inicio'
 
 # Nome do site
-NOME_SITE = 'CdL UnB'
+NOME_SITE = 'CdL'
 
 # Acelerar testes
 PASSWORD_HASHERS = [
