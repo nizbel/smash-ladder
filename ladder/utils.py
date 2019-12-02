@@ -173,6 +173,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
             # Reescrever
             for evento in eventos:
+#                 print(evento)
                 # Verificar se alterou mês/ano para próximo desafio
                 if isinstance(evento, DesafioLadder):
                     mes, ano = evento.mes_ano_ladder
@@ -251,6 +252,12 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 elif isinstance(evento, DecaimentoJogador):
                     # Verificar se decaimento ainda é válido
                     if verificar_decaimento_valido(evento):
+                        # Se válido, verificar posição
+                        posicao_decaimento = evento.jogador.posicao_em(evento.data)
+                        if posicao_decaimento != evento.posicao_inicial:
+                            evento.posicao_inicial = posicao_decaimento
+                            evento.save()
+                            
                         decair_jogador(evento)
                     else:
                         evento.delete()
@@ -1072,16 +1079,16 @@ def avaliar_decaimento(jogador):
     
 def decair_jogador(decaimento):
     """Decai um jogador por inatividade"""
-    # Se decaimento for de jogador no fim da ladder (não tem para onde cair), terminar função
-    if decaimento.posicao_inicial == PosicaoLadder.objects.all().aggregate(ultima_posicao=Max('posicao'))['ultima_posicao']:
-        return
-    
     # Definir se deve alterar histórico
     if decaimento.is_historico():
         mes, ano = decaimento.mes_ano_ladder
         ladder_para_alterar = HistoricoLadder.objects.filter(ano=ano, mes=mes)
     else:
         ladder_para_alterar = PosicaoLadder.objects
+    
+    # Se decaimento for de jogador no fim da ladder (não tem para onde cair), terminar função
+    if decaimento.posicao_inicial == ladder_para_alterar.aggregate(ultima_posicao=Max('posicao'))['ultima_posicao']:
+        return
     
     try:
         with transaction.atomic():
@@ -1134,7 +1141,6 @@ def verificar_decaimento_valido(decaimento):
     else:
         # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder
         data_hora_ultimo_desafio = DesafioLadder.validados.all().order_by('data_hora')[0].data_hora
-    
     
     # Retorna válido para caso de período de inatividade apontado pelo decaimento ainda ser verdadeiro
     return decaimento.data.date() >= data_hora_ultimo_desafio.date() \

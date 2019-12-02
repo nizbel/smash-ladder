@@ -72,7 +72,7 @@ class ViewDetalharJogadorTestCase(TestCase):
         
         criar_ladder_teste()
         
-        dia_anterior = timezone.now() - datetime.timedelta(days=1)
+        dia_anterior = timezone.localtime() - datetime.timedelta(days=1)
         # Gerar desafios para jogador 1
         cls.desafio_validado_vitoria_1 = DesafioLadder.objects.create(desafiante=cls.jogador_3, desafiado=cls.jogador_1, 
                                                                       data_hora=dia_anterior.replace(hour=1),
