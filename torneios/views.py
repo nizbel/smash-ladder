@@ -243,7 +243,6 @@ def analises_por_jogador(request):
                              
 def analise_resultado_torneio_para_um_jogador(request):
     """Retorna dados sobre resultados em torneios de um jogador"""
-    if request.is_ajax():
         jogador_id = int(request.GET.get('jogador_id'))
         
         # Verificar se jogador existe
@@ -278,7 +277,6 @@ def analises_por_time(request):
 
 def analise_resultado_torneio_para_um_time(request):
     """Retorna dados sobre resultados em torneios de um time"""
-    if request.is_ajax():
         time_id = int(request.GET.get('time_id'))
         
         # Verificar se jogador existe
