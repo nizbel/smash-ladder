@@ -243,26 +243,26 @@ def analises_por_jogador(request):
                              
 def analise_resultado_torneio_para_um_jogador(request):
     """Retorna dados sobre resultados em torneios de um jogador"""
-        jogador_id = int(request.GET.get('jogador_id'))
-        
-        # Verificar se jogador existe
-        jogador = get_object_or_404(Jogador, id=jogador_id)
-        
-        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, jogador=jogador).order_by('torneio__data') \
-            .values('posicao_final', 'torneio__data', 'torneio'))
-        dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
-            .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
-            .values('id', 'qtd_jogadores')
-        
-        for dado_jogador in dados_jogador:
-            for dado_torneio in dados_torneios:
-                if dado_jogador['torneio'] == dado_torneio['id']:
-                    dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
-                    break
-        
-        return JsonResponse({'data': [dado['torneio__data'] for dado in dados_jogador], 
-                             'posicao': [dado['posicao_final'] for dado in dados_jogador], 
-                             'qtd_jogadores': [dado['qtd_jogadores'] for dado in dados_jogador]})
+    jogador_id = int(request.GET.get('jogador_id'))
+    
+    # Verificar se jogador existe
+    jogador = get_object_or_404(Jogador, id=jogador_id)
+    
+    dados_jogador = list(JogadorTorneio.objects.filter(valido=True, jogador=jogador).order_by('torneio__data') \
+        .values('posicao_final', 'torneio__data', 'torneio'))
+    dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
+        .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
+        .values('id', 'qtd_jogadores')
+    
+    for dado_jogador in dados_jogador:
+        for dado_torneio in dados_torneios:
+            if dado_jogador['torneio'] == dado_torneio['id']:
+                dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
+                break
+    
+    return JsonResponse({'data': [dado['torneio__data'] for dado in dados_jogador], 
+                         'posicao': [dado['posicao_final'] for dado in dados_jogador], 
+                         'qtd_jogadores': [dado['qtd_jogadores'] for dado in dados_jogador]})
         
 def listar_times(request):
     """Lista times registrados"""
@@ -277,47 +277,47 @@ def analises_por_time(request):
 
 def analise_resultado_torneio_para_um_time(request):
     """Retorna dados sobre resultados em torneios de um time"""
-        time_id = int(request.GET.get('time_id'))
+    time_id = int(request.GET.get('time_id'))
+    
+    # Verificar se jogador existe
+    time = get_object_or_404(Time, id=time_id)
+    
+    dados_jogador = list(JogadorTorneio.objects.filter(valido=True, time=time, jogador__isnull=False).order_by('id', 'torneio__data') \
+        .values('posicao_final', 'torneio__data', 'torneio', 'jogador__nick'))
+    
+    dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
+        .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
+        .values('id', 'qtd_jogadores')
+    
+    for dado_jogador in dados_jogador:
+        for dado_torneio in dados_torneios:
+            if dado_jogador['torneio'] == dado_torneio['id']:
+                dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
+                break
+    
+    # TODO transferir operações com pandas para utils
+    dados_jogadores_df = pd.DataFrame(list(dados_jogador))
+    
+    # Adicionar rendimento no torneio
+    dados_jogadores_df['rendimento'] = 1 - (dados_jogadores_df['posicao_final'] - 1) / dados_jogadores_df['qtd_jogadores']
+    
+    dados_jogadores_df = dados_jogadores_df.drop(['qtd_jogadores', 'torneio'], axis=1)
+    
+    # Alterar nomes de colunas para facilitar
+    dados_jogadores_df = dados_jogadores_df.rename(columns={'torneio__data': 'data', 'jogador__nick': 'nome'})
+    
+    dados_jogadores_df = dados_jogadores_df.sort_values(['nome', 'data'])
+    
+    dados_jogadores = list()
+    for nome in dados_jogadores_df['nome'].unique().tolist():
+        # Preparar dicionário com dados do jogador
+        dict_jogador = {'nome': nome}
+        jogadores_idx = dados_jogadores_df['nome'] == nome
+        temp_df = dados_jogadores_df.loc[jogadores_idx, dados_jogadores_df.columns != 'nome']
         
-        # Verificar se jogador existe
-        time = get_object_or_404(Time, id=time_id)
+        for column in temp_df.columns:
+            dict_jogador[column] = temp_df[column].values.tolist()
         
-        dados_jogador = list(JogadorTorneio.objects.filter(valido=True, time=time, jogador__isnull=False).order_by('id', 'torneio__data') \
-            .values('posicao_final', 'torneio__data', 'torneio', 'jogador__nick'))
-        
-        dados_torneios = Torneio.objects.filter(id__in=[dado['torneio'] for dado in dados_jogador]) \
-            .annotate(qtd_jogadores=Count(Case(When(jogadortorneio__valido=True, then=1)))) \
-            .values('id', 'qtd_jogadores')
-        
-        for dado_jogador in dados_jogador:
-            for dado_torneio in dados_torneios:
-                if dado_jogador['torneio'] == dado_torneio['id']:
-                    dado_jogador['qtd_jogadores'] = dado_torneio['qtd_jogadores']
-                    break
-        
-        # TODO transferir operações com pandas para utils
-        dados_jogadores_df = pd.DataFrame(list(dados_jogador))
-        
-        # Adicionar rendimento no torneio
-        dados_jogadores_df['rendimento'] = 1 - (dados_jogadores_df['posicao_final'] - 1) / dados_jogadores_df['qtd_jogadores']
-        
-        dados_jogadores_df = dados_jogadores_df.drop(['qtd_jogadores', 'torneio'], axis=1)
-        
-        # Alterar nomes de colunas para facilitar
-        dados_jogadores_df = dados_jogadores_df.rename(columns={'torneio__data': 'data', 'jogador__nick': 'nome'})
-        
-        dados_jogadores_df = dados_jogadores_df.sort_values(['nome', 'data'])
-        
-        dados_jogadores = list()
-        for nome in dados_jogadores_df['nome'].unique().tolist():
-            # Preparar dicionário com dados do jogador
-            dict_jogador = {'nome': nome}
-            jogadores_idx = dados_jogadores_df['nome'] == nome
-            temp_df = dados_jogadores_df.loc[jogadores_idx, dados_jogadores_df.columns != 'nome']
-            
-            for column in temp_df.columns:
-                dict_jogador[column] = temp_df[column].values.tolist()
-            
-            dados_jogadores.append(dict_jogador)
-        
-        return JsonResponse({'dados_jogadores': dados_jogadores})
+        dados_jogadores.append(dict_jogador)
+    
+    return JsonResponse({'dados_jogadores': dados_jogadores})

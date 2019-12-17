@@ -772,40 +772,40 @@ def analises(request):
 
 def analise_resultado_acumulado_jogadores(request):
     """Retorna dados sobre acumulado de resultados de desafios entre jogadores"""
-        ano = int(request.GET.get('ano'))
-        mes = int(request.GET.get('mes'))
-        
-        data_atual = timezone.localdate()
-        if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
-            ano = data_atual.year
-            mes = data_atual.month
-        
-        # Definir mes/ano final para resultados de desafios
-        (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
-        
-        # Filtrar jogadores validos para mes/ano
-        if (ano, mes) == (data_atual.year, data_atual.month):
-            jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
-        else:
-            jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
-        
-        desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
-                                        .filter(desafiante__in=jogadores_validos, desafiado__in=jogadores_validos)
-                                        .annotate(nick_desafiante=F('desafiante__nick')).annotate(nick_desafiado=F('desafiado__nick')).values(
-                                            'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
-                                                    'score_desafiado').order_by('data_hora')))
-        
-        # Verifica se dataframe possui dados
-        if desafios_df.empty:
-            return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': [], 'jogador': []})
-        
-        desafios_df = analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))
-        
-        # Trocar NaNs por None, para ser codificado em JSON
-        desafios_df = desafios_df.where(pd.notnull(desafios_df), None)
-        
-        return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
-                             'jogador': desafios_df.index.tolist()})
+    ano = int(request.GET.get('ano'))
+    mes = int(request.GET.get('mes'))
+    
+    data_atual = timezone.localdate()
+    if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
+        ano = data_atual.year
+        mes = data_atual.month
+    
+    # Definir mes/ano final para resultados de desafios
+    (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
+    
+    # Filtrar jogadores validos para mes/ano
+    if (ano, mes) == (data_atual.year, data_atual.month):
+        jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
+    else:
+        jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
+    
+    desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
+                                    .filter(desafiante__in=jogadores_validos, desafiado__in=jogadores_validos)
+                                    .annotate(nick_desafiante=F('desafiante__nick')).annotate(nick_desafiado=F('desafiado__nick')).values(
+                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
+                                                'score_desafiado').order_by('data_hora')))
+    
+    # Verifica se dataframe possui dados
+    if desafios_df.empty:
+        return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': [], 'jogador': []})
+    
+    desafios_df = analisar_resultado_acumulado_entre_jogadores(desafios_df, (mes, ano))
+    
+    # Trocar NaNs por None, para ser codificado em JSON
+    desafios_df = desafios_df.where(pd.notnull(desafios_df), None)
+    
+    return JsonResponse({'resultado_desafios': desafios_df.values.tolist(), 'jogador_enfrentado': desafios_df.columns.tolist(), 
+                         'jogador': desafios_df.index.tolist()})
         
     
 def analise_resultado_por_posicao(request):
@@ -881,85 +881,85 @@ def analises_por_jogador(request):
                              
 def analise_resultado_acumulado_para_um_jogador(request):
     """Retorna dados sobre acumulado de resultados de desafios de um jogador"""
-        ano = int(request.GET.get('ano'))
-        mes = int(request.GET.get('mes'))
-        jogador_id = int(request.GET.get('jogador_id'))
-        
-        # Verificar se jogador existe
-        jogador = get_object_or_404(Jogador, id=jogador_id)
-        
-        data_atual = timezone.localdate()
-        if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
-            ano = data_atual.year
-            mes = data_atual.month
-        
-        # Definir mes/ano final para resultados de desafios
-        (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
-        
-        # Filtrar jogadores validos para mes/ano
-        if (ano, mes) == (data_atual.year, data_atual.month):
-            jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
-        else:
-            jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
-        
-        desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
-                                        .filter(desafiante__in=jogadores_validos, desafiado__in=jogadores_validos)
-                                        .filter(Q(desafiante=jogador) | Q(desafiado=jogador))
-                                        .annotate(nick_desafiante=F('desafiante__nick')).annotate(nick_desafiado=F('desafiado__nick')).values(
-                                            'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
-                                                    'score_desafiado').order_by('data_hora')))
-        
-        # Verifica se dataframe possui dados
-        if desafios_df.empty:
-            return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': []})
-        
-        desafios_df = analisar_resultado_acumulado_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
-        
-        return JsonResponse({'resultado_desafios': desafios_df['resultado'].tolist(), 'jogador_enfrentado': desafios_df['nick_desafiado'].tolist()})
+    ano = int(request.GET.get('ano'))
+    mes = int(request.GET.get('mes'))
+    jogador_id = int(request.GET.get('jogador_id'))
+    
+    # Verificar se jogador existe
+    jogador = get_object_or_404(Jogador, id=jogador_id)
+    
+    data_atual = timezone.localdate()
+    if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
+        ano = data_atual.year
+        mes = data_atual.month
+    
+    # Definir mes/ano final para resultados de desafios
+    (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
+    
+    # Filtrar jogadores validos para mes/ano
+    if (ano, mes) == (data_atual.year, data_atual.month):
+        jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
+    else:
+        jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
+    
+    desafios_df = pd.DataFrame(list(DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone())) \
+                                    .filter(desafiante__in=jogadores_validos, desafiado__in=jogadores_validos)
+                                    .filter(Q(desafiante=jogador) | Q(desafiado=jogador))
+                                    .annotate(nick_desafiante=F('desafiante__nick')).annotate(nick_desafiado=F('desafiado__nick')).values(
+                                        'data_hora', 'nick_desafiante', 'score_desafiante', 'nick_desafiado', 
+                                                'score_desafiado').order_by('data_hora')))
+    
+    # Verifica se dataframe possui dados
+    if desafios_df.empty:
+        return JsonResponse({'resultado_desafios': [], 'jogador_enfrentado': []})
+    
+    desafios_df = analisar_resultado_acumulado_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
+    
+    return JsonResponse({'resultado_desafios': desafios_df['resultado'].tolist(), 'jogador_enfrentado': desafios_df['nick_desafiado'].tolist()})
 
 
 def analise_resultado_acumulado_contra_personagens_para_um_jogador(request):
     """Retorna dados sobre acumulado de resultados de lutas de um jogador contra personagens"""
-        ano = int(request.GET.get('ano'))
-        mes = int(request.GET.get('mes'))
-        jogador_id = int(request.GET.get('jogador_id'))
-        
-        # Verificar se jogador existe
-        jogador = get_object_or_404(Jogador, id=jogador_id)
-        
-        data_atual = timezone.localdate()
-        if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
-            ano = data_atual.year
-            mes = data_atual.month
-        
-        # Definir mes/ano final para resultados de desafios
-        (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
-        
-        # Filtrar jogadores validos para mes/ano
-        if (ano, mes) == (data_atual.year, data_atual.month):
-            jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
-        else:
-            jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
-        
-        desafios_validados = DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone()))
-        
-        desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, luta__lutaladder__desafio_ladder__in=desafios_validados) \
-                                        .filter(luta__lutaladder__desafio_ladder__desafiante__in=jogadores_validos, 
-                                                luta__lutaladder__desafio_ladder__desafiado__in=jogadores_validos)
-                                        .filter(Q(luta__lutaladder__desafio_ladder__desafiante=jogador) | Q(luta__lutaladder__desafio_ladder__desafiado=jogador))
-                                        .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
-                                                               output_field=IntegerField())) \
-                                        .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
-        
-        # Verifica se dataframe possui dados
-        if desafios_df.empty:
-            return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
-        
-        desafios_df = analisar_vitorias_contra_personagens_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
-        
-        return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
-                             'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
-                             'personagem': desafios_df.index.tolist()})
+    ano = int(request.GET.get('ano'))
+    mes = int(request.GET.get('mes'))
+    jogador_id = int(request.GET.get('jogador_id'))
+    
+    # Verificar se jogador existe
+    jogador = get_object_or_404(Jogador, id=jogador_id)
+    
+    data_atual = timezone.localdate()
+    if ano > data_atual.year or (ano == data_atual.year and mes > data_atual.month):
+        ano = data_atual.year
+        mes = data_atual.month
+    
+    # Definir mes/ano final para resultados de desafios
+    (prox_mes, prox_ano) = mes_ano_prox(mes, ano)
+    
+    # Filtrar jogadores validos para mes/ano
+    if (ano, mes) == (data_atual.year, data_atual.month):
+        jogadores_validos = PosicaoLadder.objects.all().values_list('jogador')
+    else:
+        jogadores_validos = HistoricoLadder.objects.filter(mes=mes, ano=ano).values_list('jogador')
+    
+    desafios_validados = DesafioLadder.validados.filter(data_hora__lt=timezone.datetime(prox_ano, prox_mes, 1, 0, 0, tzinfo=timezone.get_current_timezone()))
+    
+    desafios_df = pd.DataFrame(list(JogadorLuta.objects.filter(personagem__isnull=False, luta__lutaladder__desafio_ladder__in=desafios_validados) \
+                                    .filter(luta__lutaladder__desafio_ladder__desafiante__in=jogadores_validos, 
+                                            luta__lutaladder__desafio_ladder__desafiado__in=jogadores_validos)
+                                    .filter(Q(luta__lutaladder__desafio_ladder__desafiante=jogador) | Q(luta__lutaladder__desafio_ladder__desafiado=jogador))
+                                    .annotate(vitoria=Case(When(luta__ganhador=F('jogador'), then=Value(1)), default=0, 
+                                                           output_field=IntegerField())) \
+                                    .values('jogador__nick', 'personagem__nome', 'vitoria', 'luta')))
+    
+    # Verifica se dataframe possui dados
+    if desafios_df.empty:
+        return JsonResponse({'quantidade_lutas': [], 'percentual_vitorias': [], 'personagem': []})
+    
+    desafios_df = analisar_vitorias_contra_personagens_para_um_jogador(desafios_df, jogador.nick, (mes, ano))
+    
+    return JsonResponse({'quantidade_lutas': desafios_df['quantidade_lutas'].tolist(), 
+                         'percentual_vitorias': desafios_df['percentual_vitorias'].tolist(),
+                         'personagem': desafios_df.index.tolist()})
         
 def analise_resultado_stages_para_um_jogador(request):
     """Retorna dados sobre resultados em stages para um jogador"""
