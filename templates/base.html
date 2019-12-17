@@ -224,10 +224,10 @@
 			
 			  return false;
 			});
-			function ajax(url, type, data, successFunction) {
+			function ajax(url, method, data, successFunction) {
 				$.ajax({
 			        url : url,
-			        type : type,
+			        type : method,
 			        data : data,
 			        dataType: 'json',
 			        headers: { "X-CSRFToken": token },
