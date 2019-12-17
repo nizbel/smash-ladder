@@ -804,6 +804,38 @@ class RecalcularLadderTestCase(TestCase):
         self.assertTrue(PosicaoLadder.objects.filter(posicao=5, jogador=self.jogador_pos_5).exists())
         self.assertTrue(PosicaoLadder.objects.filter(posicao=6, jogador=self.jogador_pos_6).exists())
         self.assertTrue(PosicaoLadder.objects.filter(posicao=7, jogador=self.jogador_pos_7).exists())
+        
+    def test_alterar_ladder_desafio_fim_historico_com_decaimentos_mes_atual(self):
+        """Testa se validar desafio no fim do mês de histórico não causa erro com decaimentos atuais"""
+        # Realizar decaimento
+        decaimento = DecaimentoJogador.objects.create(jogador=self.jogador_pos_4, data=timezone.now() - datetime.timedelta(minutes=10), 
+                                                      posicao_inicial=4, qtd_periodos_inatividade=1)
+        decair_jogador(decaimento)
+        
+        # Criar desafio no histórico
+        novo_jogador = criar_jogador_teste('novo')
+        
+        horario_historico = timezone.now().replace(day=1) - datetime.timedelta(days=2)
+        
+        desafio_ladder = criar_desafio_ladder_simples_teste(novo_jogador, self.jogador_pos_10, 3, 1, 
+                                                                          hhorario_historico, False, self.jogador_pos_1)
+                                                                          
+        # Alterar ladder
+        validar_desafio_ladder_teste(desafio_ladder, self.jogador_pos_1)
+        
+        # Novo jogador deve entrar
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=1, jogador=self.jogador_pos_1).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=2, jogador=self.jogador_pos_2).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=3, jogador=self.jogador_pos_3).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=7, jogador=self.jogador_pos_4).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=4, jogador=self.jogador_pos_5).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=5, jogador=self.jogador_pos_6).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=6, jogador=self.jogador_pos_7).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=8, jogador=self.jogador_pos_8).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=9, jogador=self.jogador_pos_9).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=11, jogador=self.jogador_pos_10).exists())
+        self.assertTrue(PosicaoLadder.objects.filter(posicao=10, jogador=novo_jogador).exists())
+        
 
 class VerificarSeDesafiantePodeDesafiarTestCase(TestCase):
     """Testes para a função que verifica se desafiante está abaixo do desafiado na ladder"""
