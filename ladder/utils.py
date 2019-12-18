@@ -66,29 +66,15 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
-                if mes != None and ano != None:
+
+                desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora))
+                if desafio_ladder.is_cancelado():
+                    desafios_a_desfazer.append(desafio_ladder)
                     
-                    # Desfazer desafios para ladder do desafio
-                    desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).filter(data_hora__month=mes, 
-                                                                                                                          data_hora__year=ano))
-                    if desafio_ladder.is_cancelado():
-                        desafios_a_desfazer.append(desafio_ladder)
-                        
-                    ladder_resultante = desfazer_lote_desafios(desafios_a_desfazer, 
-                                                               list(HistoricoLadder.objects.filter(mes=mes, ano=ano)), 
-                                                               remocoes, decaimentos)
-                    
-                    copiar_ladder(HistoricoLadder.objects.filter(mes=mes, ano=ano).order_by('posicao'), ladder_resultante)
-                    
-                else:
-                    desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora))
-                    if desafio_ladder.is_cancelado():
-                        desafios_a_desfazer.append(desafio_ladder)
-                        
-                    ladder_resultante = desfazer_lote_desafios(desafios_a_desfazer, list(PosicaoLadder.objects.all()), 
-                                                               remocoes, decaimentos)
-                    
-                    copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), ladder_resultante)
+                ladder_resultante = desfazer_lote_desafios(desafios_a_desfazer, list(PosicaoLadder.objects.all()), 
+                                                           remocoes, decaimentos)
+                
+                copiar_ladder(PosicaoLadder.objects.all().order_by('posicao'), ladder_resultante)
                 
                 # Limpar resultados
                 ResultadoDecaimentoJogador.objects.filter(decaimento__in=decaimentos).delete()
@@ -170,7 +156,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 
             mes_atual = mes
             ano_atual = ano
-            
+
             # Reescrever
             for evento in eventos:
 #                 print(evento)
