@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from jogadores.models import Jogador, RegistroFerias
+from jogadores.models import Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, ResultadoDesafioLadder
 from ladder.utils import recalcular_ladder
@@ -16,7 +15,6 @@ from ladder.utils import recalcular_ladder
 #            YALDA - ACEBLIND 21:40
 #            ZOOL - CPU 10:50
 # LADDER INICIAL ALTERAR POSIÇÕES PARA COBRIR PK
-# FÉRIAS ALTERAR DATA DE FÉRIAS DO BACABAU, 29/04
 # GERAR POSIÇÕES DESAFIOS
 class Command(BaseCommand):
     help = 'Gera posições de desafiado para cada desafio'
@@ -26,11 +24,6 @@ class Command(BaseCommand):
             with transaction.atomic():
                 # Apagar resultados anteriores
                 ResultadoDesafioLadder.objects.all().delete()
-                
-                # Alterações necessárias
-                ferias_bacabau = RegistroFerias.objects.get(jogador__nick='Bacabau')
-                ferias_bacabau.data_inicio = datetime.datetime(2019, 4, 29)
-                ferias_bacabau.save()
                 
                 desafio_mizz_monkey = DesafioLadder.objects.get(id=77)
                 desafio_mizz_monkey.data_hora = desafio_mizz_monkey.data_hora.replace(hour=21, minute=50)

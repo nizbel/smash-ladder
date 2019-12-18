@@ -4,7 +4,7 @@ import datetime
 from django.test.testcases import TestCase
 from django.utils import timezone
 
-from jogadores.models import Jogador, RegistroFerias
+from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_personagens_teste, criar_stage_teste
 from ladder.models import InicioLadder, CancelamentoDesafioLadder, \
@@ -48,28 +48,6 @@ class JogadorTestCase(TestCase):
         # Adicionar desafios
         cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, cls.horario_mes, False, cls.teets)
         cls.desafio_ladder_historico = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 1, 3, cls.horario_historico, False, cls.teets)
-        
-    def test_is_de_ferias_jogador_sem_ferias(self):
-        """Testa se retorno indica que jogador não está de férias"""
-        self.assertFalse(self.teets.is_de_ferias())
-        
-    def test_is_de_ferias_jogador_de_ferias(self):
-        """Testa se retorno indica que jogador está de férias"""
-        # Colocar jogador de férias
-        RegistroFerias.objects.create(jogador=self.teets, data_inicio=timezone.now() - datetime.timedelta(days=5), \
-                                      data_fim=timezone.now() + datetime.timedelta(days=5))
-        self.assertTrue(self.teets.is_de_ferias())
-        
-    def test_de_ferias_na_data_jogador_sem_ferias(self):
-        """Testa se retorno indica que jogador não está de férias na data"""
-        self.assertFalse(self.teets.de_ferias_na_data((timezone.now() - datetime.timedelta(days=5)).date()))
-        
-    def test_de_ferias_na_data_jogador_de_ferias(self):
-        """Testa se retorno indica que jogador está de férias na data"""
-        # Colocar jogador de férias
-        RegistroFerias.objects.create(jogador=self.teets, data_inicio=timezone.now() - datetime.timedelta(days=5), \
-                                      data_fim=timezone.now() + datetime.timedelta(days=5))
-        self.assertTrue(self.teets.de_ferias_na_data((timezone.now() - datetime.timedelta(days=5)).date()))
         
     def test_posicao_em_jogador_sem_desafios_nem_ladder_inicial(self):
         """Testa se retorno é 0 caso jogador não esteja na ladder inicial nem possua desafios"""

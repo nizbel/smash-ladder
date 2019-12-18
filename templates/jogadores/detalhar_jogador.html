@@ -49,12 +49,6 @@
 				    </div>
 			    </div>
 				
-				{% if jogador.is_de_ferias %}
-					<div class="alert alert-primary card-text d-flex justify-content-between">
-						Jogador está de férias
-					</div>
-				{% endif %}
-				
 				{% if request.user.username == jogador.user.username or request.user.jogador.admin %}
 				<a class="card-link" href="{% url 'jogadores:editar_jogador' jogador.user.username %}">Editar</a>
 				{% endif %}

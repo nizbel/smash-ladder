@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import RegistroFerias, Jogador
+from jogadores.models import Jogador
 from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
     RemocaoJogadorForm, PermissaoAumentoRangeForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
@@ -125,7 +125,7 @@ def add_desafio_ladder(request):
     
 def detalhar_ladder_atual(request):
     """Detalhar posição da ladder atual"""
-    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user').prefetch_related('jogador__registroferias_set'))
+    ladder = list(PosicaoLadder.objects.all().order_by('posicao').select_related('jogador__user'))
     
     data_atual = timezone.localtime()
     data_mes_anterior = data_atual.replace(day=1) - datetime.timedelta(days=1)
@@ -580,7 +580,6 @@ def detalhar_regras(request):
                                                   'MELHOR_DE': DesafioLadder.MELHOR_DE, 
                                                   'PERIODO_ESPERA_MESMOS_JOGADORES': DesafioLadder.PERIODO_ESPERA_MESMOS_JOGADORES,
                                                   'PERIODO_ESPERA_DESAFIO_CORINGA': DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA,
-                                                  'PERIODO_MAX_FERIAS': RegistroFerias.PERIODO_MAX_FERIAS,
                                                   'QTD_POSICOES_DECAIMENTO': DecaimentoJogador.QTD_POSICOES_DECAIMENTO,
                                                   'PERIODO_INATIVIDADE': DecaimentoJogador.PERIODO_INATIVIDADE,
                                                   'admins': admins})

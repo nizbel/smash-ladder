@@ -98,7 +98,7 @@ UF = 'df'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'smash-ladder-df',
+        'NAME': 'tekken-ladder-df',
         'USER': 'smash',
         'PASSWORD': 'smash',
 #         'HOST': 'localhost',
@@ -165,9 +165,9 @@ LOGOUT_REDIRECT_URL = 'inicio'
 NOME_SITE = 'CdL'
 
 # Acelerar testes
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-]
+# PASSWORD_HASHERS = [
+#     'django.contrib.auth.hashers.MD5PasswordHasher',
+# ]
 
 # Configuracoes extras
 from conf.conf import *

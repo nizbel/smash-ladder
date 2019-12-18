@@ -31,17 +31,6 @@ class Jogador(models.Model):
         verbose_name_plural = 'jogadores'
         unique_together = ('nick',)
         ordering = ('nick',)
-        
-    def is_de_ferias(self):
-        """Verifica se jogador está de férias"""
-        return self.de_ferias_na_data(timezone.localdate())
-        
-    def de_ferias_na_data(self, data):
-        """Verifica se jogador está de férias na data apontada"""
-        for registro_ferias in list(self.registroferias_set.all()):
-            if registro_ferias.data_inicio <= data and registro_ferias.data_fim >= data:
-                return True
-        return False
     
     def pode_usar_coringa_na_data(self, data):
         return self.ultimo_uso_coringa == None or \
@@ -237,18 +226,6 @@ class StageValidaLadder(models.Model):
     stage = models.OneToOneField('Stage', on_delete=models.CASCADE)
     # Indica se pode ser escolhida apenas depois da primeira luta
     retorno = models.BooleanField('Stage para retorno', default=False)
-
-class RegistroFerias(models.Model):
-    """Registro de férias de jogador"""
-    PERIODO_MAX_FERIAS = 30
-    
-    jogador = models.ForeignKey('Jogador', on_delete=models.CASCADE)
-    data_inicio = models.DateField(u'Início das férias')
-    data_fim = models.DateField(u'Fim das férias')
-     
-    class Meta():
-        verbose_name_plural = 'registros de férias'
-        unique_together = (('jogador', 'data_inicio'), ('jogador', 'data_fim'))
         
 class Feedback(models.Model):
     avaliador = models.ForeignKey('Jogador', on_delete=models.CASCADE, related_name='avaliador')

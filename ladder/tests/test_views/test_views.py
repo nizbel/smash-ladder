@@ -7,7 +7,7 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem, RegistroFerias, \
+from jogadores.models import Jogador, Personagem, \
     StageValidaLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, criar_stage_teste, criar_jogador_teste
@@ -1027,22 +1027,6 @@ class ViewDetalharLadderAtualTestCase(TestCase):
         for jogador in response.context['ladder']:
             self.assertEqual(jogador.posicao, posicao)
             posicao += 1
-            
-    def test_jogador_de_ferias(self):
-        """Testa se jogadores de férias estão com a classe para férias"""
-        # Colocar 2 jogadores de férias
-        RegistroFerias.objects.create(jogador=self.sena, data_inicio=timezone.now() - datetime.timedelta(days=5), 
-                                      data_fim=timezone.now() + datetime.timedelta(days=5))
-        RegistroFerias.objects.create(jogador=self.teets, data_inicio=timezone.now() - datetime.timedelta(days=5), 
-                                      data_fim=timezone.now() + datetime.timedelta(days=5))
-        
-        response = self.client.get(reverse('ladder:detalhar_ladder_atual'))
-        self.assertContains(response, 'title="Jogador está de férias"', 2)
-        for jogador_posicao in response.context['ladder']:
-            if jogador_posicao.jogador in [self.teets, self.sena]:
-                self.assertTrue(jogador_posicao.jogador.is_de_ferias())
-            else:
-                self.assertFalse(jogador_posicao.jogador.is_de_ferias())
         
 class ViewListarHistoricoLadderTestCase(TestCase):
     """Testes para a view de listar históricos de ladder"""

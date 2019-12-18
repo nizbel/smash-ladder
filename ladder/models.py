@@ -52,8 +52,6 @@ class DesafioLadder(models.Model):
     
     MENSAGEM_ERRO_DESAFIANTE_MUITO_ABAIXO_DESAFIADO = f'Desafiante está mais de {LIMITE_POSICOES_DESAFIO} posições abaixo do desafiado'
     MENSAGEM_ERRO_DESAFIANTE_ACIMA_DESAFIADO = 'Desafiante está à frente do desafiado'
-    MENSAGEM_ERRO_DESAFIANTE_FERIAS = 'Desafiante está de férias'
-    MENSAGEM_ERRO_DESAFIADO_FERIAS = 'Desafiado está de férias'
     MENSAGEM_ERRO_MESMO_JOGADOR = 'Desafiante e desafiado não podem ser o mesmo jogador'
     MENSAGEM_ERRO_PERIODO_ESPERA_MESMOS_JOGADORES = f'Desafio não respeita período mínimo de ' \
         f'{PERIODO_ESPERA_MESMOS_JOGADORES} dias entre mesmos jogadores'

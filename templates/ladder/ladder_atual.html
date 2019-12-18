@@ -18,8 +18,7 @@ Ladder atual
 	<div class="col-12 d-md-flex justify-content-md-center">
 		<ul class="list-group col-md-3 ladder pr-0">
 		{% for posicao_ladder in ladder %}
-			<li class="list-group-item d-flex align-items-center {% if posicao_ladder.jogador.is_de_ferias %} ladder-ferias{% endif %}" 
-			{% if posicao_ladder.jogador.is_de_ferias %}title="Jogador está de férias"{% endif %}>
+			<li class="list-group-item d-flex align-items-center">
 				<div class="col-2 pl-0 posicao-ladder"><strong>{{ posicao_ladder.posicao }}</strong></div>
 				{% if posicao_ladder.alteracao > 0 %}
 					<div class="col-3 pl-0 text-success"><i class="fas fa-arrow-up"></i> {{ posicao_ladder.alteracao }}</div>
