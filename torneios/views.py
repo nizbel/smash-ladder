@@ -243,7 +243,10 @@ def analises_por_jogador(request):
                              
 def analise_resultado_torneio_para_um_jogador(request):
     """Retorna dados sobre resultados em torneios de um jogador"""
-    jogador_id = int(request.GET.get('jogador_id'))
+    parametro_id = request.GET.get('jogador_id')
+    if not parametro_id:
+        return JsonResponse({})
+    jogador_id = int(parametro_id)
     
     # Verificar se jogador existe
     jogador = get_object_or_404(Jogador, id=jogador_id)
