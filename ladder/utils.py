@@ -1207,4 +1207,11 @@ def buscar_desafiaveis(jogador, data_hora, coringa=False, retornar_ids=True):
                     desafiaveis.append(jogador_fora)
     
     return desafiaveis
+
+def reiniciar_ladder():
+    """
+    Reinicia a Ladder, removendo histórico e gerando uma nova
+    posição inicial
+    """
+    
     
