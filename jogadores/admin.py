@@ -35,7 +35,14 @@ class UserAdmin(BaseUserAdmin):
                 form.base_fields['groups'].disabled = True
 
         return form
-  
+    
+    
+    def has_add_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
