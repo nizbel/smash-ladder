@@ -15,11 +15,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.urls.conf import re_path
+from django.views.defaults import page_not_found
 
+from ladder.models import Lockdown
 from smashLadder import views, settings
 
 
-urlpatterns = [
+urlpatterns = []
+
+# Verificar lockdown de seasons
+try:
+    if Lockdown.sistema_em_lockdown():
+        urlpatterns.append(re_path(r'.*?', page_not_found, {'exception': Exception('Gerando nova Season')}))
+except:
+    pass
+        
+urlpatterns.extend([
     path('admin/', admin.site.urls),
     path('contas/', include('django.contrib.auth.urls')),
     path('', views.home, name='inicio'),
@@ -30,7 +42,7 @@ urlpatterns = [
     path('stages/', include('jogadores.urls.urls_stages')),
     path('torneios/', include('torneios.urls')),
     path('treinamento/', include('treinamento.urls')),
-]
+])
 
 if settings.DEBUG:
     import debug_toolbar

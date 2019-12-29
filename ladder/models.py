@@ -314,4 +314,61 @@ class PermissaoAumentoRange(models.Model):
                                                                     data_hora__lt=data_hora).exists())
             
         return valida
+    
+class Season(models.Model):
+    """Registro de Season"""
+    # Guarda mês/dia para começar novas seasons
+    try:
+        PERIODO_SEASON = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON]
+    except:
+        PERIODO_SEASON = ConfiguracaoLadder.VALOR_SEASON_TRIMESTRAL
+        
+    ano = models.SmallIntegerField('Ano')
+    indice = models.SmallIntegerField('Índice da Season')
+    data_inicio = models.DateField('Data de início')
+    data_fim = models.DateField('Data de fim')
+    
+    class Meta():
+        unique_together = (('ano', 'indice'), ('data_inicio',), ('data_fim',))
+    
+    def __str__(self):
+        return f'Season {self.indice}/{self.ano}'
+    
+class SeasonPosicaoInicial(models.Model):
+    """Posições da Ladder ao iniciar a Season"""
+    season = models.ForeignKey('Season', null=True, blank=True, on_delete=models.CASCADE, related_name='season_posicao_inicial')
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    posicao = models.SmallIntegerField('Posição inicial')
+    
+    class Meta():
+        unique_together = (('posicao', 'season'), ('jogador', 'season'))
+        
+    def __str__(self):
+        return f'{self.season}, {self.posicao}: {self.jogador}'
+    
+class SeasonPosicaoFinal(models.Model):
+    """Posições da Ladder ao finalizar a Season"""
+    season = models.ForeignKey('Season', null=True, blank=True, on_delete=models.CASCADE, related_name='season_posicao_final')
+    jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
+    posicao = models.SmallIntegerField('Posição final')
+    
+    class Meta():
+        unique_together = (('posicao', 'season'), ('jogador', 'season'))
+        
+    def __str__(self):
+        return f'{self.season}, {self.posicao}: {self.jogador}'
+    
+class Lockdown(models.Model):
+    """Registro de trava para site enquanto nova season é gerada"""
+    valido = models.BooleanField('Lockdown válido?', default=False)
+    
+    @staticmethod
+    def sistema_em_lockdown():
+        lockdown, _ = Lockdown.objects.get_or_create(id=1)
+        return lockdown.valido
+    
+    @staticmethod
+    def buscar():
+        return Lockdown.objects.get_or_create(id=1)[0]
         
