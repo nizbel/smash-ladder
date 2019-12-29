@@ -3,7 +3,9 @@ import datetime
 from importlib import reload
 import random
 import sys
+import traceback
 
+from django.core.mail import mail_admins
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models.aggregates import Max
@@ -21,6 +23,20 @@ class Command(BaseCommand):
     help = 'Gera histórico de ladder para mês anterior ao mês atual'
 
     def handle(self, *args, **options):
+        # Evitar que a geração de seasons aconteça antes de 2020
+        if timezone.now().year < 2020:
+            return
+        
+        # Se houver seasons
+        # Verificar se Season atual já chegou ao fim
+        if Season.objects.exists():
+            ultima_season = Season.objects.all().order_by('-data_fim')[0]
+            if timezone.now().date() > ultima_season.data_fim:
+                pass
+            else:
+                return
+        # Se não houver, criar a primeira
+        
         try:
             with transaction.atomic():
                 iniciar_lockdown()
@@ -32,8 +48,8 @@ class Command(BaseCommand):
                 gerar_season_nova()
                  
                 encerrar_lockdown()
-                raise ValueError('TESTE')
         except:
+            mail_admins("Erro em gerar seasons", traceback.format_exc())
             raise
 
     
@@ -148,14 +164,10 @@ def gerar_season_nova():
             nova_ladder[posicao_atual].jogador = jogador_restante.jogador
             posicao_atual += 1
     
-    print('Fim da season anterior')
-    print([f'{fim.posicao}: {fim.jogador}' for fim in posicoes_finais])
-    print('Início da season atual')
-    print([f'{inicio.posicao}: {inicio.jogador}' for inicio in nova_ladder])
-    
     # Salvar posições iniciais
     for posicao_inicial in nova_ladder:
         posicao_inicial.save()
+        posicao_atual = PosicaoLadder(posicao=posicao_inicial.posicao, jogador=posicao_inicial.jogador)
     
 def recarregar_urls():
     """Recarrega URLConf"""
