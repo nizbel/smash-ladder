@@ -24,14 +24,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Evitar que a geração de seasons aconteça antes de 2020
-        if timezone.now().year < 2020:
+        if timezone.localtime().year < 2020:
             return
         
         # Se houver seasons
         # Verificar se Season atual já chegou ao fim
         if Season.objects.exists():
             ultima_season = Season.objects.all().order_by('-data_fim')[0]
-            if timezone.now().date() > ultima_season.data_fim:
+            if timezone.localtime().date() > ultima_season.data_fim:
                 pass
             else:
                 return
@@ -106,7 +106,7 @@ def apagar_ladder_season_anterior():
     
 def gerar_season_nova():
     """Gerar nova Season"""
-    horario_atual = timezone.now()
+    horario_atual = timezone.localtime()
     # Gerar Season
     ano_atual = horario_atual.year
     indice = (Season.objects.filter(ano=ano_atual).aggregate(maior_indice=Max('indice'))['maior_indice'] or 0) + 1
@@ -151,7 +151,7 @@ def gerar_season_nova():
         nova_ladder[-posicao_atual].jogador = posicoes_finais[posicao_atual-1].jogador
         
         posicao_atual += 1
-    
+        
     # Randomizar o resto
     if posicao_atual <= len(nova_ladder):
         jogadores_restantes = posicoes_finais[10:]
@@ -168,6 +168,7 @@ def gerar_season_nova():
     for posicao_inicial in nova_ladder:
         posicao_inicial.save()
         posicao_atual = PosicaoLadder(posicao=posicao_inicial.posicao, jogador=posicao_inicial.jogador)
+        posicao_atual.save()
     
 def recarregar_urls():
     """Recarrega URLConf"""
