@@ -168,20 +168,18 @@ class SeasonAdmin(admin.ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
         is_superuser = request.user.is_superuser
         
-        print(form.base_fields)
-
-#         if not is_superuser:
-#             if 'is_active' in form.base_fields:
-#                 form.base_fields['is_active'].disabled = True
-#             if 'is_staff' in form.base_fields:
-#                 form.base_fields['is_staff'].disabled = True
-#             if 'is_superuser' in form.base_fields:
-#                 form.base_fields['is_superuser'].disabled = True
-#             if 'user_permissions' in form.base_fields:
-#                 form.base_fields['user_permissions'].disabled = True
-#             if 'groups' in form.base_fields:
-#                 form.base_fields['groups'].disabled = True
-
+        if not is_superuser:
+            if 'ano' in form.base_fields:
+                form.base_fields['ano'].disabled = True
+            if 'indice' in form.base_fields:
+                form.base_fields['indice'].disabled = True
+            if 'data_inicio' in form.base_fields:
+                form.base_fields['data_inicio'].disabled = True
+            # Apenas se pode alterar data de fim caso seja indeterminada
+            if 'data_fim' in form.base_fields and obj.data_fim:
+                form.base_fields['data_fim'].disabled = True
+            
+            
         return form
     
 admin.site.register(Season, SeasonAdmin)
