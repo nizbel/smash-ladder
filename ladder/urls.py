@@ -21,10 +21,13 @@ app_name='ladder'
 urlpatterns = [
     # Ladder
     path(r'atual/', views.detalhar_ladder_atual, name='detalhar_ladder_atual'),
+    path(r'hall-fama/<int:ano>/<int:indice>/', views.detalhar_hall_fama, name='detalhar_hall_fama'),
     path(r'historico/<int:ano>/<int:mes>/', views.detalhar_ladder_historico, name='detalhar_ladder_historico'),
+    path(r'hall-fama/listar/', views.listar_hall_fama, name='listar_hall_fama'),
     path(r'historico/listar/', views.listar_ladder_historico, name='listar_ladder_historico'),
     path(r'atual/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_atual'),
     path(r'historico/<int:ano>/<int:mes>/listar-desafios/', views.listar_desafios_ladder, name='listar_desafios_ladder_historico'),
+    path(r'hall-fama/<int:ano>/<int:indice>/listar-desafios/', views.listar_desafios_season, name='listar_desafios_season'),
     
     # Remoções
     path(r'cancelar-remocao/<int:remocao_id>/', views.cancelar_remocao_jogador_ladder, name='cancelar_remocao_jogador_ladder'),

@@ -335,9 +335,14 @@ class Season(models.Model):
     def __str__(self):
         return f'Season {self.indice}/{self.ano}'
     
+    @staticmethod
+    def alterar_periodo_season():
+        Season.PERIODO_SEASON = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON]
+        
 class SeasonPosicaoInicial(models.Model):
     """Posições da Ladder ao iniciar a Season"""
-    season = models.ForeignKey('Season', null=True, blank=True, on_delete=models.CASCADE, related_name='season_posicao_inicial')
+    season = models.ForeignKey('Season', on_delete=models.CASCADE, related_name='season_posicao_inicial')
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     posicao = models.SmallIntegerField('Posição inicial')
     

@@ -5,7 +5,7 @@ from django.contrib import admin
 from ladder.models import PosicaoLadder, HistoricoLadder, DesafioLadder, \
     Luta, LutaLadder, InicioLadder, RemocaoJogador, DecaimentoJogador, \
     PermissaoAumentoRange, JogadorLuta, CancelamentoDesafioLadder, \
-    SeasonPosicaoInicial, SeasonPosicaoFinal, Season
+    SeasonPosicaoInicial, SeasonPosicaoFinal, Season, Lockdown
 
 
 class HistoricoLadderAdmin(admin.ModelAdmin):
@@ -157,11 +157,32 @@ class SeasonAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return request.user.is_superuser
     
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser
+#     def has_change_permission(self, request, obj=None):
+#         return request.user.is_superuser
     
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+    
+    
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        is_superuser = request.user.is_superuser
+        
+        print(form.base_fields)
+
+#         if not is_superuser:
+#             if 'is_active' in form.base_fields:
+#                 form.base_fields['is_active'].disabled = True
+#             if 'is_staff' in form.base_fields:
+#                 form.base_fields['is_staff'].disabled = True
+#             if 'is_superuser' in form.base_fields:
+#                 form.base_fields['is_superuser'].disabled = True
+#             if 'user_permissions' in form.base_fields:
+#                 form.base_fields['user_permissions'].disabled = True
+#             if 'groups' in form.base_fields:
+#                 form.base_fields['groups'].disabled = True
+
+        return form
     
 admin.site.register(Season, SeasonAdmin)
 
@@ -194,3 +215,19 @@ class SeasonPosicaoFinalAdmin(admin.ModelAdmin):
         return request.user.is_superuser
     
 admin.site.register(SeasonPosicaoFinal, SeasonPosicaoFinalAdmin)
+
+class LockdownAdmin(admin.ModelAdmin):
+    list_display = ('valido',)
+    
+    def has_add_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+admin.site.register(Lockdown, LockdownAdmin)
+    
+    
