@@ -95,29 +95,29 @@ def encerrar_lockdown():
 def guardar_dados_season_anterior():
     """Guardar posições inicial e final da season anterior"""
     # Verificar se não há Season para guardar período sem Season
-    if not Season.objects.exists():
-        # Guardar posição inicial
-        for inicio in InicioLadder.objects.all().order_by('posicao'):
-            posicao_inicial = SeasonPosicaoInicial(jogador=inicio.jogador, posicao=inicio.posicao)
-            posicao_inicial.save()
-            
-        # Guardar posição final
-        for fim in PosicaoLadder.objects.all().order_by('posicao'):
-            posicao_final = SeasonPosicaoFinal(jogador=fim.jogador, posicao=fim.posicao)
-            posicao_final.save()
-    
-    # Se há, buscar a última
-    else:
-        ultima_season = Season.objects.all().order_by('-data_inicio')[0]
-        # Guardar posição inicial
-        for inicio in InicioLadder.objects.all().order_by('posicao'):
-            posicao_inicial = SeasonPosicaoInicial(season=ultima_season, jogador=inicio.jogador, posicao=inicio.posicao)
-            posicao_inicial.save()
-            
-        # Guardar posição final
-        for fim in PosicaoLadder.objects.all().order_by('posicao'):
-            posicao_final = SeasonPosicaoFinal(season=ultima_season, jogador=fim.jogador, posicao=fim.posicao)
-            posicao_final.save()
+#     if not Season.objects.exists():
+#         # Guardar posição inicial
+#         for inicio in InicioLadder.objects.all().order_by('posicao'):
+#             posicao_inicial = SeasonPosicaoInicial(jogador=inicio.jogador, posicao=inicio.posicao)
+#             posicao_inicial.save()
+#             
+#         # Guardar posição final
+#         for fim in PosicaoLadder.objects.all().order_by('posicao'):
+#             posicao_final = SeasonPosicaoFinal(jogador=fim.jogador, posicao=fim.posicao)
+#             posicao_final.save()
+#     
+#     # Se há, buscar a última
+#     else:
+    ultima_season = Season.objects.all().order_by('-data_inicio')[0]
+    # Guardar posição inicial
+    for inicio in InicioLadder.objects.all().order_by('posicao'):
+        posicao_inicial = SeasonPosicaoInicial(season=ultima_season, jogador=inicio.jogador, posicao=inicio.posicao)
+        posicao_inicial.save()
+        
+    # Guardar posição final
+    for fim in PosicaoLadder.objects.all().order_by('posicao'):
+        posicao_final = SeasonPosicaoFinal(season=ultima_season, jogador=fim.jogador, posicao=fim.posicao)
+        posicao_final.save()
             
 def apagar_ladder_season_anterior():
     """Apagar dados relacionados a season anterior"""
