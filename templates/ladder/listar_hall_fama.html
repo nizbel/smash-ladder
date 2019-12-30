@@ -29,7 +29,7 @@ Hall da Fama
 				        {% for ladder in ladder_ano.list %}
 							<li class="list-group-item text-center border-0">
 								<h5>
-									<a href="{% url 'ladder:detalhar_ladder_historico' ladder.ano ladder.indice %}">
+									<a href="{% url 'ladder:detalhar_hall_fama' ladder.ano ladder.indice %}">
 										{{ ladder.indice }}/{{ ladder.ano }}
 									</a>
 								</h5>
@@ -42,7 +42,7 @@ Hall da Fama
 	  		
 			{% empty %}
 			<div class="col-12 text-center">
-				<h5>Sem histórico de Ladder</h5>
+				<h5>Sem Hall da Fama</h5>
 			</div>
 			
 	  		{% endfor %}

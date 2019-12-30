@@ -326,19 +326,12 @@ def detalhar_hall_fama(request, ano, indice):
     ladder = SeasonPosicaoFinal.objects.filter(season__ano=ano, season__indice=indice).order_by('posicao') \
         .select_related('jogador__user')
     
-    # Pegar mês/ano anterior
-#     mes_anterior, ano_anterior = mes_ano_ant(mes, ano)
-
     # Buscar season
     season = Season.objects.get(ano=ano, indice=indice)
     
     qtd_desafios = DesafioLadder.objects.filter(data_hora__range=[season.data_inicio, season.data_fim]).count()
     
     # Comparar com início da season
-#     if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
-#         ladder_anterior = HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior)
-#     else:
-#         ladder_anterior = InicioLadder.objects.all()
     ladder_anterior = list(SeasonPosicaoInicial.objects.filter(season__ano=ano, season__indice=indice).order_by('posicao'))
     
     # Considerar última posição de ladder atual caso jogador não esteja na anterior
@@ -405,7 +398,7 @@ def listar_ladder_historico(request):
 def listar_hall_fama(request):
     """Listar Hall da Fama de Seasons"""
     # Buscar anos e meses para listagem
-    lista_ladders = Season.objects.all().order_by('-ano', '-indice') \
+    lista_ladders = Season.objects.filter(data_fim__lte=timezone.localdate()).order_by('-ano', '-indice') \
                          .values('indice', 'ano').distinct()
     
     return render(request, 'ladder/listar_hall_fama.html', {'lista_ladders': lista_ladders})
@@ -701,6 +694,26 @@ def listar_desafios_ladder(request, ano=None, mes=None):
             desafio_ladder.is_cancelavel = False
     
     return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'mes': mes})
+
+def listar_desafios_season(request, ano, indice):
+    """Listar desafios de ladder específica"""
+    if Season.objects.filter(ano=ano, indice=indice).exists():
+        season = Season.objects.get(ano=ano, indice=indice)
+    else:
+        raise Http404('Não existe Season para ano/índice')
+    
+    # Buscar desafios para ladder especificada
+    desafios_ladder = DesafioLadder.objects.filter(data_hora__range=[season.data_inicio, season.data_fim]).order_by('data_hora') \
+        .select_related('desafiante__user', 'desafiado__user', 'cancelamentodesafioladder', 'admin_validador')
+    
+    # Verificar quais desafios usuário pode cancelar
+    for desafio_ladder in desafios_ladder:
+        if request.user.is_authenticated:
+            desafio_ladder.is_cancelavel = desafio_ladder.cancelavel_por_jogador(request.user.jogador)
+        else:
+            desafio_ladder.is_cancelavel = False
+    
+    return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'indice': indice})
 
 def listar_desafios_ladder_pendentes_validacao(request):
     """Listar desafios de ladder pendentes de validação"""
