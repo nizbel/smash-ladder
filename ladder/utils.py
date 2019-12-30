@@ -7,16 +7,17 @@ import re
 from django.db import transaction
 from django.db.models.aggregates import Sum, Max
 from django.db.models.expressions import F
+from django.db.models.query import prefetch_related_objects
 from django.db.models.query_utils import Q
 from django.utils import timezone
 
+from configuracao.models import ConfiguracaoLadder
 from jogadores.models import RegistroFerias, Jogador
 from ladder.models import DesafioLadder, HistoricoLadder, PosicaoLadder, \
     InicioLadder, LutaLadder, JogadorLuta, Luta, ResultadoDesafioLadder, \
     RemocaoJogador, DecaimentoJogador, ResultadoDecaimentoJogador, \
-    ResultadoRemocaoJogador, PermissaoAumentoRange
+    ResultadoRemocaoJogador, PermissaoAumentoRange, Season
 from smashLadder.utils import mes_ano_ant
-from django.db.models.query import prefetch_related_objects
 
 
 def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
@@ -244,7 +245,9 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                             evento.posicao_inicial = posicao_decaimento
                             evento.save()
                             
-                        decair_jogador(evento)
+                        if not evento.qtd_periodos_inatividade == 1 \
+                                or (evento.qtd_periodos_inatividade == 1 and not DecaimentoJogador.ABONAR_PRIMEIRO_DECAIMENTO):
+                            decair_jogador(evento)
                     else:
                         evento.delete()
                 
@@ -1006,16 +1009,20 @@ def avaliar_decaimento(jogador):
     if not PosicaoLadder.objects.filter(jogador=jogador).exists():
         raise ValueError(f'{jogador} não está na ladder')
     
-    # Se ainda não há desafios validados, não há decaimentos
-    if not DesafioLadder.validados.exists():
+    # Se ainda não há desafios validados na Season atual, não há decaimentos
+    season_atual = Season.objects.order_by('-data_inicio')[0]
+    if not DesafioLadder.validados.filter(data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).exists():
         return None
     
     # Verificar último desafio validado do jogador
-    if DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).exists():
-        ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador)).order_by('-data_hora')[0]
+    if DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador), 
+                                      data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).exists():
+        ultimo_desafio = DesafioLadder.validados.filter(Q(desafiante=jogador) | Q(desafiado=jogador), 
+                                                        data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).order_by('-data_hora')[0]
     else:
-        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder
-        ultimo_desafio = DesafioLadder(data_hora=DesafioLadder.validados.all().order_by('data_hora')[0].data_hora)
+        # Se não há desafios registrados, buscar data do primeiro desafio adicionado na ladder nesta Season
+        ultimo_desafio = DesafioLadder(data_hora=DesafioLadder.validados \
+                                       .filter(data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).order_by('data_hora')[0].data_hora)
     
     # Verificar períodos de férias desde último desafio
     registros_ferias = RegistroFerias.objects.filter(jogador=jogador, data_inicio__gt=ultimo_desafio.data_hora.date())

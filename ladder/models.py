@@ -249,8 +249,21 @@ class ResultadoRemocaoJogador(models.Model):
     
 class DecaimentoJogador(models.Model):
     """Registro de decaimento de jogador na ladder"""
-    PERIODO_INATIVIDADE = 30 # Quantidade de dias inativo para decair
+    # Quantidade de dias inativo para decair
+    try:
+        PERIODO_INATIVIDADE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE]
+    except:
+        PERIODO_INATIVIDADE = ConfiguracaoLadder.PADRAO_PERIODO_INATIVIDADE
+        
     QTD_POSICOES_DECAIMENTO = 3 # Quantidade de posições a decair por vez
+    
+    # Permitir que primeiro decaimento seja perdoado?
+    try:
+        ABONAR_PRIMEIRO_DECAIMENTO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO]
+    except:
+        ABONAR_PRIMEIRO_DECAIMENTO = ConfiguracaoLadder.PADRAO_ABONAR_PRIMEIRO_DECAIMENTO
     
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     # Adicionado como datetime para facilitar comparações na hora de calcular ladder
@@ -262,8 +275,18 @@ class DecaimentoJogador(models.Model):
         unique_together = ('jogador', 'data')
         
     def __str__(self):
-        
         return f'{self.jogador} cai de {self.posicao_inicial} em {self.data.strftime("%d/%m/%Y")}'
+    
+    @staticmethod
+    def alterar_periodo_inatividade():
+        DecaimentoJogador.PERIODO_INATIVIDADE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE]
+            
+    @staticmethod
+    def alterar_abonar_primeiro_decaimento():
+        DecaimentoJogador.ABONAR_PRIMEIRO_DECAIMENTO = ConfiguracaoLadder \
+            .buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO]
     
     def is_historico(self):
         """Define se é histórico"""

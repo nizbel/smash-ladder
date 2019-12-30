@@ -9,6 +9,8 @@ class ConfiguracaoLadder(models.Model):
     CONFIGURACAO_LIMITE_POSICOES_DESAFIO = 'limite_posicoes_desafio'
     CONFIGURACAO_MELHOR_DE = 'melhor_de'
     CONFIGURACAO_PERIODO_SEASON = 'periodo_season'
+    CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO = 'abonar_primeiro_decaimento'
+    CONFIGURACAO_PERIODO_INATIVIDADE = 'periodo_inatividade'
     
     PADRAO_LIMITE_POSICOES_DESAFIO = 3
     PADRAO_MELHOR_DE = 5
@@ -27,6 +29,8 @@ class ConfiguracaoLadder(models.Model):
                               (VALOR_SEASON_SEMESTRAL, DESCRICAO_SEASON_SEMESTRAL)]
     PADRAO_PERIODO_SEASON = VALOR_SEASON_INDETERMINADO
     
+    PADRAO_ABONAR_PRIMEIRO_DECAIMENTO = True
+    PADRAO_PERIODO_INATIVIDADE = 30
     
     
     # Altera DesafioLadder.LIMITE_POSICOES_DESAFIO
@@ -34,6 +38,8 @@ class ConfiguracaoLadder(models.Model):
     melhor_de = models.SmallIntegerField('Formato melhor de', default=PADRAO_MELHOR_DE)
     periodo_season = models.SmallIntegerField('Período de uma Season', default=PADRAO_PERIODO_SEASON, 
                                               choices=CHOICES_PERIODO_SEASON)
+    abonar_primeiro_decaimento = models.BooleanField('Abonar primeiro decaimento?', default=PADRAO_ABONAR_PRIMEIRO_DECAIMENTO)
+    periodo_inatividade = models.SmallIntegerField('Período de inatividade para cair', default=PADRAO_PERIODO_INATIVIDADE)
     
     def __str__(self):
         return 'Configurações de Ladder'
@@ -47,7 +53,9 @@ class ConfiguracaoLadder(models.Model):
             config = ConfiguracaoLadder(
                 limite_posicoes_desafio=ConfiguracaoLadder.PADRAO_LIMITE_POSICOES_DESAFIO,
                 melhor_de=ConfiguracaoLadder.PADRAO_MELHOR_DE,
-                periodo_season=ConfiguracaoLadder.PADRAO_PERIODO_SEASON
+                periodo_season=ConfiguracaoLadder.PADRAO_PERIODO_SEASON,
+                abonar_primeiro_decaimento=ConfiguracaoLadder.PADRAO_ABONAR_PRIMEIRO_DECAIMENTO,
+                periodo_inatividade=ConfiguracaoLadder.PADRAO_PERIODO_INATIVIDADE
                 )
             config.save()
             
@@ -55,7 +63,10 @@ class ConfiguracaoLadder(models.Model):
 
 class HistoricoConfiguracaoLadder(models.Model):
     limite_posicoes_desafio = models.SmallIntegerField('Limite de posições para desafiar', blank=True, null=True)
-    melhor_de = models.SmallIntegerField('Limite máximo de partidas em um desafio', blank=True, null=True)
+    melhor_de = models.SmallIntegerField('Formato melhor de', blank=True, null=True)
+    periodo_season = models.SmallIntegerField('Período de uma Season', blank=True, null=True)
+    abonar_primeiro_decaimento = models.BooleanField('Abonar primeiro decaimento?', blank=True, null=True)
+    periodo_inatividade = models.SmallIntegerField('Período de inatividade para cair', blank=True, null=True)
     # Guardar responsável pela alteração
     responsavel = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE, related_name='responsavel_alteracao')
     data_hora = DateTimeFieldTz(u'Data e hora do resultado', auto_now_add=True)

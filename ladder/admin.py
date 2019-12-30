@@ -157,9 +157,6 @@ class SeasonAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return request.user.is_superuser
     
-#     def has_change_permission(self, request, obj=None):
-#         return request.user.is_superuser
-    
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
     
@@ -178,7 +175,6 @@ class SeasonAdmin(admin.ModelAdmin):
             # Apenas se pode alterar data de fim caso seja indeterminada
             if 'data_fim' in form.base_fields and obj.data_fim:
                 form.base_fields['data_fim'].disabled = True
-            
             
         return form
     
