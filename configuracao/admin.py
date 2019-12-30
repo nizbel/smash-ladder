@@ -5,7 +5,7 @@ from django.forms.models import model_to_dict
 
 from configuracao.forms import ConfiguracaoLadderForm
 from configuracao.models import ConfiguracaoLadder, HistoricoConfiguracaoLadder
-from ladder.models import DesafioLadder
+from ladder.models import DesafioLadder, Season
 
 
 class ConfiguracaoLadderAdmin(admin.ModelAdmin):
@@ -31,6 +31,7 @@ class ConfiguracaoLadderAdmin(admin.ModelAdmin):
         
         DesafioLadder.alterar_melhor_de()
         DesafioLadder.alterar_limite_posicoes_desafio()
+        Season.alterar_periodo_season()
         
     
 admin.site.register(ConfiguracaoLadder, ConfiguracaoLadderAdmin)
