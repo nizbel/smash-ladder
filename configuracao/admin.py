@@ -5,7 +5,6 @@ from django.forms.models import model_to_dict
 
 from configuracao.forms import ConfiguracaoLadderForm
 from configuracao.models import ConfiguracaoLadder, HistoricoConfiguracaoLadder
-from ladder.models import DesafioLadder, Season, DecaimentoJogador
 
 
 class ConfiguracaoLadderAdmin(admin.ModelAdmin):
@@ -29,11 +28,7 @@ class ConfiguracaoLadderAdmin(admin.ModelAdmin):
         # Salvar
         super().save_model(request, obj, form, change)
         
-        DesafioLadder.alterar_melhor_de()
-        DesafioLadder.alterar_limite_posicoes_desafio()
-        Season.alterar_periodo_season()
-        DecaimentoJogador.alterar_abonar_primeiro_decaimento()
-        DecaimentoJogador.alterar_periodo_inatividade()
+        ConfiguracaoLadder.realizar_alteracoes()
         
     
 admin.site.register(ConfiguracaoLadder, ConfiguracaoLadderAdmin)

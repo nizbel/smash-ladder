@@ -32,6 +32,10 @@ class UserAdmin(BaseUserAdmin):
                 form.base_fields['user_permissions'].disabled = True
             if 'groups' in form.base_fields:
                 form.base_fields['groups'].disabled = True
+            if 'last_login' in form.base_fields:
+                form.base_fields['last_login'].disabled = True
+            if 'date_joined' in form.base_fields:
+                form.base_fields['date_joined'].disabled = True
 
         return form
     

@@ -29,6 +29,9 @@ class DesafioLadderForm(ModelForm):
             self.admin = False
             
         super(DesafioLadderForm,self).__init__(*args,**kwargs)
+        # Apaga campo se não for para mostrá-lo
+        if not DesafioLadder.USO_CORINGA:
+            del self.fields['desafio_coringa']
         
         preparar_classes_form(self)
     
@@ -45,7 +48,11 @@ class DesafioLadderForm(ModelForm):
         
         desafiante = cleaned_data.get('desafiante')
         desafiado = cleaned_data.get('desafiado')
-        desafio_coringa = cleaned_data.get('desafio_coringa')
+        # Se não estiver habilitado, sempre é falso
+        if DesafioLadder.USO_CORINGA:
+            desafio_coringa = cleaned_data.get('desafio_coringa')
+        else:
+            desafio_coringa = False
         criador_desafio = cleaned_data.get('adicionado_por')
         score_desafiante = cleaned_data.get('score_desafiante')
         score_desafiado = cleaned_data.get('score_desafiado')

@@ -140,6 +140,8 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
+# Custom test runner
+TEST_RUNNER = 'smashLadder.test_runner.TimeLoggingTestRunner'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/

@@ -12,13 +12,14 @@ from jogadores.models import Jogador, Personagem, \
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, criar_stage_teste, criar_jogador_teste
 from ladder.models import PosicaoLadder, HistoricoLadder, JogadorLuta, \
-    DesafioLadder, CancelamentoDesafioLadder, Luta, LutaLadder
+    DesafioLadder, CancelamentoDesafioLadder, Luta, LutaLadder, Season
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_luta_teste, criar_luta_completa_teste, \
     criar_desafio_ladder_simples_teste, criar_desafio_ladder_completo_teste, \
     validar_desafio_ladder_teste, gerar_campos_formset
 from ladder.views import MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO, \
-    MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER
+    MENSAGEM_SUCESSO_EDITAR_DESAFIO_LADDER, \
+    MENSAGEM_ERRO_EDITAR_DESAFIO_SEASON_ANTERIOR
 from smashLadder import settings
 from smashLadder.utils import mes_ano_ant
 
@@ -149,6 +150,31 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO)
         
+    def test_acesso_logado_desafio_fora_season(self):
+        """Testa acesso a tela de editar desafio de ladder que pertence a Season anterior"""
+        # Criar season anterior
+        season_atual = Season.objects.order_by('-data_inicio')[0]
+        # Garantir que data de início seja em outro ano
+        data_inicio_antiga = season_atual.data_inicio - datetime.timedelta(days=366)
+        antiga_season = Season.objects.create(ano=data_inicio_antiga.year, indice=1, data_inicio=data_inicio_antiga, 
+                              data_fim=season_atual.data_inicio - datetime.timedelta(days=1))
+        
+        # Criar desafio antigo
+        desafio_antigo = criar_desafio_ladder_simples_teste(self.sena, self.teets, 1, 3, 
+                                                                          antiga_season.data_hora_inicio + datetime.timedelta(days=5), False, self.teets)
+        
+        self.client.login(username=self.saraiva.user.username, password=SENHA_TESTE)
+        response = self.client.get(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': desafio_antigo.id}))
+        self.assertEqual(response.status_code, 302)
+        
+        url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_antigo.id})
+        self.assertRedirects(response, url_esperada)
+        
+        # Verificar mensagens
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), MENSAGEM_ERRO_EDITAR_DESAFIO_SEASON_ANTERIOR)
+        
     def test_editar_desafio_ja_cancelado(self):
         """Testa editar desafio de ladder que já foi cancelado"""
         # Definir desafio como cancelado
@@ -272,6 +298,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         self.client.login(username=self.teets.user.username, password=SENHA_TESTE)
         response = self.client.post(reverse('ladder:editar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id}),
                                    dados_post)
+        
         self.assertEqual(response.status_code, 302)
         
         url_esperada = reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': self.desafio_ladder.id})

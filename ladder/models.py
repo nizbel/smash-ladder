@@ -39,7 +39,13 @@ class DesafioLadder(models.Model):
             [ConfiguracaoLadder.CONFIGURACAO_LIMITE_POSICOES_DESAFIO] # Diferença máxima de posições para haver desafio
     except:
         LIMITE_POSICOES_DESAFIO = 3
-            
+    
+    # É permitido usar coringa na Ladder?
+    try:
+        USO_CORINGA = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_USO_CORINGA,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_USO_CORINGA] # Diferença máxima de posições para haver desafio
+    except:
+        USO_CORINGA = True
     PERIODO_ESPERA_MESMOS_JOGADORES = 3 # Quantidade de dias a esperar para refazer um desafio
     PERIODO_ESPERA_DESAFIO_CORINGA = 60 # Quantidade de dias a esperar para utilizar um coringa
     
@@ -87,6 +93,11 @@ class DesafioLadder(models.Model):
             [ConfiguracaoLadder.CONFIGURACAO_MELHOR_DE]
         
         DesafioLadder.SCORE_VITORIA = ((DesafioLadder.MELHOR_DE // 2) + 1)
+        
+    @staticmethod
+    def alterar_uso_coringa():
+        DesafioLadder.USO_CORINGA = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_USO_CORINGA,]) \
+            [ConfiguracaoLadder.CONFIGURACAO_USO_CORINGA]
         
     @property
     def lutas(self):
@@ -138,6 +149,11 @@ class DesafioLadder(models.Model):
         """Retorna se desafiante foi o ganhador"""
         return self.score_desafiante > self.score_desafiado
     
+    def fora_da_season(self):
+        """Retorna se desafio é de Season anterior"""
+        season_atual = Season.objects.order_by('-data_inicio')[0]
+        return self.data_hora < season_atual.data_hora_inicio
+    
     class DesafioLadderManager(models.Manager):
         """Override do manager padrão"""
         def na_season(self, season):
@@ -147,12 +163,12 @@ class DesafioLadder(models.Model):
             if season.data_fim:
                 data_hora_fim = datetime.datetime(season.data_fim.year, season.data_fim.month, season.data_fim.day) \
                     + datetime.timedelta(days=1)
-                return self.get_queryset().filter(data_hora__range=[timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()), 
+                return self.get_queryset().filter(data_hora__range=[timezone.make_aware(data_hora_inicio), 
                                                                 timezone.make_aware(data_hora_fim, 
                                                                                     timezone.get_current_timezone())])
             else:
                 # Se não, buscar apenas a partir da data inicial
-                return self.get_queryset().filter(data_hora__gte=timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()))
+                return self.get_queryset().filter(data_hora__gte=timezone.make_aware(data_hora_inicio))
     # Managers
     class DesafiosValidadosManager(models.Manager):
         """Manager para trazer desafios validados e não cancelados"""
@@ -160,18 +176,15 @@ class DesafioLadder(models.Model):
             return super().get_queryset().filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=False)
         
         def na_season(self, season):
-            data_hora_inicio = datetime.datetime(season.data_inicio.year, season.data_inicio.month, season.data_inicio.day)
-            
             # Se possui data de fim
             if season.data_fim:
                 data_hora_fim = datetime.datetime(season.data_fim.year, season.data_fim.month, season.data_fim.day) \
                     + datetime.timedelta(days=1)
-                return self.get_queryset().filter(data_hora__range=[timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()), 
-                                                                timezone.make_aware(data_hora_fim, 
-                                                                                    timezone.get_current_timezone())])
+                return self.get_queryset().filter(data_hora__range=[season.data_hora_inicio, 
+                                                                timezone.make_aware(data_hora_fim)])
             else:
                 # Se não, buscar apenas a partir da data inicial
-                return self.get_queryset().filter(data_hora__gte=timezone.make_aware(data_hora_inicio, timezone.get_current_timezone()))
+                return self.get_queryset().filter(data_hora__gte=season.data_hora_inicio)
         
 #     objects = models.Manager()
     objects = DesafioLadderManager()
@@ -389,7 +402,7 @@ class Season(models.Model):
     @property
     def data_hora_inicio(self):
         data_hora_inicio = datetime.datetime(self.data_inicio.year, self.data_inicio.month, self.data_inicio.day)
-        return timezone.make_aware(data_hora_inicio, timezone.get_current_timezone())
+        return timezone.make_aware(data_hora_inicio)
     
     @staticmethod
     def alterar_periodo_season():

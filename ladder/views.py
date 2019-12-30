@@ -37,6 +37,7 @@ from smashLadder.utils import mes_ano_ant, mes_ano_prox
 
 
 MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO = 'Não é possível editar desafio cancelado'
+MENSAGEM_ERRO_EDITAR_DESAFIO_SEASON_ANTERIOR = 'Não é possível editar desafio de Season anterior'
 
 MENSAGEM_SUCESSO_ADD_DESAFIO_LADDER = 'Desafio inserido com sucesso! Peça a um administrador para validar'
 MENSAGEM_SUCESSO_CANCELAR_DESAFIO_LADDER = 'Desafio cancelado com sucesso'
@@ -484,6 +485,9 @@ def cancelar_desafio_ladder(request, desafio_id):
     if desafio_ladder.is_cancelado():
         messages.error(request, f'Cancelamento já foi feito por {desafio_ladder.cancelamentodesafioladder.jogador.nick}')
         return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_id}))
+    if desafio_ladder.fora_da_season():
+        messages.error(request, 'Não é possível cancelar desafio de Season anterior')
+        return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_id}))
     
     # Verificar se usuário logado pode cancelar desafio
     # Admins podem ver tudo
@@ -564,6 +568,9 @@ def editar_desafio_ladder(request, desafio_id):
     # Verificar se cancelado
     if desafio_ladder.is_cancelado():
         messages.error(request, MENSAGEM_ERRO_EDITAR_DESAFIO_CANCELADO)
+        return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_ladder.id}))
+    if desafio_ladder.fora_da_season():
+        messages.error(request, MENSAGEM_ERRO_EDITAR_DESAFIO_SEASON_ANTERIOR)
         return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_ladder.id}))
     
     # Verificar se usuário logado pode editar desafio
@@ -812,6 +819,9 @@ def validar_desafio_ladder(request, desafio_id):
     
     if desafio_ladder.is_validado():
         messages.error(request, f'Validação já foi feita por {desafio_ladder.admin_validador.nick}')
+        return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_id}))
+    if desafio_ladder.fora_da_season():
+        messages.error(request, 'Não é possível validar desafio de Season anterior')
         return redirect(reverse('ladder:detalhar_desafio_ladder', kwargs={'desafio_id': desafio_id}))
     
     if request.POST:
