@@ -322,12 +322,12 @@ class Season(models.Model):
         PERIODO_SEASON = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON,]) \
             [ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON]
     except:
-        PERIODO_SEASON = ConfiguracaoLadder.VALOR_SEASON_TRIMESTRAL
+        PERIODO_SEASON = ConfiguracaoLadder.VALOR_SEASON_INDETERMINADO
         
     ano = models.SmallIntegerField('Ano')
     indice = models.SmallIntegerField('Índice da Season')
     data_inicio = models.DateField('Data de início')
-    data_fim = models.DateField('Data de fim')
+    data_fim = models.DateField('Data de fim', blank=True, null=True)
     
     class Meta():
         unique_together = (('ano', 'indice'), ('data_inicio',), ('data_fim',))

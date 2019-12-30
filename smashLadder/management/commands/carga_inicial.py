@@ -12,6 +12,7 @@ from ladder.models import InicioLadder, PosicaoLadder, DesafioLadder, \
     HistoricoLadder
 from ladder.utils import verificar_posicoes_desafiante_desafiado, alterar_ladder
 from smashLadder import settings
+from smashLadder.management.commands.gerar_season import gerar_season_inicial
 
 
 # Mapeia stages que não existem, pois são cópias
@@ -82,6 +83,9 @@ class Command(BaseCommand):
                         
                         InicioLadder.objects.create(posicao=posicao, jogador=jogador)
                         PosicaoLadder.objects.create(posicao=posicao, jogador=jogador)
+                
+                # Gerar season inicial (padrão indeterminado)
+                gerar_season_inicial()
                         
                 if options['desafios']:
                     # Desafios

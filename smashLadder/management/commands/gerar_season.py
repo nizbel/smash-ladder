@@ -24,18 +24,27 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Evitar que a geração de seasons aconteça antes de 2020
-        if timezone.localtime().year < 2020:
+        if settings.DEBUG == False and timezone.localtime().year < 2020:
             return
         
         # Se houver seasons
         # Verificar se Season atual já chegou ao fim
         if Season.objects.exists():
             ultima_season = Season.objects.all().order_by('-data_fim')[0]
-            if timezone.localtime().date() > ultima_season.data_fim:
+            # Se season for indeterminada, manter
+            if ultima_season.data_fim != None and timezone.localtime().date() > ultima_season.data_fim:
                 pass
             else:
                 return
-        # Se não houver, criar a primeira
+        # Se não houver, criar a primeira de acordo com a configuração atual
+        else:
+            try:
+                with transaction.atomic():
+                    gerar_season_inicial()
+                    return
+            except:
+                mail_admins("Erro em gerar seasons", traceback.format_exc())
+                raise
         
         try:
             with transaction.atomic():
@@ -49,10 +58,24 @@ class Command(BaseCommand):
                  
                 encerrar_lockdown()
         except:
+            encerrar_lockdown()
             mail_admins("Erro em gerar seasons", traceback.format_exc())
             raise
 
-    
+
+def gerar_season_inicial():
+    try:
+        with transaction.atomic():
+            # Data de início é a data do primeiro desafio ou a data atual
+            if DesafioLadder.validados.exists():
+                data_inicio = DesafioLadder.validados.order_by('data_hora')[0].data_hora.date()
+            else:
+                data_inicio = timezone.localdate()
+            nova_season = Season(ano=timezone.localtime().year, indice=1, data_inicio=data_inicio, data_fim=None)
+            nova_season.save()
+    except:
+        raise
+
 def iniciar_lockdown():
     """Bloqueia URLs durante geração de season"""
     status_lockdown = Lockdown.buscar()
@@ -112,21 +135,25 @@ def gerar_season_nova():
     indice = (Season.objects.filter(ano=ano_atual).aggregate(maior_indice=Max('indice'))['maior_indice'] or 0) + 1
     
     # Definir data de fim
-    mes_atual = horario_atual.month
-    meses_duracao = 0
-    if Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_TRIMESTRAL:
-        meses_duracao = 3
-    elif Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_QUADRIMESTRAL:
-        meses_duracao = 4
-    elif Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_SEMESTRAL:
-        meses_duracao = 6
-    mes_fim = mes_atual + meses_duracao
-    ano_fim = ano_atual
-    if mes_fim > 12:
-        ano_fim += 1
-        mes_fim -= 12
+    if Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_INDETERMINADO:
+        data_fim = None
+    else:
+        mes_atual = horario_atual.month
+        meses_duracao = 0
+        if Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_TRIMESTRAL:
+            meses_duracao = 3
+        elif Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_QUADRIMESTRAL:
+            meses_duracao = 4
+        elif Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_SEMESTRAL:
+            meses_duracao = 6
+            
+        mes_fim = mes_atual + meses_duracao
+        ano_fim = ano_atual
+        if mes_fim > 12:
+            ano_fim += 1
+            mes_fim -= 12
         
-    data_fim = datetime.date(ano_fim, mes_fim, 1) - datetime.timedelta(days=1)
+        data_fim = datetime.date(ano_fim, mes_fim, 1) - datetime.timedelta(days=1)
         
     nova_season = Season(ano=ano_atual, indice=indice, data_inicio=horario_atual.date(), data_fim=data_fim)
     nova_season.save()

@@ -66,10 +66,6 @@ class GerarSeasonTestCase(TestCase):
         ano, mes = mes_ano_ant(horario_atual.month, horario_atual.year)
         criar_ladder_historico_teste(ano, mes)
         
-        # Criar remoções
-        
-        # Criar exclusões
-        
         # Criar desafios
         desafio_ladder = criar_desafio_ladder_simples_teste(jogador_pos_3, jogador_pos_1, 3, 1, 
                                                                           horario_atual, False, jogador_pos_1)
