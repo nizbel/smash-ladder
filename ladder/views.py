@@ -22,7 +22,8 @@ from ladder.forms import DesafioLadderForm, DesafioLadderLutaForm, \
     RemocaoJogadorForm, PermissaoAumentoRangeForm
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
     DesafioLadder, CancelamentoDesafioLadder, InicioLadder, DecaimentoJogador, \
-    PermissaoAumentoRange, RemocaoJogador
+    PermissaoAumentoRange, RemocaoJogador, SeasonPosicaoFinal, Season, \
+    SeasonPosicaoInicial
 from ladder.utils import recalcular_ladder, validar_e_salvar_lutas_ladder, \
     remover_jogador
 import pandas as pd
@@ -30,7 +31,7 @@ from smashLadder.management.commands.analise import analisar_resultado_acumulado
     analisar_resultado_acumulado_para_um_jogador, \
     analisar_vitorias_contra_personagens_para_um_jogador, \
     analisar_resultados_por_posicao, analisar_resultados_por_dif_de_posicao, \
-    analisar_vitorias_por_personagem, analisar_resultados_stages_para_um_jogador,\
+    analisar_vitorias_por_personagem, analisar_resultados_stages_para_um_jogador, \
     analisar_vitorias_desafio_para_um_jogador
 from smashLadder.utils import mes_ano_ant, mes_ano_prox
 
@@ -314,6 +315,85 @@ def detalhar_ladder_historico(request, ano, mes):
     return render(request, 'ladder/ladder_historico.html', {'ladder': ladder, 'ano': ano, 'mes': mes, 'destaques': destaques,
                                                             'qtd_desafios': qtd_desafios})
 
+
+def detalhar_hall_fama(request, ano, indice):
+    """Detalhar Season no Hall da Fama"""
+    # TODO adicionar destaques
+    
+    # Testa se existe histórico para mês/ano apontados
+    if not SeasonPosicaoFinal.objects.filter(season__ano=ano, season__indice=indice).exists():
+        raise Http404('Não há registro no Hall da Fama para o índice/ano inseridos')
+    ladder = SeasonPosicaoFinal.objects.filter(season__ano=ano, season__indice=indice).order_by('posicao') \
+        .select_related('jogador__user')
+    
+    # Pegar mês/ano anterior
+#     mes_anterior, ano_anterior = mes_ano_ant(mes, ano)
+
+    # Buscar season
+    season = Season.objects.get(ano=ano, indice=indice)
+    
+    qtd_desafios = DesafioLadder.objects.filter(data_hora__range=[season.data_inicio, season.data_fim]).count()
+    
+    # Comparar com início da season
+#     if HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior).exists():
+#         ladder_anterior = HistoricoLadder.objects.filter(mes=mes_anterior, ano=ano_anterior)
+#     else:
+#         ladder_anterior = InicioLadder.objects.all()
+    ladder_anterior = list(SeasonPosicaoInicial.objects.filter(season__ano=ano, season__indice=indice).order_by('posicao'))
+    
+    # Considerar última posição de ladder atual caso jogador não esteja na anterior
+    for posicao_ladder in ladder:
+        preencheu_alteracao = False
+        # Procurar jogador na ladder anterior
+        for posicao_ladder_anterior in ladder_anterior:
+            if posicao_ladder_anterior.jogador_id == posicao_ladder.jogador_id:
+                posicao_ladder.alteracao = posicao_ladder_anterior.posicao - posicao_ladder.posicao
+
+                preencheu_alteracao = True
+                break
+            
+        if not preencheu_alteracao:
+            # Se jogador não estava na ladder anterior, buscar posição em seu primeiro desafio da ladder atual
+            primeiro_desafio = DesafioLadder.validados.filter((Q(desafiante=posicao_ladder.jogador) | Q(desafiado=posicao_ladder.jogador)), 
+                                                              data_hora__range=[season.data_inicio, season.data_fim]).annotate(
+                                                                  posicao=Case(When(desafiante=posicao_ladder.jogador, then=F('posicao_desafiante')),
+                                                                               When(desafiado=posicao_ladder.jogador, then=F('posicao_desafiado')))) \
+                                                                               .order_by('data_hora')[0]
+                 
+            posicao_ladder.alteracao = primeiro_desafio.posicao - posicao_ladder.posicao
+            
+    # Guardar destaques da ladder
+    destaques = {}
+    
+    desafios_season = DesafioLadder.validados.filter(data_hora__range=[season.data_inicio, season.data_fim])
+    if desafios_season.exists():
+        # Procurar destaques
+        
+        # Verificar jogadores que fizeram 5 defesas com sucesso
+        defesas_sucesso_5 = dict(desafios_season.filter(score_desafiado__gt=F('score_desafiante')).values('desafiado').order_by('desafiado') \
+             .annotate(qtd_vitorias=Count('desafiado')).filter(qtd_vitorias__gte=5).values_list('desafiado__nick', 'qtd_vitorias'))
+        
+        # Destacar jogadores que fizeram 5 defesas com sucesso
+        destaques['jogadores_5_defesas'] = [key for key, _ in defesas_sucesso_5.items()]
+        for posicao_ladder in ladder:
+            if posicao_ladder.jogador.nick in destaques['jogadores_5_defesas']:
+                posicao_ladder.jogador.qtd_defesas = defesas_sucesso_5[posicao_ladder.jogador.nick]
+        
+        # Destaque para uso de coringa com sucesso subindo mais de 10 posições
+        vitorias_coringa = desafios_season.filter(desafio_coringa=True, score_desafiante__gt=F('score_desafiado'),
+                                                          posicao_desafiante__gte=(F('posicao_desafiado') + 10)).select_related('desafiante')
+        destaques['vitoria_coringa_10_posicoes'] = [vitoria.desafiante.nick for vitoria in vitorias_coringa]
+
+        # Marcar todos os jogadores com destaques
+        for posicao_ladder in ladder:
+            for destaque in destaques:
+                if posicao_ladder.jogador.nick in destaques[destaque]:
+                    posicao_ladder.jogador.tem_destaque = True
+                    break
+    
+    return render(request, 'ladder/hall_fama.html', {'ladder': ladder, 'ano': ano, 'indice': indice, 'destaques': destaques,
+                                                            'qtd_desafios': qtd_desafios})
+
 def listar_ladder_historico(request):
     """Listar históricos de ladder por ano/mês"""
     # Buscar anos e meses para listagem
@@ -321,6 +401,14 @@ def listar_ladder_historico(request):
                          .values('mes', 'ano').distinct()
     
     return render(request, 'ladder/listar_ladder_historico.html', {'lista_ladders': lista_ladders})
+
+def listar_hall_fama(request):
+    """Listar Hall da Fama de Seasons"""
+    # Buscar anos e meses para listagem
+    lista_ladders = Season.objects.all().order_by('-ano', '-indice') \
+                         .values('indice', 'ano').distinct()
+    
+    return render(request, 'ladder/listar_hall_fama.html', {'lista_ladders': lista_ladders})
 
 @login_required
 def add_permissao_aumento_range(request):
