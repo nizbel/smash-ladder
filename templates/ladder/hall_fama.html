@@ -8,7 +8,7 @@ Ladder de {{ indice }}/{{ ano }}
 
 {% block content %}
 	<div class="col-12 text-center mb-3">
-		<a href="{% url 'ladder:listar_desafios_ladder_historico' ano indice %}">Todos os {{ qtd_desafios }} desafios</a>
+		<a href="{% url 'ladder:listar_desafios_season' ano indice %}">Todos os {{ qtd_desafios }} desafios</a>
 	</div>
 	
 	<div class="col-12 d-md-flex justify-content-md-center">
