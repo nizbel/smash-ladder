@@ -54,7 +54,7 @@ class Command(BaseCommand):
                  
                 apagar_ladder_season_anterior()
                  
-                gerar_season_nova()
+                gerar_nova_season()
                  
                 encerrar_lockdown()
         except:
@@ -118,7 +118,7 @@ def guardar_dados_season_anterior():
     for fim in PosicaoLadder.objects.all().order_by('posicao'):
         posicao_final = SeasonPosicaoFinal(season=ultima_season, jogador=fim.jogador, posicao=fim.posicao)
         posicao_final.save()
-            
+    
 def apagar_ladder_season_anterior():
     """Apagar dados relacionados a season anterior"""
     InicioLadder.objects.all().delete()
@@ -127,18 +127,21 @@ def apagar_ladder_season_anterior():
     # Apaga desafios não validados
     DesafioLadder.objects.filter(cancelamentodesafioladder__isnull=True, admin_validador__isnull=True).delete()
     
-def gerar_season_nova():
+def gerar_nova_season():
     """Gerar nova Season"""
     horario_atual = timezone.localtime()
     # Gerar Season
     ano_atual = horario_atual.year
     indice = (Season.objects.filter(ano=ano_atual).aggregate(maior_indice=Max('indice'))['maior_indice'] or 0) + 1
     
+    ultima_season = Season.objects.order_by('-data_inicio')[0]
+    data_inicio = ultima_season.data_fim + datetime.timedelta(days=1)
+    
     # Definir data de fim
     if Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_INDETERMINADO:
         data_fim = None
     else:
-        mes_atual = horario_atual.month
+        mes_atual = data_inicio.month
         meses_duracao = 0
         if Season.PERIODO_SEASON == ConfiguracaoLadder.VALOR_SEASON_TRIMESTRAL:
             meses_duracao = 3
@@ -155,18 +158,12 @@ def gerar_season_nova():
         
         data_fim = datetime.date(ano_fim, mes_fim, 1) - datetime.timedelta(days=1)
         
-    nova_season = Season(ano=ano_atual, indice=indice, data_inicio=horario_atual.date(), data_fim=data_fim)
+    nova_season = Season(ano=ano_atual, indice=indice, data_inicio=data_inicio, data_fim=data_fim)
     nova_season.save()
     
     # Gerar posição inicial
-    # Buscar última season
-    if Season.objects.all().exclude(id=nova_season.id).exists():
-        season_id = Season.objects.all().order_by('-data_inicio')[0].id
-    else:
-        season_id = None
-        
     # Guardar posições finais de última season
-    posicoes_finais = list(SeasonPosicaoFinal.objects.filter(season__id=season_id).order_by('posicao'))
+    posicoes_finais = list(SeasonPosicaoFinal.objects.filter(season__id=ultima_season.id).order_by('posicao'))
     
     nova_ladder = []
     for posicao_final in posicoes_finais:
@@ -178,7 +175,7 @@ def gerar_season_nova():
         nova_ladder[-posicao_atual].jogador = posicoes_finais[posicao_atual-1].jogador
         
         posicao_atual += 1
-        
+    
     # Randomizar o resto
     if posicao_atual <= len(nova_ladder):
         jogadores_restantes = posicoes_finais[10:]
