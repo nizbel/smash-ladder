@@ -713,7 +713,7 @@ def listar_desafios_season(request, ano, indice):
         else:
             desafio_ladder.is_cancelavel = False
     
-    return render(request, 'ladder/listar_desafios_ladder.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'indice': indice})
+    return render(request, 'ladder/listar_desafios_hall_fama.html', {'desafios_ladder': desafios_ladder, 'ano': ano, 'indice': indice})
 
 def listar_desafios_ladder_pendentes_validacao(request):
     """Listar desafios de ladder pendentes de validação"""

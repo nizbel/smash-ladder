@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='configuracaoladder',
             name='periodo_season',
-            field=models.SmallIntegerField(choices=[(1, 'Trimestral'), (2, 'Quadrimestral'), (3, 'Semestral')], default=1, verbose_name='Período de uma Season'),
+            field=models.SmallIntegerField(choices=[(0, 'Indeterminado'), (1, 'Trimestral'), (2, 'Quadrimestral'), (3, 'Semestral')], default=0, verbose_name='Período de uma Season'),
         ),
     ]

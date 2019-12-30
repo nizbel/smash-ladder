@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Testa utils de Seasons"""
 
+import datetime
+
 from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
@@ -11,9 +13,9 @@ from ladder.models import HistoricoLadder, PosicaoLadder, DesafioLadder, \
     InicioLadder
 from ladder.tests.utils_teste import criar_ladder_inicial_teste, \
     criar_ladder_historico_teste, validar_desafio_ladder_teste, \
-    criar_desafio_ladder_simples_teste, criar_ladder_teste
+    criar_desafio_ladder_simples_teste, criar_ladder_teste, criar_season_teste
 from smashLadder.management.commands.gerar_season import iniciar_lockdown, \
-    encerrar_lockdown, gerar_season_nova, apagar_ladder_season_anterior, \
+    encerrar_lockdown, gerar_nova_season, apagar_ladder_season_anterior, \
     guardar_dados_season_anterior
 from smashLadder.utils import mes_ano_ant
 
@@ -59,6 +61,8 @@ class GerarSeasonTestCase(TestCase):
         jogador_pos_9 = Jogador.objects.get(nick='rata')
         jogador_pos_10 = Jogador.objects.get(nick='tiovsky')
         
+        criar_season_teste(data_inicio=timezone.localdate() - datetime.timedelta(days=30), 
+                           data_fim=timezone.localdate() - datetime.timedelta(days=1))
         criar_ladder_inicial_teste()
         criar_ladder_teste()
         
@@ -83,7 +87,7 @@ class GerarSeasonTestCase(TestCase):
         
         guardar_dados_season_anterior()
         apagar_ladder_season_anterior()
-        gerar_season_nova()
+        gerar_nova_season()
         
         self.assertFalse(HistoricoLadder.objects.exists())
         

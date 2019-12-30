@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from django.utils import timezone
+
 from jogadores.models import Jogador, Personagem, Stage
 from ladder.models import PosicaoLadder, HistoricoLadder, Luta, JogadorLuta, \
-    DesafioLadder, LutaLadder, InicioLadder
+    DesafioLadder, LutaLadder, InicioLadder, Season
 from ladder.utils import alterar_ladder
+
 
 LADDER_FORMATO_TESTE = [
         {'nick': 'teets', 'posicao': 1,},
@@ -145,3 +148,9 @@ def gerar_campos_formset(dados, prefixo_form):
             dados_formatado[f'{prefixo_form}-{indice}-{nome}'] = valor
     
     return dados_formatado
+
+def criar_season_teste(data_inicio=None, data_fim=None):
+    """Cria uma Season"""
+    if not data_inicio:
+        data_inicio = timezone.localdate()
+    Season.objects.create(ano=timezone.localdate().year, indice=1, data_inicio=data_inicio, data_fim=data_fim)

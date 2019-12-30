@@ -254,7 +254,7 @@ class DecaimentoJogador(models.Model):
         PERIODO_INATIVIDADE = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE,]) \
             [ConfiguracaoLadder.CONFIGURACAO_PERIODO_INATIVIDADE]
     except:
-        PERIODO_INATIVIDADE = ConfiguracaoLadder.PADRAO_PERIODO_INATIVIDADE
+        PERIODO_INATIVIDADE = 30
         
     QTD_POSICOES_DECAIMENTO = 3 # Quantidade de posições a decair por vez
     
@@ -263,7 +263,7 @@ class DecaimentoJogador(models.Model):
         ABONAR_PRIMEIRO_DECAIMENTO = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO,]) \
             [ConfiguracaoLadder.CONFIGURACAO_ABONAR_PRIMEIRO_DECAIMENTO]
     except:
-        ABONAR_PRIMEIRO_DECAIMENTO = ConfiguracaoLadder.PADRAO_ABONAR_PRIMEIRO_DECAIMENTO
+        ABONAR_PRIMEIRO_DECAIMENTO = False
     
     jogador = models.ForeignKey('jogadores.Jogador', on_delete=models.CASCADE)
     # Adicionado como datetime para facilitar comparações na hora de calcular ladder
