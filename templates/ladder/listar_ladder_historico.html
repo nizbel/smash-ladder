@@ -10,19 +10,6 @@ Hall da Fama
 	<div class="col-12">
 		{% regroup lista_ladders by ano as ladder_por_ano %}
 		
-		{% comment %}
-		{% for ladder_ano in ladder_por_ano %}
-		    <div class="my-2">
-		    	<h3>{{ ladder_ano.grouper }}</h3>
-			    <ul class="list-group list-group-horizontal-md">
-			        {% for ladder in ladder_ano.list %}
-						<li class="list-group-item text-center"><a href="{% url 'ladder:detalhar_ladder_historico' ladder.ano ladder.mes %}">{{ ladder.mes }}/{{ ladder.ano }}</a></li>
-			        {% endfor %}
-			    </ul>
-		    </div>
-		{% endfor %}
-		{% endcomment %}
-		
 		{% now "Y" as current_year%} 
 		<div class="d-flex flex-column" id="accordion">
 			{% for ladder_ano in ladder_por_ano %}
