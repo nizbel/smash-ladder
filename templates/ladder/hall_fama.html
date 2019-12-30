@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}- Ladder de {{ indice }}/{{ ano }}{% endblock %}
+
+{% block page_header %}
+Ladder de {{ indice }}/{{ ano }}
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 text-center mb-3">
+		<a href="{% url 'ladder:listar_desafios_ladder_historico' ano indice %}">Todos os {{ qtd_desafios }} desafios</a>
+	</div>
+	
+	<div class="col-12 d-md-flex justify-content-md-center">
+		<ul class="list-group col-md-3 ladder pr-0">
+		{% for posicao_ladder in ladder %}
+			<li class="list-group-item d-flex align-items-center">
+				<div class="col-2 pl-0 posicao-ladder"><strong>{{ posicao_ladder.posicao }}</strong></div>
+				{% if posicao_ladder.alteracao > 0 %}
+					<div class="col-3 pl-0 text-success"><i class="fas fa-arrow-up"></i> {{ posicao_ladder.alteracao }}</div>
+				{% elif posicao_ladder.alteracao < 0 %}
+					<div class="col-3 pl-0 text-danger"><i class="fas fa-arrow-down"></i> {{ posicao_ladder.alteracao }}</div>
+				{% else %}
+					<div class="col-3 pl-0"></div>
+				{% endif %}
+				
+				{% comment %}
+				Ícones
+				{% endcomment %}
+				{% if posicao_ladder.jogador.tem_destaque %}
+					<div class="col-3 pl-0">
+					{% if posicao_ladder.jogador.nick in destaques.jogadores_mais_desafios %}
+						<i title="Participou de mais desafios" class="fas fa-fist-raised"></i>
+					{% endif %}
+					
+					{% comment %}
+					{% if posicao_ladder.jogador.nick in destaques.jogadores_streak_vitorias %}
+						<i title="On fire! Sequência de {{ posicao_ladder.jogador.streak }} vitórias" class="fas fa-fire-alt"></i>
+					{% endif %}
+					{% endcomment %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.jogadores_5_defesas %}
+						<i title="{{ posicao_ladder.jogador.qtd_defesas }} defesas de posição com sucesso!" class="fas fa-shield-alt"></i>
+					{% endif %}
+					
+					{% if posicao_ladder.jogador.nick in destaques.vitoria_coringa_10_posicoes %}
+						<i title="Subiu mais de 10 posições com um coringa" class="fas fa-rocket"></i>
+					{% endif %}
+					</div>
+				{% endif %}
+				
+				<a class="ml-auto text-right" href="{% url 'jogadores:detalhar_jogador' posicao_ladder.jogador.user.username %}">{{ posicao_ladder.jogador.nick }}</a>
+			</li>
+		{% endfor %}
+		</ul>
+	</div>
+{% endblock %}
