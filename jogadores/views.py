@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models.aggregates import Count, Max, Sum
 from django.db.models.expressions import F, Value
 from django.db.models.fields import IntegerField
+from django.db.models.query import prefetch_related_objects
 from django.db.models.query_utils import Q
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -20,10 +21,9 @@ from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm
 from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem, \
     Feedback
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
-    JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador
+    JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador, Season
 from ladder.utils import buscar_desafiaveis
 from torneios.models import JogadorTorneio
-from django.db.models.query import prefetch_related_objects
 
 
 def detalhar_jogador(request, username):
@@ -72,10 +72,13 @@ def detalhar_jogador(request, username):
     
     # Verificar se jogador possui desafios
     if todos_desafios:
+        # Buscar season atual
+        season_atual = Season.objects.all().order_by('-data_inicio')[0]
+        
         # Verificar se jogador possui remoções
-        if RemocaoJogador.objects.filter(jogador=jogador).exists():
+        if RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_inicio).exists():
             # Buscar última remoção
-            ultima_remocao = RemocaoJogador.objects.filter(jogador=jogador).order_by('-data')[0]
+            ultima_remocao = RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_inicio).order_by('-data')[0]
             
             for desafio in todos_desafios:
                 if desafio.data_hora > ultima_remocao.data:
@@ -84,8 +87,14 @@ def detalhar_jogador(request, username):
             else:
                 primeiro_desafio = None
         else:
-            primeiro_desafio = todos_desafios[0]
+            for desafio in todos_desafios:
+                if desafio.data_hora.date() >= season_atual.data_inicio:
+                    primeiro_desafio = desafio
+                    break
+            else:
+                primeiro_desafio = None
         
+        # Se possui um desafio válido na season atual, montar gráfico de variação
         if primeiro_desafio:
             data_inicial = primeiro_desafio.data_hora
         
