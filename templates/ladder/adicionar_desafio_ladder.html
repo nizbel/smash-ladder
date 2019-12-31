@@ -251,6 +251,10 @@ function buscarPersonagensJogador(elemento_jogador) {
 				fim_id = 'personagem_desafiado';
 			}
 			
+			// Garantir que o estilo do select2 será mantido, primeiro remove display none, para inserir posteriormente
+			if ($("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display') == 'none') {
+				$("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display', '');
+			}
 			$("select[id$='" + fim_id + "']").select2({
 				sorter: function(data) {
 				    return data.sort(function(a, b) {
@@ -275,6 +279,10 @@ function buscarPersonagensJogador(elemento_jogador) {
 				    });
 			    }
 			});
+			// Reinserir style display
+			if ($("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display') !== 'none') {
+				$("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display', 'none');
+			}
         }
     );
 }
@@ -292,10 +300,6 @@ function mostrarApenasLutasValidas() {
 		$('h3[id="id_header_luta_' + i + '"]').removeClass('invisible').css('display', '');
 		$('div[id="id_row_luta_' + i + '"]').removeClass('invisible').css('display', '');
 	}
-	
-	// Manter estilo dos selecionadores de personagem
-	$("select[id$='personagem_desafiante']").select2();
-	$("select[id$='personagem_desafiado']").select2();
 }
 
 function preencherGanhadores() {
