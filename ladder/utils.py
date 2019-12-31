@@ -1006,7 +1006,7 @@ def avaliar_decaimento(jogador):
     
     # Se ainda não há desafios validados na Season atual, não há decaimentos
     season_atual = Season.objects.order_by('-data_inicio')[0]
-    if not DesafioLadder.validados.filter(data_hora__range=[season_atual.data_inicio, season_atual.data_fim]).exists():
+    if not DesafioLadder.validados.na_season(season_atual).exists():
         return None
     
     # Verificar último desafio validado do jogador na season

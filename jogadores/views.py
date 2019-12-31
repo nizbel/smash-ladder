@@ -76,9 +76,9 @@ def detalhar_jogador(request, username):
         season_atual = Season.objects.all().order_by('-data_inicio')[0]
         
         # Verificar se jogador possui remoções
-        if RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_inicio).exists():
+        if RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_hora_inicio).exists():
             # Buscar última remoção
-            ultima_remocao = RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_inicio).order_by('-data')[0]
+            ultima_remocao = RemocaoJogador.objects.filter(jogador=jogador, data__gte=season_atual.data_hora_inicio).order_by('-data')[0]
             
             for desafio in todos_desafios:
                 if desafio.data_hora > ultima_remocao.data:

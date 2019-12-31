@@ -386,6 +386,11 @@ class Season(models.Model):
     def __str__(self):
         return f'Season {self.indice}/{self.ano}'
     
+    @property
+    def data_hora_inicio(self):
+        data_hora_inicio = datetime.datetime(self.data_inicio.year, self.data_inicio.month, self.data_inicio.day)
+        return timezone.make_aware(data_hora_inicio, timezone.get_current_timezone())
+    
     @staticmethod
     def alterar_periodo_season():
         Season.PERIODO_SEASON = ConfiguracaoLadder.buscar_configuracao([ConfiguracaoLadder.CONFIGURACAO_PERIODO_SEASON,]) \

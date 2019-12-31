@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import datetime
+
 from django.utils import timezone
 
 from jogadores.models import Jogador, Personagem, Stage
@@ -156,5 +158,5 @@ def gerar_campos_formset(dados, prefixo_form):
 def criar_season_teste(data_inicio=None, data_fim=None):
     """Cria uma Season"""
     if not data_inicio:
-        data_inicio = timezone.localdate()
+        data_inicio = timezone.localdate() - datetime.timedelta(days=180)
     Season.objects.create(ano=timezone.localdate().year, indice=1, data_inicio=data_inicio, data_fim=data_fim)

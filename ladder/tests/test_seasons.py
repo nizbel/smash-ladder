@@ -21,6 +21,10 @@ from smashLadder.utils import mes_ano_ant
 
 
 class IniciarLockdownTestCase(TestCase):
+    def tearDown(self):
+        TestCase.tearDown(self)
+        encerrar_lockdown()
+        
     def testa_acesso_apos_lockdown(self):
         """Testa acesso a tela inicial durante lockdown"""
         response = self.client.get(reverse('inicio'))
@@ -35,6 +39,10 @@ class EncerrarLockdownTestCase(TestCase):
         super(EncerrarLockdownTestCase, cls).setUpTestData()
         
         iniciar_lockdown()
+        
+    def tearDown(self):
+        TestCase.tearDown(self)
+        encerrar_lockdown()
         
     def testa_acesso_apos_encerrar_lockdown(self):
         """Testa acesso a tela inicial durante lockdown"""
