@@ -46,7 +46,6 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
             # Definir desafios a serem recalculados
             if informou_desafio:
-                print('DESAFIO')
                 eventos = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora).exclude(id=desafio_ladder.id) \
                     .order_by('data_hora', 'posicao_desafiado', 'id'))
                 
@@ -80,13 +79,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                                                                list(HistoricoLadder.objects.filter(mes=mes, ano=ano)), 
                                                                remocoes, decaimentos)
                     
-                    print(HistoricoLadder.objects.filter(mes=mes, ano=ano).order_by('posicao'))
-                    print(ladder_resultante)
-                    
-                    print('vai copiar 1')
                     copiar_ladder(HistoricoLadder.objects.filter(mes=mes, ano=ano).order_by('posicao'), ladder_resultante)
-                    print('copiou')
-                    
                 else:
                     desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora))
                     if desafio_ladder.is_cancelado():
@@ -180,7 +173,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
             
             # Reescrever
             for evento in eventos:
-                print(evento)
+#                 print(evento)
                 # Verificar se alterou mês/ano para próximo desafio
                 if isinstance(evento, DesafioLadder):
                     mes, ano = evento.mes_ano_ladder
@@ -601,7 +594,7 @@ def verificar_posicoes_desafiante_desafiado(desafio_ladder, ladder=None):
             # Verificar se desafiante possui permissão de aumento de range
             limite_range = (DesafioLadder.LIMITE_POSICOES_DESAFIO + PermissaoAumentoRange.AUMENTO_RANGE) \
                 if desafio_ladder.desafiante.possui_permissao_aumento_range(desafio_ladder.data_hora) else DesafioLadder.LIMITE_POSICOES_DESAFIO
-                
+
             for jogador_posicao in [ladder_posicao for ladder_posicao in ladder if ladder_posicao.posicao < posicao_desafiante]:
                 desafiaveis.append(jogador_posicao.jogador)
                 
@@ -742,7 +735,6 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     resultados_desafios = dict(ResultadoDesafioLadder.objects.filter(desafio_ladder__in=desafios).order_by('jogador').values('jogador') \
                                .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
     
-    print(resultados_desafios)
     
     if not decaimentos:
         decaimentos = list()
@@ -750,14 +742,12 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     resultados_decaimentos = dict(ResultadoDecaimentoJogador.objects.filter(decaimento__in=decaimentos).order_by('jogador').values('jogador') \
                               .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
     
-    print(resultados_decaimentos)
     if not remocoes:
         remocoes = list()
     
     resultados_remocoes = dict(ResultadoRemocaoJogador.objects.filter(remocao__in=remocoes).order_by('jogador').values('jogador') \
                               .annotate(alteracao_total=Sum('alteracao_posicao')).values_list('jogador', 'alteracao_total'))
     
-    print(resultados_remocoes)
     resultados = { k: resultados_desafios.get(k, 0) + resultados_decaimentos.get(k, 0) + resultados_remocoes.get(k, 0)  \
                   for k in set(resultados_desafios) | set(resultados_decaimentos) | set(resultados_remocoes) }
     
@@ -809,7 +799,6 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
         else:
             for posicao_ladder in ladder:
                 if posicao_ladder.jogador_id == jogador:
-                    print(posicao_ladder, alteracao)
                     # Alterar posição
                     posicao_ladder.posicao -= alteracao
                     break
@@ -821,7 +810,6 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     desafio_mais_antigo = sorted(desafios, key=lambda x: x.data_hora)[0]
     novos_entrantes = list()
     
-    print('LADDER DURANTE PROCESSO', ladder)
     for posicao_ladder in reversed(ladder):
         if DesafioLadder.validados.filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
             .filter(data_hora__lt=desafio_mais_antigo.data_hora).exists():

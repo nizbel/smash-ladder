@@ -53,7 +53,7 @@ class ViewEditarDesafioLadderTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        cls.horario_atual = timezone.now()
+        cls.horario_atual = timezone.localtime()
         data_atual = cls.horario_atual.date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
@@ -816,7 +816,7 @@ class ViewDetalharLutaTestCase(TestCase):
         cls.sena = Jogador.objects.get(nick='sena')
         cls.teets = Jogador.objects.get(nick='teets')
         
-        cls.luta = criar_luta_teste([cls.sena, cls.teets], cls.sena, timezone.now().date(), cls.teets)
+        cls.luta = criar_luta_teste([cls.sena, cls.teets], cls.sena, timezone.localtime().date(), cls.teets)
         
         # Preparar luta completa
         cls.stage_teste = criar_stage_teste()
@@ -824,10 +824,10 @@ class ViewDetalharLutaTestCase(TestCase):
         cls.fox = Personagem.objects.get(nome='Fox')
         cls.marth = Personagem.objects.get(nome='Marth')
         cls.luta_completa = criar_luta_completa_teste([cls.sena, cls.teets], [cls.marth, cls.fox], cls.sena, 
-                                                      timezone.now().date(), cls.teets, cls.stage_teste)
+                                                      timezone.localtime().date(), cls.teets, cls.stage_teste)
         
         # Luta depende de um desafio válido para existir
-        desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.teets)
+        desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.localtime(), False, cls.teets)
         LutaLadder.objects.create(desafio_ladder=desafio_ladder, indice_desafio_ladder=1, luta=cls.luta)
         LutaLadder.objects.create(desafio_ladder=desafio_ladder, indice_desafio_ladder=2, luta=cls.luta_completa)
         
@@ -859,7 +859,7 @@ class ViewDetalharLutaTestCase(TestCase):
         response = self.client.get(reverse('ladder:detalhar_luta', kwargs={'luta_id': self.luta_completa.id}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['luta'].ganhador, self.sena)
-        self.assertEqual(response.context['luta'].data, timezone.now().date())
+        self.assertEqual(response.context['luta'].data, timezone.localtime().date())
         self.assertEqual(response.context['luta'].adicionada_por, self.teets)
         
         self.assertEqual(len(response.context['participantes']), 2)
@@ -885,13 +885,13 @@ class ViewDetalharDesafioLadderTestCase(TestCase):
         
         criar_ladder_teste()
         
-        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.now(), False, cls.sena)
+        cls.desafio_ladder = criar_desafio_ladder_simples_teste(cls.sena, cls.teets, 3, 1, timezone.localtime(), False, cls.sena)
         
         cls.desafio_ladder_completo = criar_desafio_ladder_completo_teste(cls.sena, cls.teets, 3, 1, 
-                                                                            timezone.now() - datetime.timedelta(minutes=1), False, cls.sena)
+                                                                            timezone.localtime() - datetime.timedelta(minutes=1), False, cls.sena)
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localtime().date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
@@ -1039,7 +1039,7 @@ class ViewListarHistoricoLadderTestCase(TestCase):
         cls.sena = Jogador.objects.get(nick='sena')
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localtime().date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
@@ -1101,7 +1101,7 @@ class ViewDetalharHistoricoLadderTestCase(TestCase):
         cls.teets = Jogador.objects.get(nick='teets')
         
         # Preparar mês anterior para histórico
-        data_atual = timezone.now().date()
+        data_atual = timezone.localtime().date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
         criar_ladder_historico_teste(cls.ano, cls.mes)
@@ -1171,7 +1171,7 @@ class ViewListarDesafiosLadderPendentesValidacaoTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         data_atual = horario_atual.date()
         cls.mes, cls.ano = mes_ano_ant(data_atual.month, data_atual.year)
         
@@ -1255,7 +1255,7 @@ class ViewListarDesafiosLadderEspecificaTestCase(TestCase):
         criar_ladder_teste()
         
         # Preparar mês anterior para histórico
-        horario_atual = timezone.now()
+        horario_atual = timezone.localtime()
         cls.data_atual = horario_atual.date()
         cls.mes, cls.ano = mes_ano_ant(cls.data_atual.month, cls.data_atual.year)
         
@@ -1361,7 +1361,7 @@ class ViewListarDesafiosLadderEspecificaTestCase(TestCase):
         
     def test_erro_ano_futuro(self):
         """Testa erro caso seja informado ano futuro"""
-        prox_mes = timezone.now().replace(day=calendar.monthrange(self.data_atual.year, self.data_atual.month)[1]) + datetime.timedelta(days=1)
+        prox_mes = timezone.localtime().replace(day=calendar.monthrange(self.data_atual.year, self.data_atual.month)[1]) + datetime.timedelta(days=1)
         response = self.client.get(reverse('ladder:listar_desafios_ladder_historico', kwargs={'mes': prox_mes.month, 'ano':prox_mes.year}))
         self.assertEqual(response.status_code, 404)
         
