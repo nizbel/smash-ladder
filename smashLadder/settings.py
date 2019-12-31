@@ -98,7 +98,7 @@ UF = 'df'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tekken-ladder-df',
+        'NAME': 'smash-ladder-df',
         'USER': 'smash',
         'PASSWORD': 'smash',
 #         'HOST': 'localhost',
