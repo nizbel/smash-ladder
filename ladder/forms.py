@@ -49,10 +49,9 @@ class DesafioLadderForm(ModelForm):
         desafiante = cleaned_data.get('desafiante')
         desafiado = cleaned_data.get('desafiado')
         # Se não estiver habilitado, sempre é falso
-        if DesafioLadder.USO_CORINGA:
-            desafio_coringa = cleaned_data.get('desafio_coringa')
-        else:
-            desafio_coringa = False
+        if not DesafioLadder.USO_CORINGA:
+            cleaned_data['desafio_coringa'] = False
+        desafio_coringa = cleaned_data.get('desafio_coringa')
         criador_desafio = cleaned_data.get('adicionado_por')
         score_desafiante = cleaned_data.get('score_desafiante')
         score_desafiado = cleaned_data.get('score_desafiado')

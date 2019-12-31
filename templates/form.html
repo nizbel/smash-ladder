@@ -1,4 +1,4 @@
-<div class="row">
+<div class="row {% if row_extra_classes %}{{ row_extra_classes }}{% endif %}" {% if row_id %}id="{{ row_id }}"{% endif %}>
 {% for field in form.visible_fields %}
     <div class="col-12 col-md-2 py-2" aria-required={% if field.field.required %}"true"{% else %}"false"{% endif %}>
         {{ field.label_tag }}{% if field.field.required %}<span class="required">*</span>{% endif %}
