@@ -7,11 +7,21 @@ from django.contrib.auth.models import User
 from jogadores.models import Jogador, Personagem, Stage, Feedback
 
 
-# Define an inline admin descriptor for Employee model
+# Define an inline admin descriptor for Jogador model
 # which acts a bit like a singleton
 class UserJogadorInLine(admin.StackedInline):
     model = Jogador
     can_delete = False
+    
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        is_superuser = request.user.is_superuser
+        
+        if not is_superuser:
+            if 'ultimo_uso_coringa' in formset.form.base_fields:
+                formset.form.base_fields['ultimo_uso_coringa'].disabled = True
+            
+        return formset
     
 # Define a new User admin
 class UserAdmin(BaseUserAdmin):
