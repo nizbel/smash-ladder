@@ -14,26 +14,12 @@ Editar desafio
 {% block content %}
 	<form class="col-12" action="{% url 'ladder:editar_desafio_ladder' form_desafio_ladder.instance.id %}" method="post">
 	    {% csrf_token %}
-	    {% comment %}
-	    {{ form_desafio_ladder }}
-	    
-	    {{ formset_lutas.management_form }}
-        {% for form in formset_lutas %}
-        	<div>
-	        	<h4>Luta {{ forloop.counter }}</h4>
-	        	{{ form }}
-        	</div>
-        {% endfor %}
-        {% endcomment %}
         
         {% include "form.html" with form=form_desafio_ladder %}
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}
         	<h3>Luta {{ forloop.counter }}</h3>
-        	{% comment %}
-        	{{ form }}
-        	{% endcomment %}
         	
         	{% include "form.html" with form=form %}
         {% endfor %}
