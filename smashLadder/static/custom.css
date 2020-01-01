@@ -1,9 +1,17 @@
 /*
+	Padrão
 	ffffff (255, 255, 255) 
 	000000 (0, 0, 0) 
-	cecccc (206, 204, 204) cinza-2
 	9d6381 (157, 99, 129) cinza-3
+	cecccc (206, 204, 204) cinza-2
 	fdecef (253, 236, 239) cinza-1
+	
+	Verão
+	ffffff (255, 255, 255) 
+	000000 (0, 0, 0) 
+	ffd700 () cinza-3
+	236e96 () cinza-2
+	15b2d3 () cinza-1
 */
 
 .site-header {
@@ -11,7 +19,7 @@
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
 }
-
+/*
 .bg-cinza-1 {
     background-color: rgba(253, 236, 239, 1);
 }
@@ -21,6 +29,18 @@
 .bg-cinza-3 {
     background-color: rgba(157, 99, 129, 1);
 }
+*/
+.bg-cinza-1 {
+    background-color: #15B2D3;
+}
+.bg-cinza-2 {
+    background-color: #236E96;
+    color: #ffffff;
+}
+.bg-cinza-3 {
+    background-color: #FFD700;
+}
+
 
 .clicavel {
 	cursor: pointer;
