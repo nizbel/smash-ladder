@@ -19,9 +19,11 @@ Editar desafio
 	    
 	    {{ formset_lutas.management_form }}
         {% for form in formset_lutas %}
-        	<h3>Luta {{ forloop.counter }}</h3>
+        	<h3 id="id_header_luta_{{ forloop.counter }}" class="invisible">Luta {{ forloop.counter }}</h3>
         	
-        	{% include "form.html" with form=form %}
+        	{% with forloop.counter|stringformat:"s" as forloop_string %}
+        	{% include "form.html" with form=form row_id="id_row_luta_"|add:forloop_string row_extra_classes="invisible" %}
+        	{% endwith %}
         {% endfor %}
         
 	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
@@ -50,6 +52,11 @@ $(document).ready(function(){
 		}
 	});
 	
+	// A cada ganhador definido, verificar se já pode preencher o resto
+	$("select[id$='ganhador']").on('select2:select', function (e) {
+	  	preencherGanhadores();
+	});
+	
 	$("select[id='id_desafiante']").on('select2:select', function (e) {
 	  	recarregarParticipantes();
 	  	
@@ -57,6 +64,8 @@ $(document).ready(function(){
 	  	buscarDesafiaveis();
 	  	
 	  	buscarPersonagensJogador($(this));
+	  	
+	  	preencherGanhadores();
 	});
 	
 	$('#id_desafio_coringa').change(function(){
@@ -67,6 +76,8 @@ $(document).ready(function(){
 	  	recarregarParticipantes();
 	  	
 	  	buscarPersonagensJogador($(this));
+	  	
+	  	preencherGanhadores();
 	});
 	
 	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});
@@ -128,6 +139,14 @@ $(document).ready(function(){
 		if (desafiado_anterior.id) {
 			$('#id_desafio_ladder_luta-' + (indice) + '-personagem_desafiado').val(desafiado_anterior.id).trigger('change');
 		}
+	});
+	
+	// Mostrar lutas de acordo com scores
+	mostrarApenasLutasValidas();
+	preencherGanhadores();
+	$('input[id*="score"]').change(function(){
+		mostrarApenasLutasValidas();
+		preencherGanhadores();
 	});
 	
 	buscarPersonagensJogador($("select[id='id_desafiante']"));
@@ -222,10 +241,14 @@ function buscarPersonagensJogador(elemento_jogador) {
 				fim_id = 'personagem_desafiado';
 			}
 			
+			// Garantir que o estilo do select2 será mantido, primeiro remove display none, para inserir posteriormente
+			if ($("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display') == 'none') {
+				$("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display', '');
+			}
 			$("select[id$='" + fim_id + "']").select2({
 				sorter: function(data) {
 				    return data.sort(function(a, b) {
-				    	if (a.id == "") {
+						if (a.id == "") {
 							a.prioridade = 0;
 						} else {
 				    		a.prioridade = $.inArray(parseInt(a.id), resultado.personagens);
@@ -246,8 +269,82 @@ function buscarPersonagensJogador(elemento_jogador) {
 				    });
 			    }
 			});
+			// Reinserir style display
+			if ($("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display') !== 'none') {
+				$("select[id$='" + fim_id + "']").parents().find('.row.invisible').css('display', 'none');
+			}
         }
     );
+}
+
+function mostrarApenasLutasValidas() {
+	// Mostrar lutas que estejam compatíveis com resultado do desafio
+	var score_desafiante = parseInt($('#id_score_desafiante').val() || 0);
+	var score_desafiado = parseInt($('#id_score_desafiado').val() || 0);
+	
+	// Esconder para depois mostrar
+	$('h3[id*="id_header_luta_"]').addClass('invisible').css('display', 'none');
+	$('div[id*="id_row_luta_"]').addClass('invisible').css('display', 'none');
+	// Mostrar lutas que condizem com resultado
+	for (var i = 1; i <= score_desafiado + score_desafiante; i++) {
+		$('h3[id="id_header_luta_' + i + '"]').removeClass('invisible').css('display', '');
+		$('div[id="id_row_luta_' + i + '"]').removeClass('invisible').css('display', '');
+	}
+}
+
+function preencherGanhadores() {
+	// Verificar jogadores cadastrados
+	var desafiante = $('#id_desafiante').val();
+	var desafiado = $('#id_desafiado').val();
+	
+	// Se não estiverem ambos cadastrados, parar função
+	if (desafiante.length === 0 || desafiado.length === 0) {
+		return;
+	}
+	
+	// Buscar scores
+	var score_desafiante = $('#id_score_desafiante').val();
+	var score_desafiado = $('#id_score_desafiado').val();
+	
+	if (score_desafiante.length === 0 || score_desafiado.length === 0) {
+		return;
+	} else {
+		score_desafiante = parseInt(score_desafiante);
+		score_desafiado = parseInt(score_desafiado);
+	}
+	
+	// Verificar se lutas restantes só possuem apenas uma opção
+	// Contar cadastros de vitória para jogador
+	var ganhadores = $("select[id$='ganhador']");
+	var vitorias_desafiante = 0;
+	var vitorias_desafiado = 0;
+	
+	for (var i = 0; i < score_desafiante + score_desafiado; i++) {
+		if (ganhadores[i].value === desafiante) {
+			vitorias_desafiante++;
+		} else if (ganhadores[i].value === desafiado) {
+			vitorias_desafiado++;
+		}
+	}
+	
+	// Verificar que ganhadores não foram todos configurados
+	if (vitorias_desafiante + vitorias_desafiado < score_desafiante + score_desafiado) {
+		// Se todas as vitórias de algum dos jogadores foi inserida, preencher o resto
+		if (vitorias_desafiante === score_desafiante) {
+			for (var i = 0; i < score_desafiante + score_desafiado; i++) {
+				if (ganhadores[i].value.length === 0) {
+					$(ganhadores[i]).val(desafiado);
+				}
+			}
+		} else if (vitorias_desafiado === score_desafiado) {
+			for (var i = 0; i < score_desafiante + score_desafiado; i++) {
+				if (ganhadores[i].value.length === 0) {
+					$(ganhadores[i]).val(desafiante);
+				}
+			}
+		}
+	}
+	$("select[id$='ganhador']").trigger('change');
 }
 </script>
 {% endblock %}
