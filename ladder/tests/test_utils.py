@@ -1630,7 +1630,7 @@ class BuscarDesafiaveisTestCase(TestCase):
         posicao_jogador_removido = 11
         
         # Adicionar desafio
-        desafio = criar_desafio_ladder_simples_teste(jogador_removido, self.jogador_pos_9, 3, 0, timezone.localtime() - datetime.timedelta(days=1), 
+        desafio = criar_desafio_ladder_simples_teste(jogador_removido, self.jogador_pos_9, 3, 0, timezone.localtime() - datetime.timedelta(hours=1), 
                                                      False, self.jogador_pos_9, posicao_jogador_removido, 9)
         validar_desafio_ladder_teste(desafio, self.jogador_pos_1)
         
