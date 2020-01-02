@@ -24,7 +24,8 @@ def copiar_info_ladder_atual_para_mes_passado():
             data_mes_passado = timezone.localtime().replace(day=1) - datetime.timedelta(days=1)
             mes = data_mes_passado.month
             ano = data_mes_passado.year
-            if DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).exists():
+            if DesafioLadder.objects.filter(data_hora__month=mes, data_hora__year=ano).exists() \
+                or DesafioLadder.objects.filter(data_hora__lte=data_mes_passado):
                 for posicao_ladder in PosicaoLadder.objects.all().order_by('posicao'):
                     historico_ladder = HistoricoLadder(posicao=posicao_ladder.posicao, jogador=posicao_ladder.jogador,
                                                        mes=mes, ano=ano)
