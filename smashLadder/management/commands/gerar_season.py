@@ -71,7 +71,7 @@ def gerar_season_inicial():
                 data_inicio = DesafioLadder.validados.order_by('data_hora')[0].data_hora.date()
             else:
                 data_inicio = timezone.localdate()
-            nova_season = Season(ano=timezone.localtime().year, indice=1, data_inicio=data_inicio, data_fim=None)
+            nova_season = Season(ano=data_inicio.year, indice=1, data_inicio=data_inicio, data_fim=None)
             nova_season.save()
     except:
         raise
@@ -188,6 +188,18 @@ def gerar_nova_season():
             nova_ladder[posicao_atual].jogador = jogador_restante.jogador
             posicao_atual += 1
     
+    # Apagar jogadores na nova ladder
+    for username in ['WindWalker', 'LePabs', 'DAN', 'Munani', 'CDX', 'Estrela', 'Danriser', 'Pebattle']:
+        for posicao_inicial in nova_ladder:
+            if posicao_inicial.jogador.user.username == username:
+                nova_ladder.remove(posicao_inicial)
+                break
+    
+    indice = 1
+    for posicao_inicial in nova_ladder:
+        posicao_inicial.posicao = indice
+        indice += 1
+        
     # Salvar posições iniciais
     for posicao_inicial in nova_ladder:
         posicao_inicial.save()
