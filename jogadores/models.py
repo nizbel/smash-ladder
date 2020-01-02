@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from ladder.models import DesafioLadder, InicioLadder, ResultadoDesafioLadder, \
     HistoricoLadder, RemocaoJogador, ResultadoDecaimentoJogador, \
-    ResultadoRemocaoJogador, PermissaoAumentoRange
+    ResultadoRemocaoJogador, PermissaoAumentoRange, Season
 from smashLadder.utils import DateTimeFieldTz, mes_ano_ant
 
 
@@ -38,13 +38,16 @@ class Jogador(models.Model):
             
     def posicao_em(self, data_hora):
         """Retora a posição do jogador na ladder na data/hora especificada"""
+        # Verificar Season para data/hora
+        season = Season.objects.filter(data_inicio__lte=data_hora.date()).order_by('-data_inicio')[0]
+        
         # Buscar última remoção da ladder, posição será definida a partir de sua data
         if RemocaoJogador.objects.filter(jogador=self, data__lt=data_hora).exists():
             data_inicial = RemocaoJogador.objects.filter(jogador=self).order_by('-data')[0].data
-            desafios_validados_considerando_remocao = DesafioLadder.validados.filter(data_hora__gt=data_inicial)
+            desafios_validados_considerando_remocao = DesafioLadder.validados.na_season(season).filter(data_hora__gt=data_inicial)
         else:
             data_inicial = None
-            desafios_validados_considerando_remocao = DesafioLadder.validados
+            desafios_validados_considerando_remocao = DesafioLadder.validados.na_season(season)
         
         # Buscar último desafio participado
         desafio_mais_recente = None
@@ -126,16 +129,19 @@ class Jogador(models.Model):
             else:
                 # Remoções
 #                 posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao).count()
-                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, jogador=self) \
-                            .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
+                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, remocao__data__gt=season.data_hora_inicio,
+                                                                   jogador=self).aggregate(alteracao_total= \
+                                                                                           Sum('alteracao_posicao'))['alteracao_total'] or 0)
                     
                 # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora,
-                            desafio_ladder__admin_validador__isnull=False, desafio_ladder__cancelamentodesafioladder__isnull=True) \
+                            desafio_ladder__data_hora__gt=season.data_hora_inicio, desafio_ladder__admin_validador__isnull=False, 
+                            desafio_ladder__cancelamentodesafioladder__isnull=True) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
                 # Decaimentos
-                posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__lt=data_hora) \
+                posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__lt=data_hora,
+                                                                      decaimento__data__gt=season.data_hora_inicio) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
             return posicao
