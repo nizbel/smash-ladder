@@ -134,6 +134,8 @@ def detalhar_ladder_atual(request):
     
     qtd_desafios = DesafioLadder.objects.filter(data_hora__month=data_atual.month, data_hora__year=data_atual.year).count()
     
+    season_atual = Season.objects.order_by('-data_inicio')[0]
+    
     # Comparar com ladder anterior
     if HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).exists():
         ladder_anterior = HistoricoLadder.objects.filter(mes=data_mes_anterior.month, ano=data_mes_anterior.year).select_related('jogador')
@@ -191,7 +193,7 @@ def detalhar_ladder_atual(request):
         
         # Sequencia de vitórias superior a 5
         # Buscar todos os desafios
-        desafios = DesafioLadder.validados.order_by('data_hora').select_related('desafiante', 'desafiado')
+        desafios = DesafioLadder.validados.na_season(season_atual).order_by('data_hora').select_related('desafiante', 'desafiado')
         
         # Buscar participantes da ladder
         jogadores = {posicao.jogador.nick: 0 for posicao in ladder}
