@@ -11,7 +11,7 @@ from ladder.models import InicioLadder, CancelamentoDesafioLadder, \
     HistoricoLadder, PosicaoLadder, RemocaoJogador
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_ladder_historico_teste, criar_desafio_ladder_simples_teste, \
-    validar_desafio_ladder_teste
+    validar_desafio_ladder_teste, criar_season_teste
 from ladder.utils import remover_jogador, recalcular_ladder
 from smashLadder.utils import mes_ano_ant
 
@@ -104,3 +104,20 @@ class JogadorTestCase(TestCase):
         validar_desafio_ladder_teste(self.desafio_ladder, self.teets)
         self.assertEqual(self.saraiva.posicao_em(self.horario_atual), 3)
         
+    def test_posicao_em_jogador_com_exclusao_na_ultima_season(self):
+        """Testa se jogador excluído na última Season aparece normalmente na nova"""
+        # Criar season anterior
+        criar_season_teste(timezone.localtime() - datetime.timedelta(days=30), timezone.localtime() - datetime.timedelta(days=2))
+        # Criar season atual
+        criar_season_teste(timezone.localtime() - datetime.timedelta(days=1))
+        # Remover jogador na anterior
+        RemocaoJogador.objects.create(jogador=self.saraiva, data=timezone.localtime() - datetime.timedelta(days=5),
+                                      admin_removedor=self.teets, posicao_jogador=2)
+        
+        # Guardar histórico
+        historico = list(HistoricoLadder.objects.all())
+        # Remover histórico para simular início de season
+        HistoricoLadder.objects.all().delete()
+        self.assertEqual(self.saraiva.posicao_em(self.horario_atual), 2)
+        for elemento in historico:
+            elemento.save()

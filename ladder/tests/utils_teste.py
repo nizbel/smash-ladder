@@ -159,4 +159,6 @@ def criar_season_teste(data_inicio=None, data_fim=None):
     """Cria uma Season"""
     if not data_inicio:
         data_inicio = timezone.localdate() - datetime.timedelta(days=180)
-    Season.objects.create(ano=timezone.localdate().year, indice=1, data_inicio=data_inicio, data_fim=data_fim)
+    # Verificar indice
+    indice = Season.objects.filter(ano=data_inicio.year).count() + 1
+    Season.objects.create(ano=data_inicio.year, indice=indice, data_inicio=data_inicio, data_fim=data_fim)

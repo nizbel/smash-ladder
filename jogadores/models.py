@@ -42,7 +42,7 @@ class Jogador(models.Model):
         season = Season.objects.filter(data_inicio__lte=data_hora.date()).order_by('-data_inicio')[0]
         
         # Buscar última remoção da ladder, posição será definida a partir de sua data
-        if RemocaoJogador.objects.filter(jogador=self, data__lt=data_hora).exists():
+        if RemocaoJogador.objects.filter(jogador=self, data__lt=data_hora, data__gte=season.data_hora_inicio).exists():
             data_inicial = RemocaoJogador.objects.filter(jogador=self).order_by('-data')[0].data
             desafios_validados_considerando_remocao = DesafioLadder.validados.na_season(season).filter(data_hora__gt=data_inicial)
         else:
