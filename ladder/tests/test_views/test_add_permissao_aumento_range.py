@@ -7,6 +7,7 @@ from jogadores.models import Jogador
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE
 from ladder.models import PermissaoAumentoRange
 from smashLadder import settings
+from ladder.tests.utils_teste import criar_season_teste
 
 
 class ViewAddPermissaoAumentoRange(TestCase):
@@ -17,6 +18,8 @@ class ViewAddPermissaoAumentoRange(TestCase):
         criar_jogadores_teste(['sena', 'teets',])
         cls.jogador_1 = Jogador.objects.get(nick='sena')
         cls.jogador_2 = Jogador.objects.get(nick='teets')
+        
+        criar_season_teste()
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de adicionar permissão de aumento de range sem logar"""

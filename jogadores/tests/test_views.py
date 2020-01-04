@@ -14,7 +14,7 @@ from ladder.models import DesafioLadder, RemocaoJogador, DecaimentoJogador, \
     PosicaoLadder
 from ladder.tests.utils_teste import criar_ladder_teste, \
     criar_desafio_ladder_simples_teste, criar_desafio_ladder_completo_teste, \
-    validar_desafio_ladder_teste
+    validar_desafio_ladder_teste, criar_season_teste
 from ladder.utils import remover_jogador, decair_jogador, alterar_ladder, \
     processar_remocao, buscar_desafiaveis
 from smashLadder import settings
@@ -301,6 +301,8 @@ class ViewEditarJogadorTestCase(TestCase):
         
         criar_personagens_teste()
         
+        criar_season_teste()
+        
     def test_acesso_deslogado(self):
         """Testa acesso a tela de editar jogador sem logar"""
         response = self.client.get(reverse('jogadores:editar_jogador', kwargs={'username': self.jogador_2.user.username}))
@@ -572,6 +574,8 @@ class ViewDetalharPersonagemTestCase(TestCase):
         cls.stage = criar_stage_teste()
         
         cls.desafio = criar_desafio_ladder_completo_teste(cls.jogador_1, cls.jogador_2, 3, 0, timezone.now(), False, cls.jogador_1)
+        
+        criar_season_teste()
         
     def test_acesso_deslogado(self):
         """Testa acesso a tela de detalhar personagem sem logar"""
