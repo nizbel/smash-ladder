@@ -129,19 +129,19 @@ class Jogador(models.Model):
             else:
                 # Remoções
 #                 posicao -= RemocaoJogador.objects.filter(data__lt=data_hora, posicao_jogador__lt=posicao).count()
-                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, remocao__data__gt=season.data_hora_inicio,
+                posicao += (ResultadoRemocaoJogador.objects.filter(remocao__data__lt=data_hora, remocao__data__gte=season.data_hora_inicio,
                                                                    jogador=self).aggregate(alteracao_total= \
                                                                                            Sum('alteracao_posicao'))['alteracao_total'] or 0)
                     
                 # Desafios
                 posicao += (ResultadoDesafioLadder.objects.filter(jogador=self, desafio_ladder__data_hora__lt=data_hora,
-                            desafio_ladder__data_hora__gt=season.data_hora_inicio, desafio_ladder__admin_validador__isnull=False, 
+                            desafio_ladder__data_hora__gte=season.data_hora_inicio, desafio_ladder__admin_validador__isnull=False, 
                             desafio_ladder__cancelamentodesafioladder__isnull=True) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
                 # Decaimentos
                 posicao += (ResultadoDecaimentoJogador.objects.filter(jogador=self, decaimento__data__lt=data_hora,
-                                                                      decaimento__data__gt=season.data_hora_inicio) \
+                                                                      decaimento__data__gte=season.data_hora_inicio) \
                     .aggregate(alteracao_total=Sum('alteracao_posicao'))['alteracao_total'] or 0)
                 
             return posicao

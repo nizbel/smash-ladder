@@ -77,6 +77,10 @@ class DesafioLadder(models.Model):
     
     class Meta():
         unique_together = (('desafiante', 'data_hora'), ('desafiado', 'data_hora'))
+        ordering = ('data_hora',)
+        
+    def __str__(self):
+        return f'{self.id}: {self.data_hora}'
     
     @staticmethod
     def alterar_limite_posicoes_desafio():
