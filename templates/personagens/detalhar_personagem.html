@@ -40,14 +40,45 @@
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
-		    	Top 5 ganhadores
+		    	Top 5 Qtd. lutas
+		  	</div>
+		  	<div class="card-body col-12">
+		  		{% for registro in personagem.top_5_jogadores %}
+		  		<div class="row">
+			  		<div class="col-12 col-md-3">
+				  		<h6 class="card-title my-1">
+						    <strong>{{ registro.jogador.nick }}</strong>
+					    </h6>
+				    </div>
+				    <div class="col-12 col-md-9">
+						<div class="progress my-1">
+						  	<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-2
+						  	{% if registro.qtd_lutas < personagem.maior_qtd_lutas %} bg-cinza-3 {% endif %}" role="progressbar" 
+						  	aria-valuenow="{% widthratio registro.qtd_lutas personagem.maior_qtd_lutas 100 %}" 
+						  	aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+						  		{{ registro.qtd_lutas }}
+						  	</div>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+		  	</div>
+		</div>
+	</div>
+	{% endif %}
+	
+	{% if personagem.qtd_lutas > 0 %}
+	<div class="col-12 col-md-4 my-2">
+		<div class="card">
+		  	<div class="card-header bg-cinza-2">
+		    	Top 5 % de vitórias
 		  	</div>
 		  	<div class="card-body col-12">
 		  		{% for registro in personagem.top_5_ganhadores %}
 		  		<div class="row">
 			  		<div class="col-12 col-md-3">
 				  		<h6 class="card-title my-1">
-						    <strong>{{ registro.luta__ganhador.nick }}</strong>
+						    <strong>{{ registro.jogador.nick }}</strong>
 					    </h6>
 				    </div>
 				    <div class="col-12 col-md-9">
@@ -65,8 +96,8 @@
 		  	</div>
 		</div>
 	</div>
-	
 	{% endif %}
+	
 {% endblock %}
 
 {% block extra_scripts %}
