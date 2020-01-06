@@ -506,13 +506,13 @@ def detalhar_personagem_id(request, personagem_id):
                                                             personagem=personagem, luta__ganhador=F('jogador')).order_by('luta__ganhador').values('luta__ganhador') \
             .annotate(qtd_vitorias=Count('luta__ganhador')).aggregate(maior_qtd_vitorias=Max('qtd_vitorias'))['maior_qtd_vitorias'] or 0
         
-        if personagem.maior_qtd_vitorias > 0:
-            jogadores_com_mais_vitorias = JogadorLuta.objects.filter(luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
-                                                        luta__lutaladder__desafio_ladder__admin_validador__isnull=False,
-                                                        personagem=personagem, luta__ganhador=F('jogador')).order_by('luta__ganhador').values('luta__ganhador') \
-                .annotate(qtd_vitorias=Count('luta__ganhador')).filter(qtd_vitorias=personagem.maior_qtd_vitorias)
-            if len(jogadores_com_mais_vitorias) == 1:
-                personagem.maior_ganhador = Jogador.objects.select_related('user').get(id=jogadores_com_mais_vitorias[0]['luta__ganhador'])
+        #if personagem.maior_qtd_vitorias > 0:
+        #    jogadores_com_mais_vitorias = JogadorLuta.objects.filter(luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
+        #                                                luta__lutaladder__desafio_ladder__admin_validador__isnull=False,
+        #                                                personagem=personagem, luta__ganhador=F('jogador')).order_by('luta__ganhador').values('luta__ganhador') \
+        #        .annotate(qtd_vitorias=Count('luta__ganhador')).filter(qtd_vitorias=personagem.maior_qtd_vitorias)
+        #    if len(jogadores_com_mais_vitorias) == 1:
+        #        personagem.maior_ganhador = Jogador.objects.select_related('user').get(id=jogadores_com_mais_vitorias[0]['luta__ganhador'])
             
         # Preparar o top 5 de mais vitórias
         top_ganhadores = JogadorLuta.objects.filter(luta__lutaladder__desafio_ladder__cancelamentodesafioladder__isnull=True,
@@ -530,8 +530,14 @@ def detalhar_personagem_id(request, personagem_id):
                     break
         
         # Definir top 5 ganhadores com base em percentual, de jogadores com pelo menos 3 lutas
-        personagem.top_5_ganhadores = sorted(top_ganhadores, key=lambda x: x['qtd_vitorias'], reverse=True)[:5]
-            
+        personagem.top_5_ganhadores = sorted([ganhador for ganhador in top_ganhadores if ganhador['qtd_lutas'] >= 3], key=lambda x: x['qtd_vitorias'], reverse=True)[:5]
+        
+        if len(personagem.top_5_ganhadores) > 0:
+            if len(personagem.top_5_ganhadores) == 1:
+                personagem.maior_ganhador = personagem.top_5_ganhadores[0]
+            elif personagem.top_5_ganhadores[0]['qtd_vitorias'] > personagem.top_5_ganhadores[1]['qtd_vitorias']:
+                personagem.maior_ganhador = personagem.top_5_ganhadores[0]
+        
         # Buscar jogadores para preencher nome
         jogadores_top_5 = Jogador.objects.filter(id__in=[registro['jogador'] for registro in personagem.top_5_ganhadores])
         for registro in personagem.top_5_ganhadores:
