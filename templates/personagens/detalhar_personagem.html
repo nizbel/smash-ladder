@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block title %}- {{ personagem.nome }}{% endblock %}
 
@@ -40,7 +41,7 @@
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
-		    	Top 5 Qtd. lutas
+		    	Top 5 em qtd. de lutas
 		  	</div>
 		  	<div class="card-body col-12">
 		  		{% for registro in personagem.top_5_jogadores %}
@@ -67,11 +68,11 @@
 	</div>
 	{% endif %}
 	
-	{% if personagem.qtd_lutas > 0 %}
+	{% if personagem.maior_qtd_vitorias > 0 %}
 	<div class="col-12 col-md-4 my-2">
 		<div class="card">
 		  	<div class="card-header bg-cinza-2">
-		    	Top 5 % de vitórias
+		    	Top 5 em % de vitórias
 		  	</div>
 		  	<div class="card-body col-12">
 		  		{% for registro in personagem.top_5_ganhadores %}
@@ -85,9 +86,9 @@
 						<div class="progress my-1">
 						  	<div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-2
 						  	{% if registro.qtd_vitorias < personagem.maior_qtd_vitorias %} bg-cinza-3 {% endif %}" role="progressbar" 
-						  	aria-valuenow="{% widthratio registro.qtd_vitorias personagem.maior_qtd_vitorias 100 %}" 
+						  	aria-valuenow="{% widthratio registro.qtd_vitorias personagem.maior_qtd_vitorias|unlocalize 100 %}" 
 						  	aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-						  		{{ registro.qtd_vitorias }}
+						  		{{ registro.qtd_vitorias|floatformat:2 }} %
 						  	</div>
 						</div>
 					</div>

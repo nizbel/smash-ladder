@@ -605,7 +605,8 @@ class ViewDetalharPersonagemTestCase(TestCase):
         response = self.client.get(reverse('personagens:detalhar_personagem_por_id', kwargs={'personagem_id': self.personagem.id}))
         
         self.assertTrue(hasattr(response.context['personagem'], 'top_5_ganhadores'))
-        self.assertEqual(response.context['personagem'].top_5_ganhadores[0], {'luta__ganhador': self.jogador_1, 'qtd_vitorias': 3})
+        self.assertEqual(response.context['personagem'].top_5_ganhadores[0], {'jogador': self.jogador_1, 'qtd_vitorias': 100,
+                                                                              'qtd_lutas': 3})
 
 class ViewListarDesafiaveisTestCase(TestCase): 
     """Testes para a view de listar desafiáveis"""
