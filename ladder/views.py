@@ -672,7 +672,7 @@ def detalhar_regras(request):
                                                   'PERIODO_ESPERA_DESAFIO_CORINGA': DesafioLadder.PERIODO_ESPERA_DESAFIO_CORINGA,
                                                   'QTD_POSICOES_DECAIMENTO': DecaimentoJogador.QTD_POSICOES_DECAIMENTO,
                                                   'PERIODO_INATIVIDADE': DecaimentoJogador.PERIODO_INATIVIDADE,
-                                                  'admins': admins})
+                                                  'admins': admins, 'USO_CORINGA': DesafioLadder.USO_CORINGA})
 
 def listar_desafios_ladder(request, ano=None, mes=None):
     """Listar desafios de ladder específica"""

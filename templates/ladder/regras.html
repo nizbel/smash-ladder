@@ -63,11 +63,13 @@
 			<li class="list-group-item list-group-item-order">
 				Todas as partidas de desafio seguem os moldes de ban dos torneios e serão realizadas em uma Melhor de {{ MELHOR_DE }}.
 			</li>
+			{% if USO_CORINGA %}
 			<li class="list-group-item list-group-item-order">
 				Todo player terá o direito a 1 desafio coringa, esse desafio te permite desafiar qualquer pessoa acima de você! Todos os 
 				coringas de todas as pessoas serão resetados a cada <strong>{{ PERIODO_ESPERA_DESAFIO_CORINGA }} dias</strong>. O coringa, porém, não 
 				ultrapassa a regra de número 5.
 			</li>
+			{% endif %}
 			<li class="list-group-item list-group-item-order">
 				Qualquer dúvida, procure uma pessoa da comissão.
 			</li>
