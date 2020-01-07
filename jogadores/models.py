@@ -237,5 +237,10 @@ class Feedback(models.Model):
     avaliador = models.ForeignKey('Jogador', on_delete=models.CASCADE, related_name='avaliador')
     avaliado = models.ForeignKey('Jogador', on_delete=models.CASCADE, related_name='avaliado')
     texto = models.CharField('Texto do feedback', max_length=250)
-    data_hora = DateTimeFieldTz(u'Data e hora do feedback')
-        
+    data_hora = DateTimeFieldTz(u'Data e hora do feedback', auto_now_add=True)
+    
+class SugestaoLadder(models.Model):
+    jogador = models.ForeignKey('Jogador', on_delete=models.CASCADE)
+    texto = models.CharField('Texto da sugestão', max_length=1000)
+    data_hora = DateTimeFieldTz(u'Data e hora da sugestão', auto_now_add=True)
+    

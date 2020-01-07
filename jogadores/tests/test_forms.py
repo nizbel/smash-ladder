@@ -5,7 +5,8 @@ from decimal import Decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm
+from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm, \
+    SugestaoLadderForm
 from jogadores.models import Jogador, Personagem, Stage
 from jogadores.tests.utils_teste import criar_jogadores_teste, \
     criar_personagens_teste, criar_stages_teste
@@ -189,3 +190,29 @@ class FeedbackFormTestCase(TestCase):
         self.assertIn('texto', form.errors)
         self.assertEqual(len(form.errors), 1)
         
+class SugestaoLadderFormTestCase(TestCase):
+    """Testes para SugestaoLadderForm"""
+    @classmethod
+    def setUpTestData(cls):
+        super(SugestaoLadderFormTestCase, cls).setUpTestData()
+        
+        # Configurar jogador
+        criar_jogadores_teste(['teets'])
+        cls.teets = Jogador.objects.get(nick='teets')
+        
+    def test_form_texto_sucesso(self):
+        """Testa deixar texto de feedback com sucesso"""
+        form = SugestaoLadderForm({'texto': 'Teste'})
+        self.assertTrue(form.is_valid())
+        
+        feedback = form.save(commit=False)
+        self.assertEqual(feedback.texto, 'Teste')
+        
+    def test_form_texto_maior_que_limite(self):
+        """Testa erro ao deixar feedback maior do que o limite"""
+        texto_maior_que_limite = 't' * 10000
+        form = SugestaoLadderForm({'texto': texto_maior_que_limite})
+        self.assertFalse(form.is_valid())
+        
+        self.assertIn('texto', form.errors)
+        self.assertEqual(len(form.errors), 1)

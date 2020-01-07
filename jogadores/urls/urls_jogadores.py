@@ -27,6 +27,11 @@ urlpatterns = [
     path(r'listar-desafiaveis/<slug:username>/', views.listar_desafiaveis, name='listar_desafiaveis'),
     path(r'listar-desafios/<slug:username>/', views.listar_desafios_jogador, name='listar_desafios_jogador'),
     
+    # Sugestões para a Ladder
+    path(r'adicionar-sugestao/', views.adicionar_sugestao, name='adicionar_sugestao'),
+    path(r'detalhar-sugestao/<int:sugestao_id>/', views.detalhar_sugestao, name='detalhar_sugestao'),
+    path(r'listar-sugestoes/', views.listar_sugestoes, name='listar_sugestoes'),
+    
     # JSON
     path(r'buscar-quantidade-feedbacks', views.buscar_qtd_feedbacks_jogador, name='buscar_qtd_feedbacks'),
     path(r'listar-desafiaveis/', views.listar_desafiaveis_json, name='listar_desafiaveis_json'),

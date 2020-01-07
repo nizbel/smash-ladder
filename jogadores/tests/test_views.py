@@ -6,7 +6,8 @@ from django.test.testcases import TestCase
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.models import Jogador, Personagem, Stage, StageValidaLadder
+from jogadores.models import Jogador, Personagem, Stage, StageValidaLadder,\
+    SugestaoLadder
 from jogadores.tests.utils_teste import criar_jogadores_teste, SENHA_TESTE, \
     criar_personagens_teste, JOGADORES_TESTE, criar_stages_teste, \
     criar_stage_teste
@@ -676,4 +677,73 @@ class ViewListarDesafiaveisTestCase(TestCase):
         # Testar se desafio pendente de vitória do desafiante é ignorado
         # por jogadores acima do desafiado
         self.assertEqual(len(response.context['desafios_pendentes']), 0)
-    
+        
+class ViewListarSugestoesTestCase(TestCase):
+    """Testes para a view de listar sugestões para a Ladder"""
+    def test_mostrar_tela_vazia_caso_nao_haja_sugestoes(self):
+        """Testa se view retorna uma tela sem sugestões"""
+        response = self.client.get(reverse('jogadores:listar_sugestoes'))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(len(response.context['sugestoes']), 0)
+        
+        self.assertContains(response, 'Não há sugestões cadastradas', 1)
+
+    def test_mostrar_sugestoes_caso_existam(self):
+        """Testa se view retorna tela com lista de sugestões"""
+        criar_jogadores_teste(['teets'])
+        jogador = Jogador.objects.all()[0]
+        
+        # Cadastrar sugestões
+        SugestaoLadder.objects.create(texto='Teste', jogador=jogador)
+        SugestaoLadder.objects.create(texto='Teste 2', jogador=jogador)
+        
+        response = self.client.get(reverse('jogadores:listar_sugestoes'))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(len(response.context['sugestoes']), 2)
+        
+        self.assertIn('Teste', [sugestao.texto for sugestao in response.context['sugestoes']])
+        self.assertIn('Teste 2', [sugestao.texto for sugestao in response.context['sugestoes']])
+                                                                                
+class ViewDetalharSugestaoTestCase(TestCase): 
+    """Testes para a view de detalhar sugestão para a Ladder"""
+    def test_mostrar_sugestao(self):
+        """Testa se view retorna uma tela com a sugestão"""
+        criar_jogadores_teste(['teets'])
+        jogador = Jogador.objects.all()[0]
+        
+        # Cadastrar sugestões
+        sugestao_1 = SugestaoLadder.objects.create(texto='Teste', jogador=jogador)
+        sugestao_2 = SugestaoLadder.objects.create(texto='Teste 2', jogador=jogador)
+        response = self.client.get(reverse('jogadores:detalhar_sugestao', kwargs={'sugestao_id': sugestao_1.id}))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(response.context['sugestao'], SugestaoLadder.objects.get(id=sugestao_1.id))
+        
+        self.assertContains(response, sugestao_1.texto, 1)
+        self.assertContains(response, sugestao_1.jogador.nick, 1)
+        self.assertNotContains(response, sugestao_2.texto)
+        
+class ViewAdicionarSugestaoTestCase(TestCase): 
+    """Testes para a view de adicionar sugestão para a Ladder"""
+    def test_deve_estar_logado_para_adicionar(self):
+        """Testa se é usuário é redirecionado para tela de login ao tentar adicionar deslogado"""
+        response = self.client.get(reverse('jogadores:adicionar_sugestao'))
+        url_esperada = settings.LOGIN_URL + '?next=' + reverse('jogadores:adicionar_sugestao')
+        self.assertRedirects(response, url_esperada)
+        self.assertEqual(response.status_code, 302)
+        
+    def test_sucesso_adicionar_sugestao(self):
+        """Testa se view retorna uma tela com a sugestão"""
+        criar_jogadores_teste(['teets'])
+        jogador = Jogador.objects.all()[0]
+        
+        self.client.login(username=jogador.user.username, password=SENHA_TESTE)
+        response = self.client.post(reverse('jogadores:adicionar_sugestao'), {'texto': 'Teste'})
+        self.assertRedirects(response, reverse('jogadores:listar_sugestoes'))
+        self.assertEqual(response.status_code, 302)
+        
+        # Garantir que sugestão foi criada
+        self.assertEqual(SugestaoLadder.objects.all().count(), 1)
+                                                                                
