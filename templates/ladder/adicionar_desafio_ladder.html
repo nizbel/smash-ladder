@@ -75,6 +75,20 @@ $(document).ready(function(){
 	  	buscarPersonagensJogador($(this));
 	  	
 	  	preencherGanhadores();
+	  	
+	  	// Alterar label desafiante
+		$("select[id$='personagem_desafiante']").each(function(){
+			var desafiante = $('#id_desafiante option:selected').text();
+			var desafiante_id = $('#id_desafiante').val();
+			var label = $("label[for='" + $(this).attr('id') + "']");
+		
+			// Se não houver desafiante, preencher com texto padrão
+			if (desafiante_id.length === 0) {
+				label.text('Personagem desafiante');
+			} else {
+				label.text('Personagem ' + desafiante);
+			}
+		});
 	});
 	
 	$('#id_desafio_coringa').change(function(){
@@ -87,6 +101,20 @@ $(document).ready(function(){
 	  	buscarPersonagensJogador($(this));
 	  	
 	  	preencherGanhadores();
+	  	
+		// Alterar label desafiado
+		$("select[id$='personagem_desafiado']").each(function(){
+			var desafiado = $('#id_desafiado option:selected').text();
+			var desafiado_id = $('#id_desafiado').val();
+			var label = $("label[for='" + $(this).attr('id') + "']");
+		
+			// Se não houver desafiado, preencher com texto padrão
+			if (desafiado_id.length === 0) {
+				label.text('Personagem desafiado');
+			} else {
+				label.text('Personagem ' + desafiado);
+			}
+		});
 	});
 	
 	$('.data-hora').mask('00/00/0000 00:00', {placeholder: 'DD/MM/AAAA hh:mm'});

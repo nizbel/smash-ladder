@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}- Adicionar sugestão{% endblock %}
+
+{% block page_header %}
+Adicionar sugestão
+{% endblock %}
+
+{% block content %}
+	<div class="col-12 alert alert-primary mb-0">
+		<strong>Escreva aqui alguma melhoria que você gostaria de ver na {{ JOGO }} Ladder {{ UF }}</strong>
+	</div>
+	<form class="col-12" action="{% url 'jogadores:adicionar_sugestao' %}" method="post">
+	    {% csrf_token %}
+    	{% include "form_2_colunas.html" with form=form_sugestao %}
+    	
+	  	<input class="btn btn-lg btn-dark mt-4" type="submit" value="Salvar">
+	</form>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+- Sugestões para a Ladder
+{% endblock %}
+
+{% block page_header %}
+Sugestões para a Ladder
+{% endblock %}
+
+{% block content %}
+	{% for sugestao in sugestoes %}
+	<div class="card col-12 col-md-3">
+	  	<div class="card-body">
+	    	<h5 class="card-title">{{ sugestao.jogador.nick }}</h5>
+	    	
+		    <h6 class="card-subtitle mb-2 text-muted">{{ sugestao.data_hora|date:'d/m/Y H:i' }}</h6>
+		    
+	    	<p class="card-text">{{ sugestao.texto|truncatechars:100 }}</p>
+		    <a class="card-link" href="{% url 'jogadores:detalhar_sugestao' sugestao.id %}">Detalhar</a>
+	  	</div>
+	</div>
+	{% empty %}
+	<div class="col-12 text-center">
+		<h5>Não há sugestões cadastradas</h5>
+	</div>
+	{% endfor %}
+{% endblock %}

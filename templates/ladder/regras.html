@@ -63,23 +63,25 @@
 			<li class="list-group-item list-group-item-order">
 				Todas as partidas de desafio seguem os moldes de ban dos torneios e serão realizadas em uma Melhor de {{ MELHOR_DE }}.
 			</li>
+			{% if USO_CORINGA %}
 			<li class="list-group-item list-group-item-order">
 				Todo player terá o direito a 1 desafio coringa, esse desafio te permite desafiar qualquer pessoa acima de você! Todos os 
 				coringas de todas as pessoas serão resetados a cada <strong>{{ PERIODO_ESPERA_DESAFIO_CORINGA }} dias</strong>. O coringa, porém, não 
 				ultrapassa a regra de número 5.
 			</li>
+			{% endif %}
 			<li class="list-group-item list-group-item-order">
 				Qualquer dúvida, procure uma pessoa da comissão.
 			</li>
 			<li class="list-group-item list-group-item-order">
-				<strong>Todo dia 1º do mês</strong>, as posições atuais da smashcada serão salvas em um hall da fama.
+				<strong>Todo dia 1º do mês</strong>, as posições atuais da {{ JOGO }} Ladder {{ UF }} serão salvas em um hall da fama.
 			</li>
 			<li class="list-group-item list-group-item-order">
 				Evitem realizar uma partida sem antes comprovar com a comissão se ela é válida. As pessoas da comissão são 
 				{% for admin in admins %}{% if not forloop.first and not forloop.last %},{% endif %}{% if forloop.last and not forloop.first %} e{% endif %} <strong>{{ admin.nome_tag }}</strong>{% endfor %}.
 			</li>
 			<li class="list-group-item list-group-item-order">
-				Para entrar e participar da {{ JOGO }}scada, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
+				Para entrar e participar da {{ JOGO }} Ladder {{ UF }}, o jogador que desejar participar deverá JOGAR a partida contra um jogador com a 
 				range de sua modalidade (ou seja, os últimos colocados da respectiva ladder).
 			</li>
 		</ul>

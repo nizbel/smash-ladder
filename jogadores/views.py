@@ -17,9 +17,10 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.urls.base import reverse
 from django.utils import timezone
 
-from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm
+from jogadores.forms import JogadorForm, StagesValidasForm, FeedbackForm, \
+    SugestaoLadderForm
 from jogadores.models import Jogador, Stage, StageValidaLadder, Personagem, \
-    Feedback
+    Feedback, SugestaoLadder
 from ladder.models import DesafioLadder, Luta, ResultadoDesafioLadder, \
     JogadorLuta, RemocaoJogador, ResultadoDecaimentoJogador, Season
 from ladder.utils import buscar_desafiaveis
@@ -342,7 +343,6 @@ def avaliar_jogador(request, username):
                     feedback = form_feedback.save(commit=False)
                     
                     feedback.avaliador = request.user.jogador
-                    feedback.data_hora = timezone.localtime()
                     feedback.avaliado = jogador
                     feedback.save()
                     
@@ -547,3 +547,39 @@ def detalhar_personagem_id(request, personagem_id):
                     break
     
     return render(request, 'personagens/detalhar_personagem.html', {'personagem': personagem})
+
+def listar_sugestoes(request):
+    """Lista sugestões para a Ladder"""
+    sugestoes = SugestaoLadder.objects.all().order_by('-data_hora').select_related('jogador')
+    return render(request, 'jogadores/listar_sugestoes.html', {'sugestoes': sugestoes})
+    
+def detalhar_sugestao(request, sugestao_id):
+    """Detalha uma sugestão para a Ladder"""
+    sugestao = get_object_or_404(SugestaoLadder.objects.select_related('jogador'), id=sugestao_id)
+    return render(request, 'jogadores/detalhar_sugestao.html', {'sugestao': sugestao})
+    
+@login_required
+def adicionar_sugestao(request):
+    """Adiciona uma sugestão para a Ladder"""
+    if request.POST:
+        form_sugestao = SugestaoLadderForm(request.POST)
+        
+        if form_sugestao.is_valid():
+            try:
+                with transaction.atomic():
+                    sugestao = form_sugestao.save(commit=False)
+                    
+                    sugestao.jogador = request.user.jogador
+                    sugestao.save()
+                    
+                    messages.success(request, f'Sugestão para Ladder registrada com sucesso')
+                    return redirect(reverse('jogadores:listar_sugestoes'))
+            except Exception as e:
+                print(e)
+                messages.error(request, str(e))
+        print(form_sugestao.errors)
+    else:
+        # Preparar form
+        form_sugestao = SugestaoLadderForm()
+    
+    return render(request, 'jogadores/adicionar_sugestao.html', {'form_sugestao': form_sugestao})

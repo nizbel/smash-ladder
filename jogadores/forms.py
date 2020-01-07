@@ -6,7 +6,8 @@ from django.forms.forms import Form
 from django.forms.models import ModelForm
 from django.forms.widgets import Textarea
 
-from jogadores.models import Jogador, Stage, StageValidaLadder, Feedback
+from jogadores.models import Jogador, Stage, StageValidaLadder, Feedback, \
+    SugestaoLadder
 from smashLadder.utils import preparar_classes_form
 
 
@@ -76,5 +77,23 @@ class FeedbackForm(ModelForm):
     
     def __init__(self,*args,**kwargs):
         super(FeedbackForm,self).__init__(*args,**kwargs)
+        
+        preparar_classes_form(self)
+        
+class SugestaoLadderForm(ModelForm):
+
+    class Meta:
+        model = SugestaoLadder
+        fields = ('texto',)
+        widgets = {
+            'texto': Textarea(attrs={'rows': 10}),
+        }
+        help_texts = {
+            'texto': 'Limite de 1000 caracteres',
+        }
+        
+    
+    def __init__(self,*args,**kwargs):
+        super(SugestaoLadderForm,self).__init__(*args,**kwargs)
         
         preparar_classes_form(self)
