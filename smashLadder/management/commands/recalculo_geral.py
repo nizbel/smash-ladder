@@ -9,8 +9,8 @@ from ladder.utils import recalcular_ladder
 from smashLadder.utils import mes_ano_prox
 
 
-MES = 4
-ANO = 2019
+MES = 1
+ANO = 2020
 
 class Command(BaseCommand):
     help = 'Recalcular ladder geral'
@@ -18,7 +18,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             with transaction.atomic():
-                recalcular_ladder(mes=MES, ano=ANO)
+                if MES != timezone.localtime().month or ANO != timezone.localtime().year:
+                    recalcular_ladder(mes=MES, ano=ANO)
+                else:
+                    recalcular_ladder()
                 
                 mes = MES
                 ano = ANO

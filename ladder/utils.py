@@ -718,6 +718,9 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     # Se desafios está vazio, retornar ladder
     if not desafios:
         return ladder
+    
+    # Guardar season atual
+    season_atual = Season.objects.order_by('-data_inicio')[0]
 
     jogadores_ladder = [posicao_ladder.jogador_id for posicao_ladder in ladder]
     
@@ -800,10 +803,10 @@ def desfazer_lote_desafios(desafios, ladder, remocoes=None, decaimentos=None):
     novos_entrantes = list()
     
     for posicao_ladder in reversed(ladder):
-        if DesafioLadder.validados.filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
+        if DesafioLadder.validados.na_season(season_atual).filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
             .filter(data_hora__lt=desafio_mais_antigo.data_hora).exists():
             # Se jogador possuir desafio e não possuir remoção desde este desafio, não é novo entrante
-            desafio_mais_recente_pre_desfeitos = DesafioLadder.validados \
+            desafio_mais_recente_pre_desfeitos = DesafioLadder.validados.na_season(season_atual) \
                 .filter(Q(desafiante__id=posicao_ladder.jogador_id) | Q(desafiado__id=posicao_ladder.jogador_id)) \
                 .filter(data_hora__lt=desafio_mais_antigo.data_hora).order_by('-data_hora')[0]
             if RemocaoJogador.objects.filter(jogador__id=posicao_ladder.jogador_id).filter(data__range=[desafio_mais_recente_pre_desfeitos.data_hora, 
@@ -902,7 +905,7 @@ def copiar_ladder(ladder_destino, ladder_origem, mes_destino=None, ano_destino=N
     for posicao_dest in ladder_destino:
         posicao_dest.posicao = -posicao_dest.posicao
         posicao_dest.save()
-    
+
     # Copia posições
     for posicao_orig in ladder_origem:
         # Buscar jogador na ladder original
