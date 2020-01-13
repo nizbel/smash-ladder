@@ -69,7 +69,7 @@ def recalcular_ladder(desafio_ladder=None, mes=None, ano=None):
                 # Apagar ladders futuras e resultados para reescrever
                 mes, ano = desafio_ladder.mes_ano_ladder
 
-                desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora))
+                desafios_a_desfazer = list(DesafioLadder.validados.filter(data_hora__gte=desafio_ladder.data_hora)).exclude(id=desafio_ladder.id)
                 if desafio_ladder.is_cancelado():
                     desafios_a_desfazer.append(desafio_ladder)
                     
