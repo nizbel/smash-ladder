@@ -50,10 +50,10 @@ class UserAdmin(BaseUserAdmin):
         return form
     
     
-    def has_add_permission(self, request, obj=None):
+    def has_change_permission(self, request, obj=None):
         return request.user.is_superuser
     
-    def has_change_permission(self, request, obj=None):
+    def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
     
 # Re-register UserAdmin
@@ -76,5 +76,11 @@ admin.site.register(Stage, StageAdmin)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ('avaliador', 'avaliado', 'data_hora')
     search_fields = ['avaliador__nick', 'avaliado__nick']
+    
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
     
 admin.site.register(Feedback, FeedbackAdmin)
