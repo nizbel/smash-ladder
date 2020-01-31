@@ -1,0 +1,11 @@
+1 0 * * * docker-compose run -d web_smash_df python manage.py gerar_historico_ladder
+#1 0 * * * docker-compose run -d web_smash_pr python manage.py gerar_historico_ladder
+1 0 * * * docker-compose run -d web_tekken_df python manage.py gerar_historico_ladder
+
+0 5 * * * docker-compose run -d web_smash_df python manage.py preparar_backup
+#1 5 * * * docker-compose run -d web_smash_pr python manage.py preparar_backup
+2 5 * * * docker-compose run -d web_tekken_df python manage.py preparar_backup
+
+30 0 * * * docker-compose run -d web_smash_df python manage.py executar_decaimento
+#30 0 * * * docker-compose run -d web_smash_pr python manage.py executar_decaimento
+30 0 * * * docker-compose run -d web_tekken_df python manage.py executar_decaimento
